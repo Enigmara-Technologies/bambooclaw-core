@@ -1,6 +1,6 @@
-# ZeroClaw Commands Reference
+# BambooClaw Core Commands Reference
 
-This reference is derived from the current CLI surface (`zeroclaw --help`).
+This reference is derived from the current CLI surface (`BambooClaw Core --help`).
 
 Last verified: **February 19, 2026**.
 
@@ -30,58 +30,58 @@ Last verified: **February 19, 2026**.
 
 ### `onboard`
 
-- `zeroclaw onboard`
-- `zeroclaw onboard --interactive`
-- `zeroclaw onboard --channels-only`
-- `zeroclaw onboard --api-key <KEY> --provider <ID> --memory <sqlite|lucid|markdown|none>`
+- `BambooClaw Core onboard`
+- `BambooClaw Core onboard --interactive`
+- `BambooClaw Core onboard --channels-only`
+- `BambooClaw Core onboard --api-key <KEY> --provider <ID> --memory <sqlite|lucid|markdown|none>`
 
 ### `agent`
 
-- `zeroclaw agent`
-- `zeroclaw agent -m "Hello"`
-- `zeroclaw agent --provider <ID> --model <MODEL> --temperature <0.0-2.0>`
-- `zeroclaw agent --peripheral <board:path>`
+- `BambooClaw Core agent`
+- `BambooClaw Core agent -m "Hello"`
+- `BambooClaw Core agent --provider <ID> --model <MODEL> --temperature <0.0-2.0>`
+- `BambooClaw Core agent --peripheral <board:path>`
 
 ### `gateway` / `daemon`
 
-- `zeroclaw gateway [--host <HOST>] [--port <PORT>]`
-- `zeroclaw daemon [--host <HOST>] [--port <PORT>]`
+- `BambooClaw Core gateway [--host <HOST>] [--port <PORT>]`
+- `BambooClaw Core daemon [--host <HOST>] [--port <PORT>]`
 
 ### `service`
 
-- `zeroclaw service install`
-- `zeroclaw service start`
-- `zeroclaw service stop`
-- `zeroclaw service status`
-- `zeroclaw service uninstall`
+- `BambooClaw Core service install`
+- `BambooClaw Core service start`
+- `BambooClaw Core service stop`
+- `BambooClaw Core service status`
+- `BambooClaw Core service uninstall`
 
 ### `cron`
 
-- `zeroclaw cron list`
-- `zeroclaw cron add <expr> [--tz <IANA_TZ>] <command>`
-- `zeroclaw cron add-at <rfc3339_timestamp> <command>`
-- `zeroclaw cron add-every <every_ms> <command>`
-- `zeroclaw cron once <delay> <command>`
-- `zeroclaw cron remove <id>`
-- `zeroclaw cron pause <id>`
-- `zeroclaw cron resume <id>`
+- `BambooClaw Core cron list`
+- `BambooClaw Core cron add <expr> [--tz <IANA_TZ>] <command>`
+- `BambooClaw Core cron add-at <rfc3339_timestamp> <command>`
+- `BambooClaw Core cron add-every <every_ms> <command>`
+- `BambooClaw Core cron once <delay> <command>`
+- `BambooClaw Core cron remove <id>`
+- `BambooClaw Core cron pause <id>`
+- `BambooClaw Core cron resume <id>`
 
 ### `models`
 
-- `zeroclaw models refresh`
-- `zeroclaw models refresh --provider <ID>`
-- `zeroclaw models refresh --force`
+- `BambooClaw Core models refresh`
+- `BambooClaw Core models refresh --provider <ID>`
+- `BambooClaw Core models refresh --force`
 
 `models refresh` currently supports live catalog refresh for provider IDs: `openrouter`, `openai`, `anthropic`, `groq`, `mistral`, `deepseek`, `xai`, `together-ai`, `gemini`, `ollama`, `astrai`, `venice`, `fireworks`, `cohere`, `moonshot`, `glm`, `zai`, `qwen`, and `nvidia`.
 
 ### `channel`
 
-- `zeroclaw channel list`
-- `zeroclaw channel start`
-- `zeroclaw channel doctor`
-- `zeroclaw channel bind-telegram <IDENTITY>`
-- `zeroclaw channel add <type> <json>`
-- `zeroclaw channel remove <name>`
+- `BambooClaw Core channel list`
+- `BambooClaw Core channel start`
+- `BambooClaw Core channel doctor`
+- `BambooClaw Core channel bind-telegram <IDENTITY>`
+- `BambooClaw Core channel add <type> <json>`
+- `BambooClaw Core channel remove <name>`
 
 Runtime in-chat commands (Telegram/Discord while channel server is running):
 
@@ -94,45 +94,45 @@ Runtime in-chat commands (Telegram/Discord while channel server is running):
 
 ### `integrations`
 
-- `zeroclaw integrations info <name>`
+- `BambooClaw Core integrations info <name>`
 
 ### `skills`
 
-- `zeroclaw skills list`
-- `zeroclaw skills install <source>`
-- `zeroclaw skills remove <name>`
+- `BambooClaw Core skills list`
+- `BambooClaw Core skills install <source>`
+- `BambooClaw Core skills remove <name>`
 
 Skill manifests (`SKILL.toml`) support `prompts` and `[[tools]]`; both are injected into the agent system prompt at runtime, so the model can follow skill instructions without manually reading skill files.
 
 ### `migrate`
 
-- `zeroclaw migrate openclaw [--source <path>] [--dry-run]`
+- `BambooClaw Core migrate openclaw [--source <path>] [--dry-run]`
 
 ### `config`
 
-- `zeroclaw config schema`
+- `BambooClaw Core config schema`
 
 `config schema` prints a JSON Schema (draft 2020-12) for the full `config.toml` contract to stdout.
 
 ### `hardware`
 
-- `zeroclaw hardware discover`
-- `zeroclaw hardware introspect <path>`
-- `zeroclaw hardware info [--chip <chip_name>]`
+- `BambooClaw Core hardware discover`
+- `BambooClaw Core hardware introspect <path>`
+- `BambooClaw Core hardware info [--chip <chip_name>]`
 
 ### `peripheral`
 
-- `zeroclaw peripheral list`
-- `zeroclaw peripheral add <board> <path>`
-- `zeroclaw peripheral flash [--port <serial_port>]`
-- `zeroclaw peripheral setup-uno-q [--host <ip_or_host>]`
-- `zeroclaw peripheral flash-nucleo`
+- `BambooClaw Core peripheral list`
+- `BambooClaw Core peripheral add <board> <path>`
+- `BambooClaw Core peripheral flash [--port <serial_port>]`
+- `BambooClaw Core peripheral setup-uno-q [--host <ip_or_host>]`
+- `BambooClaw Core peripheral flash-nucleo`
 
 ## Validation Tip
 
 To verify docs against your current binary quickly:
 
 ```bash
-zeroclaw --help
-zeroclaw <command> --help
+BambooClaw Core --help
+BambooClaw Core <command> --help
 ```

@@ -7658,7 +7658,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "zeroclaw"
+name = "BambooClaw Core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -7736,7 +7736,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "zeroclaw-robot-kit"
+name = "BambooClaw Core-robot-kit"
 version = "0.1.0"
 dependencies = [
  "anyhow",

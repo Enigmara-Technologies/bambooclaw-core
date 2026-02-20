@@ -1,5 +1,5 @@
 """
-Built-in tools for ZeroClaw agents.
+Built-in tools for BambooClaw Core agents.
 """
 
 from .base import tool

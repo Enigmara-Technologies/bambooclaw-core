@@ -1,6 +1,6 @@
 # Custom Provider Configuration
 
-ZeroClaw supports custom API endpoints for both OpenAI-compatible and Anthropic-compatible providers.
+BambooClaw Core supports custom API endpoints for both OpenAI-compatible and Anthropic-compatible providers.
 
 ## Provider Types
 
@@ -28,7 +28,7 @@ default_model = "your-model-name"
 
 ### Config File
 
-Edit `~/.zeroclaw/config.toml`:
+Edit `~/.BambooClaw Core/config.toml`:
 
 ```toml
 api_key = "your-api-key"
@@ -42,8 +42,8 @@ For `custom:` and `anthropic-custom:` providers, use the generic key env vars:
 
 ```bash
 export API_KEY="your-api-key"
-# or: export ZEROCLAW_API_KEY="your-api-key"
-zeroclaw agent
+# or: export BambooClaw Core_API_KEY="your-api-key"
+BambooClaw Core agent
 ```
 
 ## Testing Configuration
@@ -52,10 +52,10 @@ Verify your custom endpoint:
 
 ```bash
 # Interactive mode
-zeroclaw agent
+BambooClaw Core agent
 
 # Single message test
-zeroclaw agent -m "test message"
+BambooClaw Core agent -m "test message"
 ```
 
 ## Troubleshooting

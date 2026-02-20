@@ -1,4 +1,4 @@
-# ZeroClaw Config Reference (Operator-Oriented)
+# BambooClaw Core Config Reference (Operator-Oriented)
 
 This is a high-signal reference for common config sections and defaults.
 
@@ -6,17 +6,17 @@ Last verified: **February 19, 2026**.
 
 Config path resolution at startup:
 
-1. `ZEROCLAW_WORKSPACE` override (if set)
-2. persisted `~/.zeroclaw/active_workspace.toml` marker (if present)
-3. default `~/.zeroclaw/config.toml`
+1. `BambooClaw Core_WORKSPACE` override (if set)
+2. persisted `~/.BambooClaw Core/active_workspace.toml` marker (if present)
+3. default `~/.BambooClaw Core/config.toml`
 
-ZeroClaw logs the resolved config on startup at `INFO` level:
+BambooClaw Core logs the resolved config on startup at `INFO` level:
 
 - `Config loaded` with fields: `path`, `workspace`, `source`, `initialized`
 
 Schema export command:
 
-- `zeroclaw config schema` (prints JSON Schema draft 2020-12 to stdout)
+- `BambooClaw Core config schema` (prints JSON Schema draft 2020-12 to stdout)
 
 ## Core Keys
 
@@ -30,14 +30,14 @@ Schema export command:
 
 Provider selection can also be controlled by environment variables. Precedence is:
 
-1. `ZEROCLAW_PROVIDER` (explicit override, always wins when non-empty)
+1. `BambooClaw Core_PROVIDER` (explicit override, always wins when non-empty)
 2. `PROVIDER` (legacy fallback, only applied when config provider is unset or still `openrouter`)
 3. `default_provider` in `config.toml`
 
 Operational note for container users:
 
 - If your `config.toml` sets an explicit custom provider like `custom:https://.../v1`, a default `PROVIDER=openrouter` from Docker/container env will no longer replace it.
-- Use `ZEROCLAW_PROVIDER` when you intentionally want runtime env to override a non-default configured provider.
+- Use `BambooClaw Core_PROVIDER` when you intentionally want runtime env to override a non-default configured provider.
 
 ## `[agent]`
 
@@ -287,7 +287,7 @@ Upgrade strategy:
 
 1. Keep hints stable (`hint:reasoning`, `hint:semantic`).
 2. Update only `model = "...new-version..."` in the route entries.
-3. Validate with `zeroclaw doctor` before restart/rollout.
+3. Validate with `BambooClaw Core doctor` before restart/rollout.
 
 ## `[query_classification]`
 
@@ -422,9 +422,9 @@ Notes:
 After editing config:
 
 ```bash
-zeroclaw status
-zeroclaw doctor
-zeroclaw channel doctor
+BambooClaw Core status
+BambooClaw Core doctor
+BambooClaw Core channel doctor
 ```
 
 ## Related Docs

@@ -26,16 +26,16 @@ jobs:
                 include:
                     - os: ubuntu-latest
                       target: x86_64-unknown-linux-gnu
-                      artifact: zeroclaw
+                      artifact: BambooClaw Core
                     - os: macos-latest
                       target: x86_64-apple-darwin
-                      artifact: zeroclaw
+                      artifact: BambooClaw Core
                     - os: macos-latest
                       target: aarch64-apple-darwin
-                      artifact: zeroclaw
+                      artifact: BambooClaw Core
                     - os: windows-latest
                       target: x86_64-pc-windows-msvc
-                      artifact: zeroclaw.exe
+                      artifact: BambooClaw Core.exe
 
         steps:
             - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -70,19 +70,19 @@ jobs:
               if: runner.os != 'Windows'
               run: |
                   cd target/${{ matrix.target }}/release
-                  tar czf ../../../zeroclaw-${{ matrix.target }}.tar.gz ${{ matrix.artifact }}
+                  tar czf ../../../BambooClaw Core-${{ matrix.target }}.tar.gz ${{ matrix.artifact }}
 
             - name: Package (Windows)
               if: runner.os == 'Windows'
               run: |
                   cd target/${{ matrix.target }}/release
-                  7z a ../../../zeroclaw-${{ matrix.target }}.zip ${{ matrix.artifact }}
+                  7z a ../../../BambooClaw Core-${{ matrix.target }}.zip ${{ matrix.artifact }}
 
             - name: Upload artifact
               uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
               with:
-                  name: zeroclaw-${{ matrix.target }}
-                  path: zeroclaw-${{ matrix.target }}.*
+                  name: BambooClaw Core-${{ matrix.target }}
+                  path: BambooClaw Core-${{ matrix.target }}.*
                   retention-days: 7
 
     publish:
@@ -104,11 +104,11 @@ jobs:
 
             - name: Generate SBOM (CycloneDX)
               run: |
-                  syft dir:. --source-name zeroclaw -o cyclonedx-json=artifacts/zeroclaw.cdx.json -o spdx-json=artifacts/zeroclaw.spdx.json
+                  syft dir:. --source-name BambooClaw Core -o cyclonedx-json=artifacts/BambooClaw Core.cdx.json -o spdx-json=artifacts/BambooClaw Core.spdx.json
                   {
                     echo "### SBOM Generated"
-                    echo "- CycloneDX: zeroclaw.cdx.json"
-                    echo "- SPDX: zeroclaw.spdx.json"
+                    echo "- CycloneDX: BambooClaw Core.cdx.json"
+                    echo "- SPDX: BambooClaw Core.spdx.json"
                   } >> "$GITHUB_STEP_SUMMARY"
 
             - name: Generate SHA256 checksums

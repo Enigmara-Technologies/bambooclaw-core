@@ -1,20 +1,20 @@
 # One-Click Bootstrap
 
-This page defines the fastest supported path to install and initialize ZeroClaw.
+This page defines the fastest supported path to install and initialize BambooClaw Core.
 
 Last verified: **February 18, 2026**.
 
 ## Option 0: Homebrew (macOS/Linuxbrew)
 
 ```bash
-brew install zeroclaw
+brew install BambooClaw Core
 ```
 
 ## Option A (Recommended): Clone + local script
 
 ```bash
-git clone https://github.com/zeroclaw-labs/zeroclaw.git
-cd zeroclaw
+git clone https://github.com/BambooClaw Core-labs/BambooClaw Core.git
+cd BambooClaw Core
 ./bootstrap.sh
 ```
 
@@ -25,7 +25,7 @@ What it does by default:
 
 ## Dual-mode bootstrap
 
-Default behavior is **app-only** (build/install ZeroClaw) and expects existing Rust toolchain.
+Default behavior is **app-only** (build/install BambooClaw Core) and expects existing Rust toolchain.
 
 For fresh machines, enable environment bootstrap explicitly:
 
@@ -41,7 +41,7 @@ Notes:
 ## Option B: Remote one-liner
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/main/scripts/bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/BambooClaw Core-labs/BambooClaw Core/main/scripts/bootstrap.sh | bash
 ```
 
 For high-security environments, prefer Option A so you can review the script before execution.
@@ -49,7 +49,7 @@ For high-security environments, prefer Option A so you can review the script bef
 Legacy compatibility:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/BambooClaw Core-labs/BambooClaw Core/main/scripts/install.sh | bash
 ```
 
 This legacy endpoint prefers forwarding to `scripts/bootstrap.sh` and falls back to legacy source install if unavailable in that revision.
@@ -67,7 +67,7 @@ If you run Option B outside a repository checkout, the bootstrap script automati
 Or with environment variables:
 
 ```bash
-ZEROCLAW_API_KEY="sk-..." ZEROCLAW_PROVIDER="openrouter" ./bootstrap.sh --onboard
+BambooClaw Core_API_KEY="sk-..." BambooClaw Core_PROVIDER="openrouter" ./bootstrap.sh --onboard
 ```
 
 ### Interactive onboarding

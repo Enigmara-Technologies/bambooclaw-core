@@ -1,6 +1,6 @@
 # Raspberry Pi 5 Robot Setup Guide
 
-Complete guide to setting up a ZeroClaw-powered robot on Raspberry Pi 5.
+Complete guide to setting up a BambooClaw Core-powered robot on Raspberry Pi 5.
 
 ## Hardware Requirements
 
@@ -130,8 +130,8 @@ bash ./models/download-ggml-model.sh base
 
 # Install
 sudo cp main /usr/local/bin/whisper-cpp
-mkdir -p ~/.zeroclaw/models
-cp models/ggml-base.bin ~/.zeroclaw/models/
+mkdir -p ~/.BambooClaw Core/models
+cp models/ggml-base.bin ~/.BambooClaw Core/models/
 ```
 
 ### 5. Install Piper TTS (Text-to-Speech)
@@ -143,13 +143,13 @@ tar -xzf piper_arm64.tar.gz
 sudo cp piper/piper /usr/local/bin/
 
 # Download voice model
-mkdir -p ~/.zeroclaw/models/piper
-cd ~/.zeroclaw/models/piper
+mkdir -p ~/.BambooClaw Core/models/piper
+cd ~/.BambooClaw Core/models/piper
 wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx
 wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json
 
 # Test
-echo "Hello, I am your robot!" | piper --model ~/.zeroclaw/models/piper/en_US-lessac-medium.onnx --output_file test.wav
+echo "Hello, I am your robot!" | piper --model ~/.BambooClaw Core/models/piper/en_US-lessac-medium.onnx --output_file test.wav
 aplay test.wav
 ```
 
@@ -167,17 +167,17 @@ sudo usermod -aG dialout $USER
 # Logout and login for group change to take effect
 ```
 
-### 7. Build ZeroClaw Robot Kit
+### 7. Build BambooClaw Core Robot Kit
 
 ```bash
 # Clone repo (or copy from USB)
-git clone https://github.com/theonlyhennygod/zeroclaw
-cd zeroclaw
+git clone https://github.com/theonlyhennygod/BambooClaw Core
+cd BambooClaw Core
 
 # Build robot kit
-cargo build --release -p zeroclaw-robot-kit
+cargo build --release -p BambooClaw Core-robot-kit
 
-# Build main zeroclaw (optional, if using as agent)
+# Build main BambooClaw Core (optional, if using as agent)
 cargo build --release
 ```
 
@@ -186,12 +186,12 @@ cargo build --release
 ### Create robot.toml
 
 ```bash
-mkdir -p ~/.zeroclaw
-nano ~/.zeroclaw/robot.toml
+mkdir -p ~/.BambooClaw Core
+nano ~/.BambooClaw Core/robot.toml
 ```
 
 ```toml
-# ~/.zeroclaw/robot.toml - Real Hardware Configuration
+# ~/.BambooClaw Core/robot.toml - Real Hardware Configuration
 
 # =============================================================================
 # DRIVE SYSTEM
@@ -292,7 +292,7 @@ arecord -D plughw:1,0 -f S16_LE -r 16000 -c 1 -d 3 test.wav
 aplay test.wav
 
 # Test speaker
-echo "Testing speaker" | piper --model ~/.zeroclaw/models/piper/en_US-lessac-medium.onnx --output_file - | aplay -D plughw:0,0
+echo "Testing speaker" | piper --model ~/.BambooClaw Core/models/piper/en_US-lessac-medium.onnx --output_file - | aplay -D plughw:0,0
 
 # Test Ollama
 curl http://localhost:11434/api/generate -d '{"model":"llama3.2:3b","prompt":"Say hello"}'
@@ -315,7 +315,7 @@ import json
 import time
 from rplidar import RPLidar
 
-FIFO_PATH = "/tmp/zeroclaw_sensors.fifo"
+FIFO_PATH = "/tmp/BambooClaw Core_sensors.fifo"
 
 def main():
     if not os.path.exists(FIFO_PATH):
@@ -354,11 +354,11 @@ chmod +x ~/sensor_loop.py
 nohup python3 ~/sensor_loop.py &
 ```
 
-### Start ZeroClaw Agent
+### Start BambooClaw Core Agent
 
 ```bash
-# Configure ZeroClaw to use robot tools
-cat > ~/.zeroclaw/config.toml << 'EOF'
+# Configure BambooClaw Core to use robot tools
+cat > ~/.BambooClaw Core/config.toml << 'EOF'
 api_key = ""  # Not needed for local Ollama
 default_provider = "ollama"
 default_model = "llama3.2:3b"
@@ -373,10 +373,10 @@ workspace_only = true
 EOF
 
 # Copy robot personality
-cp ~/zeroclaw/crates/robot-kit/SOUL.md ~/.zeroclaw/workspace/
+cp ~/BambooClaw Core/crates/robot-kit/SOUL.md ~/.BambooClaw Core/workspace/
 
 # Start agent
-./target/release/zeroclaw agent
+./target/release/BambooClaw Core agent
 ```
 
 ### Full Robot Startup Script
@@ -396,15 +396,15 @@ if ! pgrep -x "ollama" > /dev/null; then
 fi
 
 # Start sensor loop
-if [ ! -p /tmp/zeroclaw_sensors.fifo ]; then
-    mkfifo /tmp/zeroclaw_sensors.fifo
+if [ ! -p /tmp/BambooClaw Core_sensors.fifo ]; then
+    mkfifo /tmp/BambooClaw Core_sensors.fifo
 fi
 python3 ~/sensor_loop.py &
 SENSOR_PID=$!
 
-# Start zeroclaw
-cd ~/zeroclaw
-./target/release/zeroclaw daemon &
+# Start BambooClaw Core
+cd ~/BambooClaw Core
+./target/release/BambooClaw Core daemon &
 AGENT_PID=$!
 
 echo "Robot started!"
@@ -419,16 +419,16 @@ wait
 ## Systemd Services (Auto-Start on Boot)
 
 ```bash
-# /etc/systemd/system/zeroclaw-robot.service
-sudo tee /etc/systemd/system/zeroclaw-robot.service << 'EOF'
+# /etc/systemd/system/BambooClaw Core-robot.service
+sudo tee /etc/systemd/system/BambooClaw Core-robot.service << 'EOF'
 [Unit]
-Description=ZeroClaw Robot
+Description=BambooClaw Core Robot
 After=network.target ollama.service
 
 [Service]
 Type=simple
 User=pi
-WorkingDirectory=/home/pi/zeroclaw
+WorkingDirectory=/home/pi/BambooClaw Core
 ExecStart=/home/pi/start_robot.sh
 Restart=on-failure
 RestartSec=10
@@ -438,12 +438,12 @@ WantedBy=multi-user.target
 EOF
 
 sudo systemctl daemon-reload
-sudo systemctl enable zeroclaw-robot
-sudo systemctl start zeroclaw-robot
+sudo systemctl enable BambooClaw Core-robot
+sudo systemctl start BambooClaw Core-robot
 
 # Check status
-sudo systemctl status zeroclaw-robot
-journalctl -u zeroclaw-robot -f  # View logs
+sudo systemctl status BambooClaw Core-robot
+journalctl -u BambooClaw Core-robot -f  # View logs
 ```
 
 ## Troubleshooting

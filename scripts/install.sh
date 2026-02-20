@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" >/dev/null 2>&1 && pwd || pwd)"
 BOOTSTRAP_LOCAL="$SCRIPT_DIR/bootstrap.sh"
-REPO_URL="https://github.com/zeroclaw-labs/zeroclaw.git"
+REPO_URL="https://github.com/BambooClaw Core-labs/BambooClaw Core.git"
 
 echo "[deprecated] scripts/install.sh -> bootstrap.sh" >&2
 
@@ -16,7 +16,7 @@ if ! command -v git >/dev/null 2>&1; then
   exit 1
 fi
 
-TEMP_DIR="$(mktemp -d -t zeroclaw-install-XXXXXX)"
+TEMP_DIR="$(mktemp -d -t BambooClaw Core-install-XXXXXX)"
 cleanup() {
   rm -rf "$TEMP_DIR"
 }

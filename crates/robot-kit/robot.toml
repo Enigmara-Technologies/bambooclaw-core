@@ -1,5 +1,5 @@
-# ZeroClaw Robot Kit Configuration
-# Copy to ~/.zeroclaw/robot.toml
+# BambooClaw Core Robot Kit Configuration
+# Copy to ~/.BambooClaw Core/robot.toml
 
 # =============================================================================
 # DRIVE SYSTEM

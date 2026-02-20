@@ -7,8 +7,8 @@
 //! for each provider's API specification. Validates ChatMessage, ChatResponse,
 //! ToolCall, and AuthStyle serialization contracts.
 
-use zeroclaw::providers::compatible::AuthStyle;
-use zeroclaw::providers::traits::{ChatMessage, ChatResponse, ToolCall};
+use BambooClaw Core::providers::compatible::AuthStyle;
+use BambooClaw Core::providers::traits::{ChatMessage, ChatResponse, ToolCall};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ChatMessage serialization
@@ -241,7 +241,7 @@ fn auth_style_custom_header() {
 
 #[test]
 fn provider_construction_with_different_names() {
-    use zeroclaw::providers::compatible::OpenAiCompatibleProvider;
+    use BambooClaw Core::providers::compatible::OpenAiCompatibleProvider;
 
     // Construction with various names should succeed
     let _p1 = OpenAiCompatibleProvider::new(
@@ -256,7 +256,7 @@ fn provider_construction_with_different_names() {
 
 #[test]
 fn provider_construction_with_different_auth_styles() {
-    use zeroclaw::providers::compatible::OpenAiCompatibleProvider;
+    use BambooClaw Core::providers::compatible::OpenAiCompatibleProvider;
 
     let _bearer = OpenAiCompatibleProvider::new(
         "Test",

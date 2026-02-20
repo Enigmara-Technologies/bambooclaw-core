@@ -1,7 +1,7 @@
 //! Channel subsystem for messaging platform integrations.
 //!
 //! This module provides the multi-channel messaging infrastructure that connects
-//! ZeroClaw to external platforms. Each channel implements the [`Channel`] trait
+//! BambooClaw Core to external platforms. Each channel implements the [`Channel`] trait
 //! defined in [`traits`], which provides a uniform interface for sending messages,
 //! listening for incoming messages, health checking, and typing indicators.
 //!
@@ -505,7 +505,7 @@ fn build_models_help_response(current: &ChannelRouteSelection, workspace_dir: &P
     if cached_models.is_empty() {
         let _ = writeln!(
             response,
-            "\nNo cached model list found for `{}`. Ask the operator to run `zeroclaw models refresh --provider {}`.",
+            "\nNo cached model list found for `{}`. Ask the operator to run `BambooClaw Core models refresh --provider {}`.",
             current.provider, current.provider
         );
     } else {
@@ -1366,7 +1366,7 @@ pub fn build_system_prompt(
     prompt.push_str("- If a tool output contains credentials, they have already been redacted — do not mention them.\n\n");
 
     if prompt.is_empty() {
-        "You are ZeroClaw, a fast and efficient AI assistant built in Rust. Be helpful, concise, and direct."
+        "You are BambooClaw Core, a fast and efficient AI assistant built in Rust. Be helpful, concise, and direct."
             .to_string()
     } else {
         prompt
@@ -1431,7 +1431,7 @@ async fn bind_telegram_identity(config: &Config, identity: &str) -> Result<()> {
     let mut updated = config.clone();
     let Some(telegram) = updated.channels_config.telegram.as_mut() else {
         anyhow::bail!(
-            "Telegram channel is not configured. Run `zeroclaw onboard --channels-only` first"
+            "Telegram channel is not configured. Run `BambooClaw Core onboard --channels-only` first"
         );
     };
 
@@ -1461,13 +1461,13 @@ async fn bind_telegram_identity(config: &Config, identity: &str) -> Result<()> {
         }
         Ok(false) => {
             println!(
-                "ℹ️ No managed daemon service detected. If `zeroclaw daemon`/`channel start` is already running, restart it to load the updated allowlist."
+                "ℹ️ No managed daemon service detected. If `BambooClaw Core daemon`/`channel start` is already running, restart it to load the updated allowlist."
             );
         }
         Err(e) => {
             eprintln!(
                 "⚠️ Allowlist saved, but failed to reload daemon service automatically: {e}\n\
-                 Restart service manually with `zeroclaw service stop && zeroclaw service start`."
+                 Restart service manually with `BambooClaw Core service stop && BambooClaw Core service start`."
             );
         }
     }
@@ -1482,7 +1482,7 @@ fn maybe_restart_managed_daemon_service() -> Result<bool> {
         let plist = home
             .join("Library")
             .join("LaunchAgents")
-            .join("com.zeroclaw.daemon.plist");
+            .join("com.BambooClaw Core.daemon.plist");
         if !plist.exists() {
             return Ok(false);
         }
@@ -1492,15 +1492,15 @@ fn maybe_restart_managed_daemon_service() -> Result<bool> {
             .output()
             .context("Failed to query launchctl list")?;
         let listed = String::from_utf8_lossy(&list_output.stdout);
-        if !listed.contains("com.zeroclaw.daemon") {
+        if !listed.contains("com.BambooClaw Core.daemon") {
             return Ok(false);
         }
 
         let _ = Command::new("launchctl")
-            .args(["stop", "com.zeroclaw.daemon"])
+            .args(["stop", "com.BambooClaw Core.daemon"])
             .output();
         let start_output = Command::new("launchctl")
-            .args(["start", "com.zeroclaw.daemon"])
+            .args(["start", "com.BambooClaw Core.daemon"])
             .output()
             .context("Failed to start launchd daemon service")?;
         if !start_output.status.success() {
@@ -1519,13 +1519,13 @@ fn maybe_restart_managed_daemon_service() -> Result<bool> {
             .join(".config")
             .join("systemd")
             .join("user")
-            .join("zeroclaw.service");
+            .join("BambooClaw Core.service");
         if !unit_path.exists() {
             return Ok(false);
         }
 
         let active_output = Command::new("systemctl")
-            .args(["--user", "is-active", "zeroclaw.service"])
+            .args(["--user", "is-active", "BambooClaw Core.service"])
             .output()
             .context("Failed to query systemd service state")?;
         let state = String::from_utf8_lossy(&active_output.stdout);
@@ -1534,7 +1534,7 @@ fn maybe_restart_managed_daemon_service() -> Result<bool> {
         }
 
         let restart_output = Command::new("systemctl")
-            .args(["--user", "restart", "zeroclaw.service"])
+            .args(["--user", "restart", "BambooClaw Core.service"])
             .output()
             .context("Failed to restart systemd daemon service")?;
         if !restart_output.status.success() {
@@ -1586,9 +1586,9 @@ pub async fn handle_command(command: crate::ChannelCommands, config: &Config) ->
                     "  ℹ️ Matrix channel support is disabled in this build (enable `channel-matrix`)."
                 );
             }
-            println!("\nTo start channels: zeroclaw channel start");
-            println!("To check health:    zeroclaw channel doctor");
-            println!("To configure:      zeroclaw onboard");
+            println!("\nTo start channels: BambooClaw Core channel start");
+            println!("To check health:    BambooClaw Core channel doctor");
+            println!("To configure:      BambooClaw Core onboard");
             Ok(())
         }
         crate::ChannelCommands::Add {
@@ -1596,11 +1596,11 @@ pub async fn handle_command(command: crate::ChannelCommands, config: &Config) ->
             config: _,
         } => {
             anyhow::bail!(
-                "Channel type '{channel_type}' — use `zeroclaw onboard` to configure channels"
+                "Channel type '{channel_type}' — use `BambooClaw Core onboard` to configure channels"
             );
         }
         crate::ChannelCommands::Remove { name } => {
-            anyhow::bail!("Remove channel '{name}' — edit ~/.zeroclaw/config.toml directly");
+            anyhow::bail!("Remove channel '{name}' — edit ~/.BambooClaw Core/config.toml directly");
         }
         crate::ChannelCommands::BindTelegram { identity } => {
             bind_telegram_identity(config, &identity).await
@@ -1816,11 +1816,11 @@ pub async fn doctor_channels(config: Config) -> Result<()> {
     }
 
     if channels.is_empty() {
-        println!("No real-time channels configured. Run `zeroclaw onboard` first.");
+        println!("No real-time channels configured. Run `BambooClaw Core onboard` first.");
         return Ok(());
     }
 
-    println!("🩺 ZeroClaw Channel Doctor");
+    println!("🩺 BambooClaw Core Channel Doctor");
     println!();
 
     let mut healthy = 0_u32;
@@ -1848,7 +1848,7 @@ pub async fn doctor_channels(config: Config) -> Result<()> {
     }
 
     if config.channels_config.webhook.is_some() {
-        println!("  ℹ️  Webhook   check via `zeroclaw gateway` then GET /health");
+        println!("  ℹ️  Webhook   check via `BambooClaw Core gateway` then GET /health");
     }
 
     println!();
@@ -1865,7 +1865,7 @@ pub async fn start_channels(config: Config) -> Result<()> {
         .unwrap_or_else(|| "openrouter".into());
     let provider_runtime_options = providers::ProviderRuntimeOptions {
         auth_profile_override: None,
-        zeroclaw_dir: config.config_path.parent().map(std::path::PathBuf::from),
+        BambooClaw Core_dir: config.config_path.parent().map(std::path::PathBuf::from),
         secrets_encrypt: config.secrets.encrypt,
         reasoning_enabled: config.runtime.reasoning_enabled,
     };
@@ -2175,11 +2175,11 @@ pub async fn start_channels(config: Config) -> Result<()> {
     }
 
     if channels.is_empty() {
-        println!("No channels configured. Run `zeroclaw onboard` to set up channels.");
+        println!("No channels configured. Run `BambooClaw Core onboard` to set up channels.");
         return Ok(());
     }
 
-    println!("🦀 ZeroClaw Channel Server");
+    println!("🦀 BambooClaw Core Channel Server");
     println!("  🤖 Model:    {model}");
     let effective_backend = memory::effective_memory_backend_name(
         &config.memory.backend,
@@ -2300,7 +2300,7 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         // Create minimal workspace files
         std::fs::write(tmp.path().join("SOUL.md"), "# Soul\nBe helpful.").unwrap();
-        std::fs::write(tmp.path().join("IDENTITY.md"), "# Identity\nName: ZeroClaw").unwrap();
+        std::fs::write(tmp.path().join("IDENTITY.md"), "# Identity\nName: BambooClaw Core").unwrap();
         std::fs::write(tmp.path().join("USER.md"), "# User\nName: Test User").unwrap();
         std::fs::write(
             tmp.path().join("AGENTS.md"),
@@ -3574,7 +3574,7 @@ mod tests {
         assert!(prompt.contains("Be helpful"), "missing SOUL content");
         assert!(prompt.contains("### IDENTITY.md"), "missing IDENTITY.md");
         assert!(
-            prompt.contains("Name: ZeroClaw"),
+            prompt.contains("Name: BambooClaw Core"),
             "missing IDENTITY content"
         );
         assert!(prompt.contains("### USER.md"), "missing USER.md");
@@ -3761,7 +3761,7 @@ mod tests {
 
     #[test]
     fn channel_log_truncation_is_utf8_safe_for_multibyte_text() {
-        let msg = "Hello from ZeroClaw 🌍. Current status is healthy, and café-style UTF-8 text stays safe in logs.";
+        let msg = "Hello from BambooClaw Core 🌍. Current status is healthy, and café-style UTF-8 text stays safe in logs.";
 
         // Reproduces the production crash path where channel logs truncate at 80 chars.
         let result = std::panic::catch_unwind(|| crate::util::truncate_with_ellipsis(msg, 80));

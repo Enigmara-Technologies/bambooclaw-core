@@ -12,16 +12,16 @@ For first-time setup and quick orientation.
 
 | Scenario | Command |
 |----------|---------|
-| I have an API key, want fastest setup | `zeroclaw onboard --api-key sk-... --provider openrouter` |
-| I want guided prompts | `zeroclaw onboard --interactive` |
-| Config exists, just fix channels | `zeroclaw onboard --channels-only` |
+| I have an API key, want fastest setup | `BambooClaw Core onboard --api-key sk-... --provider openrouter` |
+| I want guided prompts | `BambooClaw Core onboard --interactive` |
+| Config exists, just fix channels | `BambooClaw Core onboard --channels-only` |
 | Using subscription auth | See [Subscription Auth](../../README.md#subscription-auth-openai-codex--claude-code) |
 
 ## Onboarding and Validation
 
-- Quick onboarding: `zeroclaw onboard --api-key "sk-..." --provider openrouter`
-- Interactive onboarding: `zeroclaw onboard --interactive`
-- Validate environment: `zeroclaw status` + `zeroclaw doctor`
+- Quick onboarding: `BambooClaw Core onboard --api-key "sk-..." --provider openrouter`
+- Interactive onboarding: `BambooClaw Core onboard --interactive`
+- Validate environment: `BambooClaw Core status` + `BambooClaw Core doctor`
 
 ## Next
 

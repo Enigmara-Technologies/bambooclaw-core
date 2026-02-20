@@ -15,13 +15,13 @@ error() {
 
 usage() {
   cat <<'USAGE'
-ZeroClaw one-click bootstrap
+BambooClaw Core one-click bootstrap
 
 Usage:
   ./bootstrap.sh [options]
 
 Modes:
-  Default mode installs/builds ZeroClaw only (requires existing Rust toolchain).
+  Default mode installs/builds BambooClaw Core only (requires existing Rust toolchain).
   Optional bootstrap mode can also install system dependencies and Rust.
 
 Options:
@@ -43,12 +43,12 @@ Examples:
   ./bootstrap.sh --interactive-onboard
 
   # Remote one-liner
-  curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/main/scripts/bootstrap.sh | bash
+  curl -fsSL https://raw.githubusercontent.com/BambooClaw Core-labs/BambooClaw Core/main/scripts/bootstrap.sh | bash
 
 Environment:
-  ZEROCLAW_API_KEY           Used when --api-key is not provided
-  ZEROCLAW_PROVIDER          Used when --provider is not provided (default: openrouter)
-  ZEROCLAW_MODEL             Used when --model is not provided
+  BambooClaw Core_API_KEY           Used when --api-key is not provided
+  BambooClaw Core_PROVIDER          Used when --provider is not provided (default: openrouter)
+  BambooClaw Core_MODEL             Used when --model is not provided
 USAGE
 }
 
@@ -131,7 +131,7 @@ install_rust_toolchain() {
 SCRIPT_PATH="${BASH_SOURCE[0]:-$0}"
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" >/dev/null 2>&1 && pwd || pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." >/dev/null 2>&1 && pwd || pwd)"
-REPO_URL="https://github.com/zeroclaw-labs/zeroclaw.git"
+REPO_URL="https://github.com/BambooClaw Core-labs/BambooClaw Core.git"
 
 INSTALL_SYSTEM_DEPS=false
 INSTALL_RUST=false
@@ -139,9 +139,9 @@ RUN_ONBOARD=false
 INTERACTIVE_ONBOARD=false
 SKIP_BUILD=false
 SKIP_INSTALL=false
-API_KEY="${ZEROCLAW_API_KEY:-}"
-PROVIDER="${ZEROCLAW_PROVIDER:-openrouter}"
-MODEL="${ZEROCLAW_MODEL:-}"
+API_KEY="${BambooClaw Core_API_KEY:-}"
+PROVIDER="${BambooClaw Core_PROVIDER:-openrouter}"
+MODEL="${BambooClaw Core_MODEL:-}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -252,7 +252,7 @@ if [[ ! -f "$WORK_DIR/Cargo.toml" ]]; then
       exit 1
     fi
 
-    TEMP_DIR="$(mktemp -d -t zeroclaw-bootstrap-XXXXXX)"
+    TEMP_DIR="$(mktemp -d -t BambooClaw Core-bootstrap-XXXXXX)"
     info "No local repository detected; cloning latest main branch"
     git clone --depth 1 "$REPO_URL" "$TEMP_DIR"
     WORK_DIR="$TEMP_DIR"
@@ -260,7 +260,7 @@ if [[ ! -f "$WORK_DIR/Cargo.toml" ]]; then
   fi
 fi
 
-info "ZeroClaw bootstrap"
+info "BambooClaw Core bootstrap"
 echo "    workspace: $WORK_DIR"
 
 cd "$WORK_DIR"
@@ -273,29 +273,29 @@ else
 fi
 
 if [[ "$SKIP_INSTALL" == false ]]; then
-  info "Installing zeroclaw to cargo bin"
+  info "Installing BambooClaw Core to cargo bin"
   cargo install --path "$WORK_DIR" --force --locked
 else
   info "Skipping install"
 fi
 
-ZEROCLAW_BIN=""
-if have_cmd zeroclaw; then
-  ZEROCLAW_BIN="zeroclaw"
-elif [[ -x "$WORK_DIR/target/release/zeroclaw" ]]; then
-  ZEROCLAW_BIN="$WORK_DIR/target/release/zeroclaw"
+BambooClaw Core_BIN=""
+if have_cmd BambooClaw Core; then
+  BambooClaw Core_BIN="BambooClaw Core"
+elif [[ -x "$WORK_DIR/target/release/BambooClaw Core" ]]; then
+  BambooClaw Core_BIN="$WORK_DIR/target/release/BambooClaw Core"
 fi
 
 if [[ "$RUN_ONBOARD" == true ]]; then
-  if [[ -z "$ZEROCLAW_BIN" ]]; then
-    error "onboarding requested but zeroclaw binary is not available."
-    error "Run without --skip-install, or ensure zeroclaw is in PATH."
+  if [[ -z "$BambooClaw Core_BIN" ]]; then
+    error "onboarding requested but BambooClaw Core binary is not available."
+    error "Run without --skip-install, or ensure BambooClaw Core is in PATH."
     exit 1
   fi
 
   if [[ "$INTERACTIVE_ONBOARD" == true ]]; then
     info "Running interactive onboarding"
-    "$ZEROCLAW_BIN" onboard --interactive
+    "$BambooClaw Core_BIN" onboard --interactive
   else
     if [[ -z "$API_KEY" ]]; then
       cat <<'MSG'
@@ -303,7 +303,7 @@ if [[ "$RUN_ONBOARD" == true ]]; then
 Use either:
   --api-key "sk-..."
 or:
-  ZEROCLAW_API_KEY="sk-..." ./bootstrap.sh --onboard
+  BambooClaw Core_API_KEY="sk-..." ./bootstrap.sh --onboard
 or run interactive:
   ./bootstrap.sh --interactive-onboard
 MSG
@@ -314,7 +314,7 @@ MSG
     else
       info "Running quick onboarding (provider: $PROVIDER)"
     fi
-    ONBOARD_CMD=("$ZEROCLAW_BIN" onboard --api-key "$API_KEY" --provider "$PROVIDER")
+    ONBOARD_CMD=("$BambooClaw Core_BIN" onboard --api-key "$API_KEY" --provider "$PROVIDER")
     if [[ -n "$MODEL" ]]; then
       ONBOARD_CMD+=(--model "$MODEL")
     fi
@@ -327,7 +327,7 @@ cat <<'DONE'
 ✅ Bootstrap complete.
 
 Next steps:
-  zeroclaw status
-  zeroclaw agent -m "Hello, ZeroClaw!"
-  zeroclaw gateway
+  BambooClaw Core status
+  BambooClaw Core agent -m "Hello, BambooClaw Core!"
+  BambooClaw Core gateway
 DONE

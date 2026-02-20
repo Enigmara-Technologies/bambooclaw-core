@@ -1,1 +1,1 @@
-# ZeroClaw Bridge — no extra deps (arduino.app_utils is preinstalled on Uno Q)
+# BambooClaw Core Bridge — no extra deps (arduino.app_utils is preinstalled on Uno Q)

@@ -1,6 +1,6 @@
-# Network Deployment — ZeroClaw on Raspberry Pi and Local Network
+# Network Deployment — BambooClaw Core on Raspberry Pi and Local Network
 
-This document covers deploying ZeroClaw on a Raspberry Pi or other host on your local network, with Telegram and optional webhook channels.
+This document covers deploying BambooClaw Core on a Raspberry Pi or other host on your local network, with Telegram and optional webhook channels.
 
 ---
 
@@ -8,17 +8,17 @@ This document covers deploying ZeroClaw on a Raspberry Pi or other host on your 
 
 | Mode | Inbound port needed? | Use case |
 |------|----------------------|----------|
-| **Telegram polling** | No | ZeroClaw polls Telegram API; works from anywhere |
-| **Matrix sync (including E2EE)** | No | ZeroClaw syncs via Matrix client API; no inbound webhook required |
+| **Telegram polling** | No | BambooClaw Core polls Telegram API; works from anywhere |
+| **Matrix sync (including E2EE)** | No | BambooClaw Core syncs via Matrix client API; no inbound webhook required |
 | **Discord/Slack** | No | Same — outbound only |
 | **Gateway webhook** | Yes | POST /webhook, WhatsApp, etc. need a public URL |
 | **Gateway pairing** | Yes | If you pair clients via the gateway |
 
-**Key:** Telegram, Discord, and Slack use **long-polling** — ZeroClaw makes outbound requests. No port forwarding or public IP required.
+**Key:** Telegram, Discord, and Slack use **long-polling** — BambooClaw Core makes outbound requests. No port forwarding or public IP required.
 
 ---
 
-## 2. ZeroClaw on Raspberry Pi
+## 2. BambooClaw Core on Raspberry Pi
 
 ### 2.1 Prerequisites
 
@@ -37,7 +37,7 @@ cargo build --release --features hardware
 
 ### 2.3 Config
 
-Edit `~/.zeroclaw/config.toml`:
+Edit `~/.BambooClaw Core/config.toml`:
 
 ```toml
 [peripherals]
@@ -67,11 +67,11 @@ allow_public_bind = false
 ### 2.4 Run Daemon (Local Only)
 
 ```bash
-zeroclaw daemon --host 127.0.0.1 --port 3000
+BambooClaw Core daemon --host 127.0.0.1 --port 3000
 ```
 
 - Gateway binds to `127.0.0.1` — not reachable from other machines
-- Telegram channel works: ZeroClaw polls Telegram API (outbound)
+- Telegram channel works: BambooClaw Core polls Telegram API (outbound)
 - No firewall or port forwarding needed
 
 ---
@@ -90,7 +90,7 @@ allow_public_bind = true
 ```
 
 ```bash
-zeroclaw daemon --host 0.0.0.0 --port 3000
+BambooClaw Core daemon --host 0.0.0.0 --port 3000
 ```
 
 **Security:** `allow_public_bind = true` exposes the gateway to your local network. Only use on trusted LANs.
@@ -101,7 +101,7 @@ If you need a **public URL** (e.g. WhatsApp webhook, external clients):
 
 1. Run gateway on localhost:
    ```bash
-   zeroclaw daemon --host 127.0.0.1 --port 3000
+   BambooClaw Core daemon --host 127.0.0.1 --port 3000
    ```
 
 2. Start a tunnel:
@@ -109,9 +109,9 @@ If you need a **public URL** (e.g. WhatsApp webhook, external clients):
    [tunnel]
    provider = "tailscale"   # or "ngrok", "cloudflare"
    ```
-   Or use `zeroclaw tunnel` (see tunnel docs).
+   Or use `BambooClaw Core tunnel` (see tunnel docs).
 
-3. ZeroClaw will refuse `0.0.0.0` unless `allow_public_bind = true` or a tunnel is active.
+3. BambooClaw Core will refuse `0.0.0.0` unless `allow_public_bind = true` or a tunnel is active.
 
 ---
 
@@ -119,7 +119,7 @@ If you need a **public URL** (e.g. WhatsApp webhook, external clients):
 
 Telegram uses **long-polling** by default:
 
-- ZeroClaw calls `https://api.telegram.org/bot{token}/getUpdates`
+- BambooClaw Core calls `https://api.telegram.org/bot{token}/getUpdates`
 - No inbound port or public IP needed
 - Works behind NAT, on RPi, in a home lab
 
@@ -131,12 +131,12 @@ bot_token = "YOUR_BOT_TOKEN"
 allowed_users = []            # deny-by-default, bind identities explicitly
 ```
 
-Run `zeroclaw daemon` — Telegram channel starts automatically.
+Run `BambooClaw Core daemon` — Telegram channel starts automatically.
 
 To approve one Telegram account at runtime:
 
 ```bash
-zeroclaw channel bind-telegram <IDENTITY>
+BambooClaw Core channel bind-telegram <IDENTITY>
 ```
 
 `<IDENTITY>` can be a numeric Telegram user ID or a username (without `@`).
@@ -145,7 +145,7 @@ zeroclaw channel bind-telegram <IDENTITY>
 
 Telegram Bot API `getUpdates` supports only one active poller per bot token.
 
-- Keep one runtime instance for the same token (recommended: `zeroclaw daemon` service).
+- Keep one runtime instance for the same token (recommended: `BambooClaw Core daemon` service).
 - Do not run `cargo run -- channel start` or another bot process at the same time.
 
 If you hit this error:
@@ -192,7 +192,7 @@ Configure Cloudflare Tunnel to forward to `127.0.0.1:3000`, then set your webhoo
 
 - [ ] Build with `--features hardware` (and `peripheral-rpi` if using native GPIO)
 - [ ] Configure `[peripherals]` and `[channels_config.telegram]`
-- [ ] Run `zeroclaw daemon --host 127.0.0.1 --port 3000` (Telegram works without 0.0.0.0)
+- [ ] Run `BambooClaw Core daemon --host 127.0.0.1 --port 3000` (Telegram works without 0.0.0.0)
 - [ ] For LAN access: `--host 0.0.0.0` + `allow_public_bind = true` in config
 - [ ] For webhooks: use Tailscale, ngrok, or Cloudflare tunnel
 

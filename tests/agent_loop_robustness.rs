@@ -11,14 +11,14 @@ use anyhow::Result;
 use async_trait::async_trait;
 use serde_json::json;
 use std::sync::{Arc, Mutex};
-use zeroclaw::agent::agent::Agent;
-use zeroclaw::agent::dispatcher::NativeToolDispatcher;
-use zeroclaw::config::MemoryConfig;
-use zeroclaw::memory;
-use zeroclaw::memory::Memory;
-use zeroclaw::observability::{NoopObserver, Observer};
-use zeroclaw::providers::{ChatRequest, ChatResponse, Provider, ToolCall};
-use zeroclaw::tools::{Tool, ToolResult};
+use BambooClaw Core::agent::agent::Agent;
+use BambooClaw Core::agent::dispatcher::NativeToolDispatcher;
+use BambooClaw Core::config::MemoryConfig;
+use BambooClaw Core::memory;
+use BambooClaw Core::memory::Memory;
+use BambooClaw Core::observability::{NoopObserver, Observer};
+use BambooClaw Core::providers::{ChatRequest, ChatResponse, Provider, ToolCall};
+use BambooClaw Core::tools::{Tool, ToolResult};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mock infrastructure
