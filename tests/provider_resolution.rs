@@ -7,8 +7,8 @@
 //! to provider construction, verifying factory resolution, URL construction,
 //! credential wiring, and auth header format.
 
-use BambooClaw Core::providers::compatible::{AuthStyle, OpenAiCompatibleProvider};
-use BambooClaw Core::providers::{create_provider, create_provider_with_url};
+use BambooClawCore::providers::compatible::{AuthStyle, OpenAiCompatibleProvider};
+use BambooClawCore::providers::{create_provider, create_provider_with_url};
 
 /// Helper: assert provider creation succeeds
 fn assert_provider_ok(name: &str, key: Option<&str>, url: Option<&str>) {

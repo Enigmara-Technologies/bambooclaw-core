@@ -1,4 +1,4 @@
-//! Example: Implementing a custom Tool for BambooClaw Core
+//! Example: Implementing a custom Tool for BambooClawCore
 //!
 //! This shows how to add a new tool the agent can use.
 //! Tools are the agent's hands — they let it interact with the world.

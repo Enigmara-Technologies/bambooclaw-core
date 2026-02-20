@@ -1,4 +1,4 @@
-//! Custom wa-rs storage backend using BambooClaw Core's rusqlite
+//! Custom wa-rs storage backend using BambooClawCore's rusqlite
 //!
 //! This module implements all 4 wa-rs storage traits using rusqlite directly,
 //! avoiding the Diesel/libsqlite3-sys dependency conflict from wa-rs-sqlite-storage.
@@ -41,7 +41,7 @@ use wa_rs_core::store::Device as CoreDevice;
 /// Custom wa-rs storage backend using rusqlite
 ///
 /// This implements all 4 storage traits required by wa-rs.
-/// The backend uses BambooClaw Core's existing rusqlite setup, avoiding the
+/// The backend uses BambooClawCore's existing rusqlite setup, avoiding the
 /// Diesel/libsqlite3-sys conflict from wa-rs-sqlite-storage.
 #[cfg(feature = "whatsapp-web")]
 #[derive(Clone)]

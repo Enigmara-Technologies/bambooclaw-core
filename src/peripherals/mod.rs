@@ -40,7 +40,7 @@ pub fn list_configured_boards(config: &PeripheralsConfig) -> Vec<&PeripheralBoar
     config.boards.iter().collect()
 }
 
-/// Handle `BambooClaw Core peripheral` subcommands.
+/// Handle `BambooClawCore peripheral` subcommands.
 #[allow(clippy::module_name_repetitions)]
 pub async fn handle_command(cmd: crate::PeripheralCommands, config: &Config) -> Result<()> {
     match cmd {
@@ -49,8 +49,8 @@ pub async fn handle_command(cmd: crate::PeripheralCommands, config: &Config) -> 
             if boards.is_empty() {
                 println!("No peripherals configured.");
                 println!();
-                println!("Add one with: BambooClaw Core peripheral add <board> <path>");
-                println!("  Example: BambooClaw Core peripheral add nucleo-f401re /dev/ttyACM0");
+                println!("Add one with: BambooClawCore peripheral add <board> <path>");
+                println!("  Example: BambooClawCore peripheral add nucleo-f401re /dev/ttyACM0");
                 println!();
                 println!("Or add to config.toml:");
                 println!("  [peripherals]");

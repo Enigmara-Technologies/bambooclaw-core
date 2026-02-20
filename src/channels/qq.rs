@@ -258,8 +258,8 @@ impl Channel for QQChannel {
                 "intents": intents,
                 "properties": {
                     "os": "linux",
-                    "browser": "BambooClaw Core",
-                    "device": "BambooClaw Core",
+                    "browser": "BambooClawCore",
+                    "device": "BambooClawCore",
                 }
             }
         });

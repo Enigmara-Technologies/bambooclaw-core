@@ -62,7 +62,7 @@ const CUSTOM_MODEL_SENTINEL: &str = "__custom_model__";
 fn has_launchable_channels(channels: &ChannelsConfig) -> bool {
     let ChannelsConfig {
         cli: _,     // `cli` is always available and does not require channel server startup
-        webhook: _, // webhook traffic is handled by gateway, not `BambooClaw Core channel start`
+        webhook: _, // webhook traffic is handled by gateway, not `BambooClawCore channel start`
         telegram,
         discord,
         slack,
@@ -103,7 +103,7 @@ pub async fn run_wizard() -> Result<Config> {
 
     println!(
         "  {}",
-        style("Welcome to BambooClaw Core — the fastest, smallest AI assistant.")
+        style("Welcome to BambooClawCore — the fastest, smallest AI assistant.")
             .white()
             .bold()
     );
@@ -119,7 +119,7 @@ pub async fn run_wizard() -> Result<Config> {
     print_step(2, 9, "AI Provider & API Key");
     let (provider, api_key, model, provider_api_url) = setup_provider(&workspace_dir)?;
 
-    print_step(3, 9, "Channels (How You Talk to BambooClaw Core)");
+    print_step(3, 9, "Channels (How You Talk to BambooClawCore)");
     let channels_config = setup_channels()?;
 
     print_step(4, 9, "Tunnel (Expose to Internet)");
@@ -223,7 +223,7 @@ pub async fn run_wizard() -> Result<Config> {
             );
             println!();
             // Signal to main.rs to call start_channels after wizard returns
-            std::env::set_var("BambooClaw Core_AUTOSTART_CHANNELS", "1");
+            std::env::set_var("BambooClawCore_AUTOSTART_CHANNELS", "1");
         }
     }
 
@@ -243,7 +243,7 @@ pub async fn run_channels_repair_wizard() -> Result<Config> {
 
     let mut config = Config::load_or_init().await?;
 
-    print_step(1, 1, "Channels (How You Talk to BambooClaw Core)");
+    print_step(1, 1, "Channels (How You Talk to BambooClawCore)");
     config.channels_config = setup_channels()?;
     config.save().await?;
     persist_workspace_selection(&config.config_path).await?;
@@ -275,7 +275,7 @@ pub async fn run_channels_repair_wizard() -> Result<Config> {
             );
             println!();
             // Signal to main.rs to call start_channels after wizard returns
-            std::env::set_var("BambooClaw Core_AUTOSTART_CHANNELS", "1");
+            std::env::set_var("BambooClawCore_AUTOSTART_CHANNELS", "1");
         }
     }
 
@@ -285,8 +285,8 @@ pub async fn run_channels_repair_wizard() -> Result<Config> {
 // ── Quick setup (zero prompts) ───────────────────────────────────
 
 /// Non-interactive setup: generates a sensible default config instantly.
-/// Use `BambooClaw Core onboard` or `BambooClaw Core onboard --api-key sk-... --provider openrouter --memory sqlite|lucid`.
-/// Use `BambooClaw Core onboard --interactive` for the full wizard.
+/// Use `BambooClawCore onboard` or `BambooClawCore onboard --api-key sk-... --provider openrouter --memory sqlite|lucid`.
+/// Use `BambooClawCore onboard --interactive` for the full wizard.
 fn backend_key_from_choice(choice: usize) -> &'static str {
     selectable_memory_backends()
         .get(choice)
@@ -344,9 +344,9 @@ pub async fn run_quick_setup(
     let home = directories::UserDirs::new()
         .map(|u| u.home_dir().to_path_buf())
         .context("Could not find home directory")?;
-    let BambooClaw Core_dir = home.join(".BambooClaw Core");
-    let workspace_dir = BambooClaw Core_dir.join("workspace");
-    let config_path = BambooClaw Core_dir.join("config.toml");
+    let BambooClawCore_dir = home.join(".BambooClawCore");
+    let workspace_dir = BambooClawCore_dir.join("workspace");
+    let config_path = BambooClawCore_dir.join("config.toml");
 
     fs::create_dir_all(&workspace_dir).context("Failed to create workspace directory")?;
 
@@ -410,7 +410,7 @@ pub async fn run_quick_setup(
     let default_ctx = ProjectContext {
         user_name: std::env::var("USER").unwrap_or_else(|_| "User".into()),
         timezone: "UTC".into(),
-        agent_name: "BambooClaw Core".into(),
+        agent_name: "BambooClawCore".into(),
         communication_style:
             "Be warm, natural, and clear. Use occasional relevant emojis (1-2 max) and avoid robotic phrasing."
                 .into(),
@@ -486,13 +486,13 @@ pub async fn run_quick_setup(
     println!("  {}", style("Next steps:").white().bold());
     if credential_override.is_none() {
         println!("    1. Set your API key:  export OPENROUTER_API_KEY=\"sk-...\"");
-        println!("    2. Or edit:           ~/.BambooClaw Core/config.toml");
-        println!("    3. Chat:              BambooClaw Core agent -m \"Hello!\"");
-        println!("    4. Gateway:           BambooClaw Core gateway");
+        println!("    2. Or edit:           ~/.BambooClawCore/config.toml");
+        println!("    3. Chat:              BambooClawCore agent -m \"Hello!\"");
+        println!("    4. Gateway:           BambooClawCore gateway");
     } else {
-        println!("    1. Chat:     BambooClaw Core agent -m \"Hello!\"");
-        println!("    2. Gateway:  BambooClaw Core gateway");
-        println!("    3. Status:   BambooClaw Core status");
+        println!("    1. Chat:     BambooClawCore agent -m \"Hello!\"");
+        println!("    2. Gateway:  BambooClawCore gateway");
+        println!("    3. Status:   BambooClawCore status");
     }
     println!();
 
@@ -1436,7 +1436,7 @@ pub fn run_models_refresh(
             print_model_preview(&cached.models);
             println!();
             println!(
-                "Tip: run `BambooClaw Core models refresh --force --provider {}` to fetch latest now.",
+                "Tip: run `BambooClawCore models refresh --force --provider {}` to fetch latest now.",
                 provider_name
             );
             return Ok(());
@@ -1525,7 +1525,7 @@ fn setup_workspace() -> Result<(PathBuf, PathBuf)> {
     let home = directories::UserDirs::new()
         .map(|u| u.home_dir().to_path_buf())
         .context("Could not find home directory")?;
-    let default_dir = home.join(".BambooClaw Core");
+    let default_dir = home.join(".BambooClawCore");
 
     print_bullet(&format!(
         "Default location: {}",
@@ -1537,7 +1537,7 @@ fn setup_workspace() -> Result<(PathBuf, PathBuf)> {
         .default(true)
         .interact()?;
 
-    let BambooClaw Core_dir = if use_default {
+    let BambooClawCore_dir = if use_default {
         default_dir
     } else {
         let custom: String = Input::new()
@@ -1547,8 +1547,8 @@ fn setup_workspace() -> Result<(PathBuf, PathBuf)> {
         PathBuf::from(expanded)
     };
 
-    let workspace_dir = BambooClaw Core_dir.join("workspace");
-    let config_path = BambooClaw Core_dir.join("config.toml");
+    let workspace_dir = BambooClawCore_dir.join("workspace");
+    let config_path = BambooClawCore_dir.join("config.toml");
 
     fs::create_dir_all(&workspace_dir).context("Failed to create workspace directory")?;
 
@@ -1661,7 +1661,7 @@ fn setup_provider(workspace_dir: &Path) -> Result<(String, String, String, Optio
             style("Custom Provider Setup").white().bold(),
             style("— any OpenAI-compatible API").dim()
         );
-        print_bullet("BambooClaw Core works with ANY API that speaks the OpenAI chat completions format.");
+        print_bullet("BambooClawCore works with ANY API that speaks the OpenAI chat completions format.");
         print_bullet("Examples: LiteLLM, LocalAI, vLLM, text-generation-webui, LM Studio, etc.");
         println!();
 
@@ -1760,7 +1760,7 @@ fn setup_provider(workspace_dir: &Path) -> Result<(String, String, String, Optio
                 "{} Gemini CLI credentials detected! You can skip the API key.",
                 style("✓").green().bold()
             ));
-            print_bullet("BambooClaw Core will reuse your existing Gemini CLI authentication.");
+            print_bullet("BambooClawCore will reuse your existing Gemini CLI authentication.");
             println!();
 
             let use_cli: bool = dialoguer::Confirm::new()
@@ -2169,7 +2169,7 @@ fn provider_env_var(name: &str) -> &'static str {
 // ── Step 5: Tool Mode & Security ────────────────────────────────
 
 fn setup_tool_mode() -> Result<(ComposioConfig, SecretsConfig)> {
-    print_bullet("Choose how BambooClaw Core connects to external apps.");
+    print_bullet("Choose how BambooClawCore connects to external apps.");
     print_bullet("You can always change this later in config.toml.");
     println!();
 
@@ -2192,7 +2192,7 @@ fn setup_tool_mode() -> Result<(ComposioConfig, SecretsConfig)> {
             style("— 1000+ OAuth integrations (Gmail, Notion, GitHub, Slack, ...)").dim()
         );
         print_bullet("Get your API key at: https://app.composio.dev/settings");
-        print_bullet("BambooClaw Core uses Composio as a tool — your core agent stays local.");
+        print_bullet("BambooClawCore uses Composio as a tool — your core agent stays local.");
         println!();
 
         let api_key: String = Input::new()
@@ -2229,7 +2229,7 @@ fn setup_tool_mode() -> Result<(ComposioConfig, SecretsConfig)> {
 
     // ── Encrypted secrets ──
     println!();
-    print_bullet("BambooClaw Core can encrypt API keys stored in config.toml.");
+    print_bullet("BambooClawCore can encrypt API keys stored in config.toml.");
     print_bullet("A local key file protects against plaintext exposure and accidental leaks.");
 
     let encrypt = Confirm::new()
@@ -2259,7 +2259,7 @@ fn setup_tool_mode() -> Result<(ComposioConfig, SecretsConfig)> {
 // ── Step 6: Hardware (Physical World) ───────────────────────────
 
 fn setup_hardware() -> Result<HardwareConfig> {
-    print_bullet("BambooClaw Core can talk to physical hardware (LEDs, sensors, motors).");
+    print_bullet("BambooClawCore can talk to physical hardware (LEDs, sensors, motors).");
     print_bullet("Scanning for connected devices...");
     println!();
 
@@ -2316,7 +2316,7 @@ fn setup_hardware() -> Result<HardwareConfig> {
     let recommended = hardware::recommended_wizard_default(&devices);
 
     let choice = Select::new()
-        .with_prompt("  How should BambooClaw Core interact with the physical world?")
+        .with_prompt("  How should BambooClawCore interact with the physical world?")
         .items(&options)
         .default(recommended)
         .interact()?;
@@ -2491,7 +2491,7 @@ fn setup_project_context() -> Result<ProjectContext> {
 
     let agent_name: String = Input::new()
         .with_prompt("  Agent name")
-        .default("BambooClaw Core".into())
+        .default("BambooClawCore".into())
         .interact_text()?;
 
     let style_options = vec![
@@ -2545,7 +2545,7 @@ fn setup_project_context() -> Result<ProjectContext> {
 // ── Step 6: Memory Configuration ───────────────────────────────
 
 fn setup_memory() -> Result<MemoryConfig> {
-    print_bullet("Choose how BambooClaw Core stores and searches memories.");
+    print_bullet("Choose how BambooClawCore stores and searches memories.");
     print_bullet("You can always change this later in config.toml.");
     println!();
 
@@ -2585,7 +2585,7 @@ fn setup_memory() -> Result<MemoryConfig> {
 
 #[allow(clippy::too_many_lines)]
 fn setup_channels() -> Result<ChannelsConfig> {
-    print_bullet("Channels let you talk to BambooClaw Core from anywhere.");
+    print_bullet("Channels let you talk to BambooClawCore from anywhere.");
     print_bullet("CLI is always available. Connect more channels now.");
     println!();
 
@@ -2744,7 +2744,7 @@ fn setup_channels() -> Result<ChannelsConfig> {
                 println!(
                     "  {} {}",
                     style("Telegram Setup").white().bold(),
-                    style("— talk to BambooClaw Core from Telegram").dim()
+                    style("— talk to BambooClawCore from Telegram").dim()
                 );
                 print_bullet("1. Open Telegram and message @BotFather");
                 print_bullet("2. Send /newbot and follow the prompts");
@@ -2842,7 +2842,7 @@ fn setup_channels() -> Result<ChannelsConfig> {
                 println!(
                     "  {} {}",
                     style("Discord Setup").white().bold(),
-                    style("— talk to BambooClaw Core from Discord").dim()
+                    style("— talk to BambooClawCore from Discord").dim()
                 );
                 print_bullet("1. Go to https://discord.com/developers/applications");
                 print_bullet("2. Create a New Application → Bot → Copy token");
@@ -2941,7 +2941,7 @@ fn setup_channels() -> Result<ChannelsConfig> {
                 println!(
                     "  {} {}",
                     style("Slack Setup").white().bold(),
-                    style("— talk to BambooClaw Core from Slack").dim()
+                    style("— talk to BambooClawCore from Slack").dim()
                 );
                 print_bullet("1. Go to https://api.slack.com/apps → Create New App");
                 print_bullet("2. Add Bot Token Scopes: chat:write, channels:history");
@@ -3077,7 +3077,7 @@ fn setup_channels() -> Result<ChannelsConfig> {
                     continue;
                 }
 
-                print_bullet("BambooClaw Core reads your iMessage database and replies via AppleScript.");
+                print_bullet("BambooClawCore reads your iMessage database and replies via AppleScript.");
                 print_bullet(
                     "You need to grant Full Disk Access to your terminal in System Settings.",
                 );
@@ -3250,7 +3250,7 @@ fn setup_channels() -> Result<ChannelsConfig> {
 
                 let verify_token: String = Input::new()
                     .with_prompt("  Webhook verify token (create your own)")
-                    .default("BambooClaw Core-whatsapp-verify".into())
+                    .default("BambooClawCore-whatsapp-verify".into())
                     .interact_text()?;
 
                 // Test connection (run entirely in separate thread — Response must be used/dropped there)
@@ -3306,7 +3306,7 @@ fn setup_channels() -> Result<ChannelsConfig> {
                     access_token: Some(access_token.trim().to_string()),
                     phone_number_id: Some(phone_number_id.trim().to_string()),
                     verify_token: Some(verify_token.trim().to_string()),
-                    app_secret: None, // Can be set via BambooClaw Core_WHATSAPP_APP_SECRET env var
+                    app_secret: None, // Can be set via BambooClawCore_WHATSAPP_APP_SECRET env var
                     session_path: None,
                     pair_phone: None,
                     pair_code: None,
@@ -3729,7 +3729,7 @@ fn setup_channels() -> Result<ChannelsConfig> {
                 println!(
                     "  {} {}",
                     style("Lark/Feishu Setup").white().bold(),
-                    style("— talk to BambooClaw Core from Lark or Feishu").dim()
+                    style("— talk to BambooClawCore from Lark or Feishu").dim()
                 );
                 print_bullet(
                     "1. Go to Lark/Feishu Open Platform (open.larksuite.com / open.feishu.cn)",
@@ -4126,7 +4126,7 @@ fn setup_tunnel() -> Result<crate::config::TunnelConfig> {
 #[allow(clippy::too_many_lines)]
 fn scaffold_workspace(workspace_dir: &Path, ctx: &ProjectContext) -> Result<()> {
     let agent = if ctx.agent_name.is_empty() {
-        "BambooClaw Core"
+        "BambooClawCore"
     } else {
         &ctx.agent_name
     };
@@ -4413,7 +4413,7 @@ fn print_summary(config: &Config) {
     println!(
         "  {}  {}",
         style("⚡").cyan(),
-        style("BambooClaw Core is ready!").white().bold()
+        style("BambooClawCore is ready!").white().bold()
     );
     println!(
         "  {}",
@@ -4577,7 +4577,7 @@ fn print_summary(config: &Config) {
             );
             println!(
                 "       {}",
-                style("BambooClaw Core auth login --provider openai-codex --device-code").yellow()
+                style("BambooClawCore auth login --provider openai-codex --device-code").yellow()
             );
         } else if provider == "anthropic" {
             println!(
@@ -4591,7 +4591,7 @@ fn print_summary(config: &Config) {
             println!(
                 "       {}",
                 style(
-                    "or: BambooClaw Core auth paste-token --provider anthropic --auth-kind authorization"
+                    "or: BambooClawCore auth paste-token --provider anthropic --auth-kind authorization"
                 )
                 .yellow()
             );
@@ -4617,7 +4617,7 @@ fn print_summary(config: &Config) {
             style(format!("{step}.")).cyan().bold(),
             style("Launch your channels").white().bold()
         );
-        println!("       {}", style("BambooClaw Core channel start").yellow());
+        println!("       {}", style("BambooClawCore channel start").yellow());
         println!();
         step += 1;
     }
@@ -4628,7 +4628,7 @@ fn print_summary(config: &Config) {
     );
     println!(
         "       {}",
-        style("BambooClaw Core agent -m \"Hello, BambooClaw Core!\"").yellow()
+        style("BambooClawCore agent -m \"Hello, BambooClawCore!\"").yellow()
     );
     println!();
     step += 1;
@@ -4637,7 +4637,7 @@ fn print_summary(config: &Config) {
         "    {} Start interactive CLI mode:",
         style(format!("{step}.")).cyan().bold()
     );
-    println!("       {}", style("BambooClaw Core agent").yellow());
+    println!("       {}", style("BambooClawCore agent").yellow());
     println!();
     step += 1;
 
@@ -4645,7 +4645,7 @@ fn print_summary(config: &Config) {
         "    {} Check full status:",
         style(format!("{step}.")).cyan().bold()
     );
-    println!("       {}", style("BambooClaw Core status").yellow());
+    println!("       {}", style("BambooClawCore status").yellow());
 
     println!();
     println!(
@@ -4857,8 +4857,8 @@ mod tests {
             .await
             .unwrap();
         assert!(
-            identity.contains("**Name:** BambooClaw Core"),
-            "should default agent name to BambooClaw Core"
+            identity.contains("**Name:** BambooClawCore"),
+            "should default agent name to BambooClawCore"
         );
 
         let user_md = tokio::fs::read_to_string(tmp.path().join("USER.md"))
@@ -5066,7 +5066,7 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let ctx = ProjectContext {
             user_name: "José María".into(),
-            agent_name: "BambooClaw Core-v2".into(),
+            agent_name: "BambooClawCore-v2".into(),
             timezone: "Europe/Madrid".into(),
             communication_style: "Be direct.".into(),
         };
@@ -5080,7 +5080,7 @@ mod tests {
         let soul = tokio::fs::read_to_string(tmp.path().join("SOUL.md"))
             .await
             .unwrap();
-        assert!(soul.contains("BambooClaw Core-v2"));
+        assert!(soul.contains("BambooClawCore-v2"));
     }
 
     // ── scaffold_workspace: full personalization round-trip ─────

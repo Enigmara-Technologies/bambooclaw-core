@@ -131,7 +131,7 @@ install_rust_toolchain() {
 SCRIPT_PATH="${BASH_SOURCE[0]:-$0}"
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" >/dev/null 2>&1 && pwd || pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." >/dev/null 2>&1 && pwd || pwd)"
-REPO_URL="https://github.com/BambooClaw Core-labs/BambooClaw Core.git"
+REPO_URL="https://github.com/Enigmara-Technologies/bambooclaw-core.git"
 
 INSTALL_SYSTEM_DEPS=false
 INSTALL_RUST=false

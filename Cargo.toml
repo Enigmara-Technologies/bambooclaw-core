@@ -3,13 +3,13 @@ members = [".", "crates/robot-kit"]
 resolver = "2"
 
 [package]
-name = "BambooClaw Core"
+name = "BambooClawCore"
 version = "0.1.0"
 edition = "2021"
 authors = ["theonlyhennygod"]
 license = "Apache-2.0"
 description = "Zero overhead. Zero compromise. 100% Rust. The fastest, smallest AI assistant."
-repository = "https://github.com/BambooClaw Core-labs/BambooClaw Core"
+repository = "https://github.com/Enigmara-Technologies/bambooclaw-core"
 readme = "README.md"
 keywords = ["ai", "agent", "cli", "assistant", "chatbot"]
 categories = ["command-line-utilities", "api-bindings"]

@@ -250,7 +250,7 @@ pub fn all_tools_with_runtime(
             security.clone(),
             crate::providers::ProviderRuntimeOptions {
                 auth_profile_override: None,
-                BambooClaw Core_dir: root_config
+                BambooClawCore_dir: root_config
                     .config_path
                     .parent()
                     .map(std::path::PathBuf::from),

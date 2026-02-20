@@ -267,8 +267,8 @@ impl Channel for DiscordChannel {
                 "intents": 37377, // GUILDS | GUILD_MESSAGES | MESSAGE_CONTENT | DIRECT_MESSAGES
                 "properties": {
                     "os": "linux",
-                    "browser": "BambooClaw Core",
-                    "device": "BambooClaw Core"
+                    "browser": "BambooClawCore",
+                    "device": "BambooClawCore"
                 }
             }
         });

@@ -645,7 +645,7 @@ mod tests {
     async fn chat_with_system_fails_without_key() {
         let p = AnthropicProvider::new(None);
         let result = p
-            .chat_with_system(Some("You are BambooClaw Core"), "hello", "claude-3-opus", 0.7)
+            .chat_with_system(Some("You are BambooClawCore"), "hello", "claude-3-opus", 0.7)
             .await;
         assert!(result.is_err());
     }
@@ -676,7 +676,7 @@ mod tests {
         let req = ChatRequest {
             model: "claude-3-opus".to_string(),
             max_tokens: 4096,
-            system: Some("You are BambooClaw Core".to_string()),
+            system: Some("You are BambooClawCore".to_string()),
             messages: vec![Message {
                 role: "user".to_string(),
                 content: "hello".to_string(),
@@ -684,7 +684,7 @@ mod tests {
             temperature: 0.7,
         };
         let json = serde_json::to_string(&req).unwrap();
-        assert!(json.contains("\"system\":\"You are BambooClaw Core\""));
+        assert!(json.contains("\"system\":\"You are BambooClawCore\""));
     }
 
     #[test]

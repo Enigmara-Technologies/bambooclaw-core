@@ -88,7 +88,7 @@ pip install piper-tts
 
 ```bash
 # Clone and build
-git clone https://github.com/BambooClaw Core-labs/BambooClaw Core
+git clone https://github.com/Enigmara-Technologies/bambooclaw-core
 cd BambooClaw Core
 cargo build -p BambooClaw Core-robot-kit --release
 ```

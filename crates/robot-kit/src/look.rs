@@ -18,8 +18,8 @@ pub struct LookTool {
 impl LookTool {
     pub fn new(config: RobotConfig) -> Self {
         let capture_dir = directories::UserDirs::new()
-            .map(|d| d.home_dir().join(".BambooClaw Core/captures"))
-            .unwrap_or_else(|| PathBuf::from("/tmp/BambooClaw Core_captures"));
+            .map(|d| d.home_dir().join(".BambooClawCore/captures"))
+            .unwrap_or_else(|| PathBuf::from("/tmp/BambooClawCore_captures"));
 
         // Ensure capture directory exists
         let _ = std::fs::create_dir_all(&capture_dir);

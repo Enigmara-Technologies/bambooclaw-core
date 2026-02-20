@@ -1,5 +1,5 @@
-# BambooClaw Core Robot Kit Configuration
-# Copy to ~/.BambooClaw Core/robot.toml
+# BambooClawCore Robot Kit Configuration
+# Copy to ~/.BambooClawCore/robot.toml
 
 # =============================================================================
 # DRIVE SYSTEM

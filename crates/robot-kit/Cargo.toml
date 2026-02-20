@@ -1,11 +1,11 @@
 [package]
-name = "BambooClaw Core-robot-kit"
+name = "BambooClawCore-robot-kit"
 version = "0.1.0"
 edition = "2021"
 authors = ["theonlyhennygod"]
 license = "MIT"
-description = "Robot control toolkit for BambooClaw Core - drive, vision, speech, sensors, safety"
-repository = "https://github.com/BambooClaw Core-labs/BambooClaw Core"
+description = "Robot control toolkit for BambooClawCore - drive, vision, speech, sensors, safety"
+repository = "https://github.com/Enigmara-Technologies/bambooclaw-core"
 readme = "README.md"
 keywords = ["robotics", "raspberry-pi", "ai", "agent", "ros2"]
 categories = ["science::robotics", "embedded", "hardware-support"]
@@ -21,8 +21,8 @@ lidar = []            # LIDAR support
 vision = []           # Camera + vision model
 
 [dependencies]
-# Re-use BambooClaw Core's tool trait (optional - can also be standalone)
-# BambooClaw Core = { path = "../..", optional = true }
+# Re-use BambooClawCore's tool trait (optional - can also be standalone)
+# BambooClawCore = { path = "../..", optional = true }
 
 # Async runtime
 tokio = { version = "1.42", features = ["rt-multi-thread", "macros", "time", "sync", "process", "fs", "io-util"] }

@@ -4,8 +4,8 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 
-const SERVICE_LABEL: &str = "com.BambooClaw Core.daemon";
-const WINDOWS_TASK_NAME: &str = "BambooClaw Core Daemon";
+const SERVICE_LABEL: &str = "com.BambooClawCore.daemon";
+const WINDOWS_TASK_NAME: &str = "BambooClawCore Daemon";
 
 fn windows_task_name() -> &'static str {
     WINDOWS_TASK_NAME
@@ -42,7 +42,7 @@ fn start(config: &Config) -> Result<()> {
         Ok(())
     } else if cfg!(target_os = "linux") {
         run_checked(Command::new("systemctl").args(["--user", "daemon-reload"]))?;
-        run_checked(Command::new("systemctl").args(["--user", "start", "BambooClaw Core.service"]))?;
+        run_checked(Command::new("systemctl").args(["--user", "start", "BambooClawCore.service"]))?;
         println!("✅ Service started");
         Ok(())
     } else if cfg!(target_os = "windows") {
@@ -69,7 +69,7 @@ fn stop(config: &Config) -> Result<()> {
         println!("✅ Service stopped");
         Ok(())
     } else if cfg!(target_os = "linux") {
-        let _ = run_checked(Command::new("systemctl").args(["--user", "stop", "BambooClaw Core.service"]));
+        let _ = run_checked(Command::new("systemctl").args(["--user", "stop", "BambooClawCore.service"]));
         println!("✅ Service stopped");
         Ok(())
     } else if cfg!(target_os = "windows") {
@@ -104,7 +104,7 @@ fn status(config: &Config) -> Result<()> {
         let out = run_capture(Command::new("systemctl").args([
             "--user",
             "is-active",
-            "BambooClaw Core.service",
+            "BambooClawCore.service",
         ]))
         .unwrap_or_else(|_| "unknown".into());
         println!("Service state: {}", out.trim());
@@ -173,7 +173,7 @@ fn uninstall(config: &Config) -> Result<()> {
             .parent()
             .map_or_else(|| PathBuf::from("."), PathBuf::from)
             .join("logs")
-            .join("BambooClaw Core-daemon.cmd");
+            .join("BambooClawCore-daemon.cmd");
         if wrapper.exists() {
             fs::remove_file(&wrapper).ok();
         }
@@ -232,7 +232,7 @@ fn install_macos(config: &Config) -> Result<()> {
 
     fs::write(&file, plist)?;
     println!("✅ Installed launchd service: {}", file.display());
-    println!("   Start with: BambooClaw Core service start");
+    println!("   Start with: BambooClawCore service start");
     Ok(())
 }
 
@@ -244,15 +244,15 @@ fn install_linux(config: &Config) -> Result<()> {
 
     let exe = std::env::current_exe().context("Failed to resolve current executable")?;
     let unit = format!(
-        "[Unit]\nDescription=BambooClaw Core daemon\nAfter=network.target\n\n[Service]\nType=simple\nExecStart={} daemon\nRestart=always\nRestartSec=3\n\n[Install]\nWantedBy=default.target\n",
+        "[Unit]\nDescription=BambooClawCore daemon\nAfter=network.target\n\n[Service]\nType=simple\nExecStart={} daemon\nRestart=always\nRestartSec=3\n\n[Install]\nWantedBy=default.target\n",
         exe.display()
     );
 
     fs::write(&file, unit)?;
     let _ = run_checked(Command::new("systemctl").args(["--user", "daemon-reload"]));
-    let _ = run_checked(Command::new("systemctl").args(["--user", "enable", "BambooClaw Core.service"]));
+    let _ = run_checked(Command::new("systemctl").args(["--user", "enable", "BambooClawCore.service"]));
     println!("✅ Installed systemd user service: {}", file.display());
-    println!("   Start with: BambooClaw Core service start");
+    println!("   Start with: BambooClawCore service start");
     Ok(())
 }
 
@@ -266,7 +266,7 @@ fn install_windows(config: &Config) -> Result<()> {
     fs::create_dir_all(&logs_dir)?;
 
     // Create a wrapper script that redirects output to log files
-    let wrapper = logs_dir.join("BambooClaw Core-daemon.cmd");
+    let wrapper = logs_dir.join("BambooClawCore-daemon.cmd");
     let stdout_log = logs_dir.join("daemon.stdout.log");
     let stderr_log = logs_dir.join("daemon.stderr.log");
 
@@ -301,7 +301,7 @@ fn install_windows(config: &Config) -> Result<()> {
     println!("✅ Installed Windows scheduled task: {}", task_name);
     println!("   Wrapper: {}", wrapper.display());
     println!("   Logs: {}", logs_dir.display());
-    println!("   Start with: BambooClaw Core service start");
+    println!("   Start with: BambooClawCore service start");
     Ok(())
 }
 
@@ -324,7 +324,7 @@ fn linux_service_file(config: &Config) -> Result<PathBuf> {
         .join(".config")
         .join("systemd")
         .join("user")
-        .join("BambooClaw Core.service"))
+        .join("BambooClawCore.service"))
 }
 
 fn run_checked(command: &mut Command) -> Result<()> {
@@ -392,12 +392,12 @@ mod tests {
     fn linux_service_file_has_expected_suffix() {
         let file = linux_service_file(&Config::default()).unwrap();
         let path = file.to_string_lossy();
-        assert!(path.ends_with(".config/systemd/user/BambooClaw Core.service"));
+        assert!(path.ends_with(".config/systemd/user/BambooClawCore.service"));
     }
 
     #[test]
     fn windows_task_name_is_constant() {
-        assert_eq!(windows_task_name(), "BambooClaw Core Daemon");
+        assert_eq!(windows_task_name(), "BambooClawCore Daemon");
     }
 
     #[cfg(target_os = "windows")]

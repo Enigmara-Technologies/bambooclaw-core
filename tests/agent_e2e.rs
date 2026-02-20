@@ -5,24 +5,24 @@
 //! external service dependencies. They complement the unit tests in
 //! `src/agent/tests.rs` by running at the integration test boundary.
 //!
-//! Ref: https://github.com/BambooClaw Core-labs/BambooClaw Core/issues/618 (item 6)
+//! Ref: https://github.com/Enigmara-Technologies/bambooclaw-core/issues/618 (item 6)
 
 use anyhow::Result;
 use async_trait::async_trait;
 use serde_json::json;
 use std::sync::{Arc, Mutex};
-use BambooClaw Core::agent::agent::Agent;
-use BambooClaw Core::agent::dispatcher::{NativeToolDispatcher, XmlToolDispatcher};
-use BambooClaw Core::agent::memory_loader::MemoryLoader;
-use BambooClaw Core::config::MemoryConfig;
-use BambooClaw Core::memory;
-use BambooClaw Core::memory::Memory;
-use BambooClaw Core::observability::{NoopObserver, Observer};
-use BambooClaw Core::providers::traits::ChatMessage;
-use BambooClaw Core::providers::{
+use BambooClawCore::agent::agent::Agent;
+use BambooClawCore::agent::dispatcher::{NativeToolDispatcher, XmlToolDispatcher};
+use BambooClawCore::agent::memory_loader::MemoryLoader;
+use BambooClawCore::config::MemoryConfig;
+use BambooClawCore::memory;
+use BambooClawCore::memory::Memory;
+use BambooClawCore::observability::{NoopObserver, Observer};
+use BambooClawCore::providers::traits::ChatMessage;
+use BambooClawCore::providers::{
     ChatRequest, ChatResponse, ConversationMessage, Provider, ProviderRuntimeOptions, ToolCall,
 };
-use BambooClaw Core::tools::{Tool, ToolResult};
+use BambooClawCore::tools::{Tool, ToolResult};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mock infrastructure
@@ -578,7 +578,7 @@ async fn e2e_multi_turn_with_memory_enrichment() {
     let (provider, recorded) =
         RecordingProvider::new(vec![text_response("answer 1"), text_response("answer 2")]);
 
-    let memory_context = "[Memory context]\n- project: BambooClaw Core\n\n";
+    let memory_context = "[Memory context]\n- project: BambooClawCore\n\n";
     let loader = StaticMemoryLoader::new(memory_context);
 
     let mut agent = build_recording_agent(Box::new(provider), vec![], Some(Box::new(loader)));
@@ -595,7 +595,7 @@ async fn e2e_multi_turn_with_memory_enrichment() {
     // Turn 1: user message is enriched
     let req1_user = requests[0].iter().find(|m| m.role == "user").unwrap();
     assert!(req1_user.content.contains("[Memory context]"));
-    assert!(req1_user.content.contains("project: BambooClaw Core"));
+    assert!(req1_user.content.contains("project: BambooClawCore"));
     assert!(req1_user.content.ends_with("first question"));
 
     // Turn 2: both user messages enriched, assistant from turn 1 present
@@ -649,13 +649,13 @@ async fn e2e_empty_memory_context_passthrough() {
 /// Sends a real multi-turn conversation to OpenAI Codex and verifies
 /// the model retains context from earlier messages.
 ///
-/// Requires valid OAuth credentials in `~/.BambooClaw Core/`.
+/// Requires valid OAuth credentials in `~/.BambooClawCore/`.
 /// Run manually: `cargo test e2e_live_openai_codex_multi_turn -- --ignored`
 #[tokio::test]
 #[ignore]
 async fn e2e_live_openai_codex_multi_turn() {
-    use BambooClaw Core::providers::openai_codex::OpenAiCodexProvider;
-    use BambooClaw Core::providers::traits::Provider;
+    use BambooClawCore::providers::openai_codex::OpenAiCodexProvider;
+    use BambooClawCore::providers::traits::Provider;
 
     let provider = OpenAiCodexProvider::new(&ProviderRuntimeOptions::default());
     let model = "gpt-5.3-codex";

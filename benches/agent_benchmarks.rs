@@ -1,4 +1,4 @@
-//! Performance benchmarks for BambooClaw Core hot paths.
+//! Performance benchmarks for BambooClawCore hot paths.
 //!
 //! Benchmarks cover:
 //!   - Tool dispatch (XML parsing, native parsing)
@@ -7,19 +7,19 @@
 //!
 //! Run: `cargo bench`
 //!
-//! Ref: https://github.com/BambooClaw Core-labs/BambooClaw Core/issues/618 (item 7)
+//! Ref: https://github.com/Enigmara-Technologies/bambooclaw-core/issues/618 (item 7)
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use std::sync::{Arc, Mutex};
 
-use BambooClaw Core::agent::agent::Agent;
-use BambooClaw Core::agent::dispatcher::{NativeToolDispatcher, ToolDispatcher, XmlToolDispatcher};
-use BambooClaw Core::config::MemoryConfig;
-use BambooClaw Core::memory;
-use BambooClaw Core::memory::{Memory, MemoryCategory};
-use BambooClaw Core::observability::{NoopObserver, Observer};
-use BambooClaw Core::providers::{ChatRequest, ChatResponse, Provider, ToolCall};
-use BambooClaw Core::tools::{Tool, ToolResult};
+use BambooClawCore::agent::agent::Agent;
+use BambooClawCore::agent::dispatcher::{NativeToolDispatcher, ToolDispatcher, XmlToolDispatcher};
+use BambooClawCore::config::MemoryConfig;
+use BambooClawCore::memory;
+use BambooClawCore::memory::{Memory, MemoryCategory};
+use BambooClawCore::observability::{NoopObserver, Observer};
+use BambooClawCore::providers::{ChatRequest, ChatResponse, Provider, ToolCall};
+use BambooClawCore::tools::{Tool, ToolResult};
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -144,7 +144,7 @@ fn bench_xml_parsing(c: &mut Criterion) {
         text: Some(
             r#"Here is my analysis.
 <tool_call>
-{"name": "search", "arguments": {"query": "BambooClaw Core architecture"}}
+{"name": "search", "arguments": {"query": "BambooClawCore architecture"}}
 </tool_call>
 Let me know if you need more."#
                 .into(),
@@ -190,7 +190,7 @@ fn bench_native_parsing(c: &mut Criterion) {
             ToolCall {
                 id: "tc1".into(),
                 name: "search".into(),
-                arguments: r#"{"query": "BambooClaw Core"}"#.into(),
+                arguments: r#"{"query": "BambooClawCore"}"#.into(),
             },
             ToolCall {
                 id: "tc2".into(),
@@ -219,7 +219,7 @@ fn bench_memory_operations(c: &mut Criterion) {
         for i in 0..100 {
             mem.store(
                 &format!("key_{i}"),
-                &format!("Content entry number {i} about BambooClaw Core agent runtime"),
+                &format!("Content entry number {i} about BambooClawCore agent runtime"),
                 MemoryCategory::Core,
                 None,
             )
@@ -248,7 +248,7 @@ fn bench_memory_operations(c: &mut Criterion) {
     c.bench_function("memory_recall_top10", |b| {
         b.iter(|| {
             rt.block_on(async {
-                mem.recall(black_box("BambooClaw Core agent"), 10, None)
+                mem.recall(black_box("BambooClawCore agent"), 10, None)
                     .await
                     .unwrap()
             })

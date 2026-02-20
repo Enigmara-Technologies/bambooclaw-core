@@ -1,6 +1,6 @@
 # BambooClaw Core-tools
 
-Python companion package for [BambooClaw Core](https://github.com/BambooClaw Core-labs/BambooClaw Core) — LangGraph-based tool calling for consistent LLM agent execution.
+Python companion package for [BambooClaw Core](https://github.com/Enigmara-Technologies/bambooclaw-core) — LangGraph-based tool calling for consistent LLM agent execution.
 
 ## Why This Package?
 

@@ -1,6 +1,6 @@
 //! Arduino Uno Q Bridge — GPIO via socket to Bridge app.
 //!
-//! When BambooClaw Core runs on Uno Q, the Bridge app (Python + MCU) exposes
+//! When BambooClawCore runs on Uno Q, the Bridge app (Python + MCU) exposes
 //! digitalWrite/digitalRead over a local socket. These tools connect to it.
 
 use crate::tools::traits::{Tool, ToolResult};
@@ -40,7 +40,7 @@ impl Tool for UnoQGpioReadTool {
     }
 
     fn description(&self) -> &str {
-        "Read GPIO pin value (0 or 1) on Arduino Uno Q. Requires BambooClaw Core-uno-q-bridge app running."
+        "Read GPIO pin value (0 or 1) on Arduino Uno Q. Requires BambooClawCore-uno-q-bridge app running."
     }
 
     fn parameters_schema(&self) -> Value {
@@ -96,7 +96,7 @@ impl Tool for UnoQGpioWriteTool {
     }
 
     fn description(&self) -> &str {
-        "Set GPIO pin high (1) or low (0) on Arduino Uno Q. Requires BambooClaw Core-uno-q-bridge app running."
+        "Set GPIO pin high (1) or low (0) on Arduino Uno Q. Requires BambooClawCore-uno-q-bridge app running."
     }
 
     fn parameters_schema(&self) -> Value {

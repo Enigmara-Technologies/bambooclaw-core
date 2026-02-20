@@ -2,7 +2,7 @@
 //!
 //! AIEOS (AI Entity Object Specification) is a standardization framework for
 //! portable AI identity. This module handles loading and converting AIEOS v1.1
-//! JSON to BambooClaw Core's system prompt format.
+//! JSON to BambooClawCore's system prompt format.
 
 use crate::config::IdentityConfig;
 use anyhow::{Context, Result};
@@ -714,7 +714,7 @@ fn non_empty_list_at(value: &Value, path: &[&str]) -> Option<Vec<String>> {
 /// Convert AIEOS identity to a system prompt string.
 ///
 /// Formats the AIEOS data into a structured markdown prompt compatible
-/// with BambooClaw Core's agent system.
+/// with BambooClawCore's agent system.
 pub fn aieos_to_system_prompt(identity: &AieosIdentity) -> String {
     use std::fmt::Write;
     let mut prompt = String::new();
@@ -986,7 +986,7 @@ mod tests {
     use super::*;
 
     fn test_workspace_dir() -> PathBuf {
-        std::env::temp_dir().join("BambooClaw Core-test-identity")
+        std::env::temp_dir().join("BambooClawCore-test-identity")
     }
 
     #[test]

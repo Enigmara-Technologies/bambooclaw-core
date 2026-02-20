@@ -17,7 +17,7 @@
 //!
 //! ```rust
 //! use serde_json::json;
-//! use BambooClaw Core::tools::schema::SchemaCleanr;
+//! use BambooClawCore::tools::schema::SchemaCleanr;
 //!
 //! let dirty_schema = json!({
 //!     "type": "object",

@@ -311,7 +311,7 @@ pub async fn run_gateway(host: &str, port: u16, config: Config) -> Result<()> {
         &config.reliability,
         &providers::ProviderRuntimeOptions {
             auth_profile_override: None,
-            BambooClaw Core_dir: config.config_path.parent().map(std::path::PathBuf::from),
+            BambooClawCore_dir: config.config_path.parent().map(std::path::PathBuf::from),
             secrets_encrypt: config.secrets.encrypt,
             reasoning_enabled: config.runtime.reasoning_enabled,
         },
@@ -384,7 +384,7 @@ pub async fn run_gateway(host: &str, port: u16, config: Config) -> Result<()> {
 
     // WhatsApp app secret for webhook signature verification
     // Priority: environment variable > config file
-    let whatsapp_app_secret: Option<Arc<str>> = std::env::var("BambooClaw Core_WHATSAPP_APP_SECRET")
+    let whatsapp_app_secret: Option<Arc<str>> = std::env::var("BambooClawCore_WHATSAPP_APP_SECRET")
         .ok()
         .and_then(|secret| {
             let secret = secret.trim();
@@ -412,7 +412,7 @@ pub async fn run_gateway(host: &str, port: u16, config: Config) -> Result<()> {
 
     // Linq signing secret for webhook signature verification
     // Priority: environment variable > config file
-    let linq_signing_secret: Option<Arc<str>> = std::env::var("BambooClaw Core_LINQ_SIGNING_SECRET")
+    let linq_signing_secret: Option<Arc<str>> = std::env::var("BambooClawCore_LINQ_SIGNING_SECRET")
         .ok()
         .and_then(|secret| {
             let secret = secret.trim();
@@ -470,7 +470,7 @@ pub async fn run_gateway(host: &str, port: u16, config: Config) -> Result<()> {
         }
     }
 
-    println!("🦀 BambooClaw Core Gateway listening on http://{display_addr}");
+    println!("🦀 BambooClawCore Gateway listening on http://{display_addr}");
     if let Some(ref url) = tunnel_url {
         println!("  🌐 Public URL: {url}");
     }
@@ -1306,7 +1306,7 @@ mod tests {
 
         let body = response.into_body().collect().await.unwrap().to_bytes();
         let text = String::from_utf8(body.to_vec()).unwrap();
-        assert!(text.contains("BambooClaw Core_heartbeat_ticks_total 1"));
+        assert!(text.contains("BambooClawCore_heartbeat_ticks_total 1"));
     }
 
     #[test]

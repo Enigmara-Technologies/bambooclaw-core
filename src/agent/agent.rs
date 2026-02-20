@@ -520,7 +520,7 @@ impl Agent {
     }
 
     pub async fn run_interactive(&mut self) -> Result<()> {
-        println!("🦀 BambooClaw Core Interactive Mode");
+        println!("🦀 BambooClawCore Interactive Mode");
         println!("Type /quit to exit.\n");
 
         let (tx, mut rx) = tokio::sync::mpsc::channel(32);

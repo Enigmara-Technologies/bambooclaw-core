@@ -1,6 +1,6 @@
-//! Example: Implementing a custom Channel for BambooClaw Core
+//! Example: Implementing a custom Channel for BambooClawCore
 //!
-//! Channels let BambooClaw Core communicate through any messaging platform.
+//! Channels let BambooClawCore communicate through any messaging platform.
 //! Implement the Channel trait, register it, and the agent works everywhere.
 
 use anyhow::Result;

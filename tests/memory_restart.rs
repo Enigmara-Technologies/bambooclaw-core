@@ -7,8 +7,8 @@
 //! message ordering, and recall behavior after re-initialization.
 
 use std::sync::Arc;
-use BambooClaw Core::memory::sqlite::SqliteMemory;
-use BambooClaw Core::memory::traits::{Memory, MemoryCategory};
+use BambooClawCore::memory::sqlite::SqliteMemory;
+use BambooClawCore::memory::traits::{Memory, MemoryCategory};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Deduplication: same key overwrites instead of duplicating (#430)

@@ -52,7 +52,7 @@ mod approval;
 mod auth;
 mod channels;
 mod rag {
-    pub use BambooClaw Core::rag::*;
+    pub use BambooClawCore::rag::*;
 }
 mod config;
 mod cron;
@@ -83,11 +83,11 @@ mod util;
 use config::Config;
 
 // Re-export so binary's hardware/peripherals modules can use crate::HardwareCommands etc.
-pub use BambooClaw Core::{HardwareCommands, PeripheralCommands};
+pub use BambooClawCore::{HardwareCommands, PeripheralCommands};
 
-/// `BambooClaw Core` - Zero overhead. Zero compromise. 100% Rust.
+/// `BambooClawCore` - Zero overhead. Zero compromise. 100% Rust.
 #[derive(Parser, Debug)]
-#[command(name = "BambooClaw Core")]
+#[command(name = "BambooClawCore")]
 #[command(author = "theonlyhennygod")]
 #[command(version = "0.1.0")]
 #[command(about = "The fastest, smallest AI assistant.", long_about = None)]
@@ -145,10 +145,10 @@ Launches an interactive chat session with the configured AI provider. \
 Use --message for single-shot queries without entering interactive mode.
 
 Examples:
-  BambooClaw Core agent                              # interactive session
-  BambooClaw Core agent -m \"Summarize today's logs\"  # single message
-  BambooClaw Core agent -p anthropic --model claude-sonnet-4-20250514
-  BambooClaw Core agent --peripheral nucleo-f401re:/dev/ttyACM0")]
+  BambooClawCore agent                              # interactive session
+  BambooClawCore agent -m \"Summarize today's logs\"  # single message
+  BambooClawCore agent -p anthropic --model claude-sonnet-4-20250514
+  BambooClawCore agent --peripheral nucleo-f401re:/dev/ttyACM0")]
     Agent {
         /// Single message mode (don't enter interactive mode)
         #[arg(short, long)]
@@ -180,10 +180,10 @@ and WebSocket connections. Bind address defaults to the values in \
 your config file (gateway.host / gateway.port).
 
 Examples:
-  BambooClaw Core gateway                  # use config defaults
-  BambooClaw Core gateway -p 8080          # listen on port 8080
-  BambooClaw Core gateway --host 0.0.0.0   # bind to all interfaces
-  BambooClaw Core gateway -p 0             # random available port")]
+  BambooClawCore gateway                  # use config defaults
+  BambooClawCore gateway -p 8080          # listen on port 8080
+  BambooClawCore gateway --host 0.0.0.0   # bind to all interfaces
+  BambooClawCore gateway -p 0             # random available port")]
     Gateway {
         /// Port to listen on (use 0 for random available port); defaults to config gateway.port
         #[arg(short, long)]
@@ -198,18 +198,18 @@ Examples:
     #[command(long_about = "\
 Start the long-running autonomous daemon.
 
-Launches the full BambooClaw Core runtime: gateway server, all configured \
+Launches the full BambooClawCore runtime: gateway server, all configured \
 channels (Telegram, Discord, Slack, etc.), heartbeat monitor, and \
-the cron scheduler. This is the recommended way to run BambooClaw Core in \
+the cron scheduler. This is the recommended way to run BambooClawCore in \
 production or as an always-on assistant.
 
-Use 'BambooClaw Core service install' to register the daemon as an OS \
+Use 'BambooClawCore service install' to register the daemon as an OS \
 service (systemd/launchd) for auto-start on boot.
 
 Examples:
-  BambooClaw Core daemon                   # use config defaults
-  BambooClaw Core daemon -p 9090           # gateway on port 9090
-  BambooClaw Core daemon --host 127.0.0.1  # localhost only")]
+  BambooClawCore daemon                   # use config defaults
+  BambooClawCore daemon -p 9090           # gateway on port 9090
+  BambooClawCore daemon --host 127.0.0.1  # localhost only")]
     Daemon {
         /// Port to listen on (use 0 for random available port); defaults to config gateway.port
         #[arg(short, long)]
@@ -247,14 +247,14 @@ Cron expressions use the standard 5-field format: \
 override with --tz and an IANA timezone name.
 
 Examples:
-  BambooClaw Core cron list
-  BambooClaw Core cron add '0 9 * * 1-5' 'Good morning' --tz America/New_York
-  BambooClaw Core cron add '*/30 * * * *' 'Check system health'
-  BambooClaw Core cron add-at 2025-01-15T14:00:00Z 'Send reminder'
-  BambooClaw Core cron add-every 60000 'Ping heartbeat'
-  BambooClaw Core cron once 30m 'Run backup in 30 minutes'
-  BambooClaw Core cron pause <task-id>
-  BambooClaw Core cron update <task-id> --expression '0 8 * * *' --tz Europe/London")]
+  BambooClawCore cron list
+  BambooClawCore cron add '0 9 * * 1-5' 'Good morning' --tz America/New_York
+  BambooClawCore cron add '*/30 * * * *' 'Check system health'
+  BambooClawCore cron add-at 2025-01-15T14:00:00Z 'Send reminder'
+  BambooClawCore cron add-every 60000 'Ping heartbeat'
+  BambooClawCore cron once 30m 'Run backup in 30 minutes'
+  BambooClawCore cron pause <task-id>
+  BambooClawCore cron update <task-id> --expression '0 8 * * *' --tz Europe/London")]
     Cron {
         #[command(subcommand)]
         cron_command: CronCommands,
@@ -273,16 +273,16 @@ Examples:
     #[command(long_about = "\
 Manage communication channels.
 
-Add, remove, list, and health-check channels that connect BambooClaw Core \
+Add, remove, list, and health-check channels that connect BambooClawCore \
 to messaging platforms. Supported channel types: telegram, discord, \
 slack, whatsapp, matrix, imessage, email.
 
 Examples:
-  BambooClaw Core channel list
-  BambooClaw Core channel doctor
-  BambooClaw Core channel add telegram '{\"bot_token\":\"...\",\"name\":\"my-bot\"}'
-  BambooClaw Core channel remove my-bot
-  BambooClaw Core channel bind-telegram BambooClaw Core_user")]
+  BambooClawCore channel list
+  BambooClawCore channel doctor
+  BambooClawCore channel add telegram '{\"bot_token\":\"...\",\"name\":\"my-bot\"}'
+  BambooClawCore channel remove my-bot
+  BambooClawCore channel bind-telegram BambooClawCore_user")]
     Channel {
         #[command(subcommand)]
         channel_command: ChannelCommands,
@@ -321,12 +321,12 @@ Enumerate connected USB devices, identify known development boards \
 probe-rs / ST-Link.
 
 Examples:
-  BambooClaw Core hardware discover
-  BambooClaw Core hardware introspect /dev/ttyACM0
-  BambooClaw Core hardware info --chip STM32F401RETx")]
+  BambooClawCore hardware discover
+  BambooClawCore hardware introspect /dev/ttyACM0
+  BambooClawCore hardware info --chip STM32F401RETx")]
     Hardware {
         #[command(subcommand)]
-        hardware_command: BambooClaw Core::HardwareCommands,
+        hardware_command: BambooClawCore::HardwareCommands,
     },
 
     /// Manage hardware peripherals (STM32, RPi GPIO, etc.)
@@ -338,27 +338,27 @@ to the agent (GPIO, sensors, actuators). Supported boards: \
 nucleo-f401re, rpi-gpio, esp32, arduino-uno.
 
 Examples:
-  BambooClaw Core peripheral list
-  BambooClaw Core peripheral add nucleo-f401re /dev/ttyACM0
-  BambooClaw Core peripheral add rpi-gpio native
-  BambooClaw Core peripheral flash --port /dev/cu.usbmodem12345
-  BambooClaw Core peripheral flash-nucleo")]
+  BambooClawCore peripheral list
+  BambooClawCore peripheral add nucleo-f401re /dev/ttyACM0
+  BambooClawCore peripheral add rpi-gpio native
+  BambooClawCore peripheral flash --port /dev/cu.usbmodem12345
+  BambooClawCore peripheral flash-nucleo")]
     Peripheral {
         #[command(subcommand)]
-        peripheral_command: BambooClaw Core::PeripheralCommands,
+        peripheral_command: BambooClawCore::PeripheralCommands,
     },
 
     /// Manage configuration
     #[command(long_about = "\
-Manage BambooClaw Core configuration.
+Manage BambooClawCore configuration.
 
 Inspect and export configuration settings. Use 'schema' to dump \
 the full JSON Schema for the config file, which documents every \
 available key, type, and default value.
 
 Examples:
-  BambooClaw Core config schema              # print JSON Schema to stdout
-  BambooClaw Core config schema > schema.json")]
+  BambooClawCore config schema              # print JSON Schema to stdout
+  BambooClawCore config schema > schema.json")]
     Config {
         #[command(subcommand)]
         config_command: ConfigCommands,
@@ -456,7 +456,7 @@ enum AuthCommands {
 
 #[derive(Subcommand, Debug)]
 enum MigrateCommands {
-    /// Import memory from an `OpenClaw` workspace into this `BambooClaw Core` workspace
+    /// Import memory from an `OpenClaw` workspace into this `BambooClawCore` workspace
     Openclaw {
         /// Optional path to `OpenClaw` workspace (defaults to ~/.openclaw/workspace)
         #[arg(long)]
@@ -680,7 +680,7 @@ async fn main() -> Result<()> {
             .await
         }?;
         // Auto-start channels if user said yes during wizard
-        if std::env::var("BambooClaw Core_AUTOSTART_CHANNELS").as_deref() == Ok("1") {
+        if std::env::var("BambooClawCore_AUTOSTART_CHANNELS").as_deref() == Ok("1") {
             channels::start_channels(config).await?;
         }
         return Ok(());
@@ -707,9 +707,9 @@ async fn main() -> Result<()> {
             let port = port.unwrap_or(config.gateway.port);
             let host = host.unwrap_or_else(|| config.gateway.host.clone());
             if port == 0 {
-                info!("🚀 Starting BambooClaw Core Gateway on {host} (random port)");
+                info!("🚀 Starting BambooClawCore Gateway on {host} (random port)");
             } else {
-                info!("🚀 Starting BambooClaw Core Gateway on {host}:{port}");
+                info!("🚀 Starting BambooClawCore Gateway on {host}:{port}");
             }
             gateway::run_gateway(&host, port, config).await
         }
@@ -718,15 +718,15 @@ async fn main() -> Result<()> {
             let port = port.unwrap_or(config.gateway.port);
             let host = host.unwrap_or_else(|| config.gateway.host.clone());
             if port == 0 {
-                info!("🧠 Starting BambooClaw Core Daemon on {host} (random port)");
+                info!("🧠 Starting BambooClawCore Daemon on {host} (random port)");
             } else {
-                info!("🧠 Starting BambooClaw Core Daemon on {host}:{port}");
+                info!("🧠 Starting BambooClawCore Daemon on {host}:{port}");
             }
             daemon::run(config, host, port).await
         }
 
         Commands::Status => {
-            println!("🦀 BambooClaw Core Status");
+            println!("🦀 BambooClawCore Status");
             println!();
             println!("Version:     {}", env!("CARGO_PKG_VERSION"));
             println!("Workspace:   {}", config.workspace_dir.display());
@@ -1135,7 +1135,7 @@ async fn handle_auth_command(auth_command: AuthCommands, config: &Config) -> Res
                 Err(e) => {
                     println!("Callback capture failed: {e}");
                     println!(
-                            "Run `BambooClaw Core auth paste-redirect --provider openai-codex --profile {profile}`"
+                            "Run `BambooClawCore auth paste-redirect --provider openai-codex --profile {profile}`"
                         );
                     return Ok(());
                 }
@@ -1165,7 +1165,7 @@ async fn handle_auth_command(auth_command: AuthCommands, config: &Config) -> Res
 
             let pending = load_pending_openai_login(config)?.ok_or_else(|| {
                 anyhow::anyhow!(
-                    "No pending OpenAI login found. Run `BambooClaw Core auth login --provider openai-codex` first."
+                    "No pending OpenAI login found. Run `BambooClawCore auth login --provider openai-codex` first."
                 )
             })?;
 
@@ -1270,7 +1270,7 @@ async fn handle_auth_command(auth_command: AuthCommands, config: &Config) -> Res
                 }
                 None => {
                     bail!(
-                        "No OpenAI Codex auth profile found. Run `BambooClaw Core auth login --provider openai-codex`."
+                        "No OpenAI Codex auth profile found. Run `BambooClawCore auth login --provider openai-codex`."
                     )
                 }
             }

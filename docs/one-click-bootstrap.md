@@ -13,7 +13,7 @@ brew install BambooClaw Core
 ## Option A (Recommended): Clone + local script
 
 ```bash
-git clone https://github.com/BambooClaw Core-labs/BambooClaw Core.git
+git clone https://github.com/Enigmara-Technologies/bambooclaw-core.git
 cd BambooClaw Core
 ./bootstrap.sh
 ```

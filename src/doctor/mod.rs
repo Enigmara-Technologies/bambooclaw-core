@@ -67,7 +67,7 @@ pub fn run(config: &Config) -> Result<()> {
     check_environment(&mut items);
 
     // Print report
-    println!("🩺 BambooClaw Core Doctor (enhanced)");
+    println!("🩺 BambooClawCore Doctor (enhanced)");
     println!();
 
     let mut current_cat = "";
@@ -93,7 +93,7 @@ pub fn run(config: &Config) -> Result<()> {
     println!("  Summary: {oks} ok, {warns} warnings, {errors} errors");
 
     if errors > 0 {
-        println!("  💡 Fix the errors above, then run `BambooClaw Core doctor` again.");
+        println!("  💡 Fix the errors above, then run `BambooClawCore doctor` again.");
     }
 
     Ok(())
@@ -154,7 +154,7 @@ pub fn run_models(config: &Config, provider_override: Option<&str>, use_cache: b
         anyhow::bail!("No providers available for model probing");
     }
 
-    println!("🩺 BambooClaw Core Doctor — Model Catalog Probe");
+    println!("🩺 BambooClawCore Doctor — Model Catalog Probe");
     println!("  Providers to probe: {}", targets.len());
     println!(
         "  Mode: {}",
@@ -414,7 +414,7 @@ fn check_config_semantics(config: &Config, items: &mut Vec<DiagItem>) {
     } else {
         items.push(DiagItem::warn(
             cat,
-            "no channels configured — run `BambooClaw Core onboard` to set one up",
+            "no channels configured — run `BambooClawCore onboard` to set one up",
         ));
     }
 
@@ -580,7 +580,7 @@ fn workspace_probe_path(workspace_dir: &Path) -> std::path::PathBuf {
         .duration_since(std::time::UNIX_EPOCH)
         .map_or(0, |duration| duration.as_nanos());
     workspace_dir.join(format!(
-        ".BambooClaw Core_doctor_probe_{}_{}",
+        ".BambooClawCore_doctor_probe_{}_{}",
         std::process::id(),
         nanos
     ))
@@ -1057,7 +1057,7 @@ mod tests {
         assert!(first
             .file_name()
             .and_then(|name| name.to_str())
-            .is_some_and(|name| name.starts_with(".BambooClaw Core_doctor_probe_")));
+            .is_some_and(|name| name.starts_with(".BambooClawCore_doctor_probe_")));
     }
 
     #[test]
