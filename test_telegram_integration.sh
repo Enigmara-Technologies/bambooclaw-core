@@ -1,5 +1,5 @@
 #!/bin/bash
-# BambooClaw Core Telegram Integration Test Suite
+# bambooclaw Telegram Integration Test Suite
 # Automated testing script for Telegram channel functionality
 
 set -e  # Exit on error
@@ -140,9 +140,9 @@ fi
 
 # Test 8: Binary size check
 print_test "Binary size verification"
-if [ -f "target/release/BambooClaw Core" ]; then
-    BINARY_SIZE=$(ls -lh target/release/BambooClaw Core | awk '{print $5}')
-    SIZE_BYTES=$(stat -f%z target/release/BambooClaw Core 2>/dev/null || stat -c%s target/release/BambooClaw Core)
+if [ -f "target/release/bambooclaw" ]; then
+    BINARY_SIZE=$(ls -lh target/release/bambooclaw | awk '{print $5}')
+    SIZE_BYTES=$(stat -f%z target/release/bambooclaw 2>/dev/null || stat -c%s target/release/bambooclaw)
     SIZE_MB=$((SIZE_BYTES / 1024 / 1024))
 
     if [ $SIZE_MB -le 10 ]; then
@@ -162,7 +162,7 @@ print_header "Phase 3: Configuration Tests"
 
 # Test 9: Config file existence
 print_test "Configuration file check"
-CONFIG_PATH="$HOME/.BambooClaw Core/config.toml"
+CONFIG_PATH="$HOME/.bambooclaw/config.toml"
 if [ -f "$CONFIG_PATH" ]; then
     pass "Config file exists at $CONFIG_PATH"
 
@@ -187,10 +187,10 @@ if [ -f "$CONFIG_PATH" ]; then
             warn "User allowlist not set"
         fi
     else
-        warn "Telegram not configured - run 'BambooClaw Core onboard' first"
+        warn "Telegram not configured - run 'bambooclaw onboard' first"
     fi
 else
-    warn "No config file found - run 'BambooClaw Core onboard' first"
+    warn "No config file found - run 'bambooclaw onboard' first"
 fi
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -202,7 +202,7 @@ print_header "Phase 4: Health Check Tests"
 # Test 13: Health check timeout
 print_test "Health check timeout (should complete in <5s)"
 START_TIME=$(date +%s)
-HEALTH_OUTPUT=$(timeout 10 target/release/BambooClaw Core channel doctor 2>&1 || true)
+HEALTH_OUTPUT=$(timeout 10 target/release/bambooclaw channel doctor 2>&1 || true)
 END_TIME=$(date +%s)
 HEALTH_TIME=$((END_TIME - START_TIME))
 
@@ -290,7 +290,7 @@ cat << 'EOF'
 📱 Manual Test Checklist:
 
 1. [ ] Start the channel:
-   BambooClaw Core channel start
+   bambooclaw channel start
 
 2. [ ] Send a short message to your bot in Telegram:
    "Hello bot!"
@@ -315,7 +315,7 @@ cat << 'EOF'
    ✓ Verify: Responses have delays
 
 6. [ ] Check logs for errors:
-   RUST_LOG=debug BambooClaw Core channel start
+   RUST_LOG=debug bambooclaw channel start
    ✓ Verify: No unexpected errors
    ✓ Verify: "missing chat_id" appears for malformed messages
    ✓ Verify: Health check logs show "timed out" if needed

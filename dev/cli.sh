@@ -22,12 +22,12 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 function ensure_config {
-    CONFIG_DIR="$HOST_TARGET_DIR/.BambooClaw Core"
+    CONFIG_DIR="$HOST_TARGET_DIR/.bambooclaw"
     CONFIG_FILE="$CONFIG_DIR/config.toml"
     WORKSPACE_DIR="$CONFIG_DIR/workspace"
 
     if [ ! -f "$CONFIG_FILE" ]; then
-        echo -e "${YELLOW}⚙️  Config file missing in target/.BambooClaw Core. Creating default dev config from template...${NC}"
+        echo -e "${YELLOW}⚙️  Config file missing in target/.bambooclaw. Creating default dev config from template...${NC}"
         mkdir -p "$WORKSPACE_DIR"
 
         # Copy template
@@ -36,14 +36,14 @@ function ensure_config {
 }
 
 function print_help {
-    echo -e "${YELLOW}BambooClaw Core Development Environment Manager${NC}"
+    echo -e "${YELLOW}bambooclaw Development Environment Manager${NC}"
     echo "Usage: ./dev/cli.sh [command]"
     echo ""
     echo "Commands:"
     echo -e "  ${GREEN}up${NC}      Start dev environment (Agent + Sandbox)"
     echo -e "  ${GREEN}down${NC}    Stop containers"
     echo -e "  ${GREEN}shell${NC}   Enter Sandbox (Ubuntu)"
-    echo -e "  ${GREEN}agent${NC}   Enter Agent (BambooClaw Core CLI)"
+    echo -e "  ${GREEN}agent${NC}   Enter Agent (bambooclaw CLI)"
     echo -e "  ${GREEN}logs${NC}    View logs"
     echo -e "  ${GREEN}build${NC}   Rebuild images"
     echo -e "  ${GREEN}ci${NC}      Run local CI checks in Docker (see ./dev/ci.sh)"
@@ -64,7 +64,7 @@ case "$1" in
         echo -e "${GREEN}✅ Environment is running!${NC}"
         echo -e "   - Agent: http://127.0.0.1:3000"
         echo -e "   - Sandbox: running (background)"
-        echo -e "   - Config: target/.BambooClaw Core/config.toml (Edit locally to apply changes)"
+        echo -e "   - Config: target/.bambooclaw/config.toml (Edit locally to apply changes)"
         ;;
 
     down)
@@ -75,12 +75,12 @@ case "$1" in
 
     shell)
         echo -e "${GREEN}💻 Entering Sandbox (Ubuntu)... (Type 'exit' to leave)${NC}"
-        docker exec -it BambooClaw Core-sandbox /bin/bash
+        docker exec -it bambooclaw-sandbox /bin/bash
         ;;
 
     agent)
-        echo -e "${GREEN}🤖 Entering Agent Container (BambooClaw Core)... (Type 'exit' to leave)${NC}"
-        docker exec -it BambooClaw Core-dev /bin/bash
+        echo -e "${GREEN}🤖 Entering Agent Container (bambooclaw)... (Type 'exit' to leave)${NC}"
+        docker exec -it bambooclaw-dev /bin/bash
         ;;
 
     logs)
@@ -105,12 +105,12 @@ case "$1" in
         ;;
 
     clean)
-        echo -e "${RED}⚠️  WARNING: This will delete 'target/.BambooClaw Core' data and Docker volumes.${NC}"
+        echo -e "${RED}⚠️  WARNING: This will delete 'target/.bambooclaw' data and Docker volumes.${NC}"
         read -p "Are you sure? (y/N) " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             docker compose -f "$COMPOSE_FILE" down -v
-            rm -rf "$HOST_TARGET_DIR/.BambooClaw Core"
+            rm -rf "$HOST_TARGET_DIR/.bambooclaw"
             echo -e "${GREEN}🧹 Cleaned up (playground/ remains intact).${NC}"
         else
             echo "Cancelled."

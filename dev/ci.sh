@@ -25,7 +25,7 @@ build_smoke_image() {
       --load
       --target dev
       --cache-to "type=local,dest=$SMOKE_CACHE_DIR,mode=max"
-      -t BambooClaw Core-local-smoke:latest
+      -t bambooclaw-local-smoke:latest
       .
     )
     if [ -f "$SMOKE_CACHE_DIR/index.json" ]; then
@@ -33,13 +33,13 @@ build_smoke_image() {
     fi
     docker buildx build "${build_args[@]}"
   else
-    DOCKER_BUILDKIT=1 docker build --target dev -t BambooClaw Core-local-smoke:latest .
+    DOCKER_BUILDKIT=1 docker build --target dev -t bambooclaw-local-smoke:latest .
   fi
 }
 
 print_help() {
   cat <<'EOF'
-BambooClaw Core Local CI in Docker
+bambooclaw Local CI in Docker
 
 Usage: ./dev/ci.sh <command>
 
@@ -109,7 +109,7 @@ case "$1" in
 
   docker-smoke)
     build_smoke_image
-    docker run --rm BambooClaw Core-local-smoke:latest --version
+    docker run --rm bambooclaw-local-smoke:latest --version
     ;;
 
   all)
@@ -119,7 +119,7 @@ case "$1" in
     run_in_ci "cargo deny check licenses sources"
     run_in_ci "cargo audit"
     build_smoke_image
-    docker run --rm BambooClaw Core-local-smoke:latest --version
+    docker run --rm bambooclaw-local-smoke:latest --version
     ;;
 
   clean)

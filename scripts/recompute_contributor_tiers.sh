@@ -23,8 +23,8 @@ Options:
   -h, --help              Show this help
 
 Examples:
-  ./$SCRIPT_NAME --repo BambooClaw Core-labs/BambooClaw Core --limit 50
-  ./$SCRIPT_NAME --repo BambooClaw Core-labs/BambooClaw Core --kind prs --state open --apply
+  ./$SCRIPT_NAME --repo bambooclaw-labs/bambooclaw --limit 50
+  ./$SCRIPT_NAME --repo bambooclaw-labs/bambooclaw --kind prs --state open --apply
 USAGE
 }
 

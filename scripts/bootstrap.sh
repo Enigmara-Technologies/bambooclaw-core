@@ -15,13 +15,13 @@ error() {
 
 usage() {
   cat <<'USAGE'
-BambooClaw Core one-click bootstrap
+bambooclaw one-click bootstrap
 
 Usage:
   ./bootstrap.sh [options]
 
 Modes:
-  Default mode installs/builds BambooClaw Core only (requires existing Rust toolchain).
+  Default mode installs/builds bambooclaw only (requires existing Rust toolchain).
   Optional bootstrap mode can also install system dependencies and Rust.
 
 Options:
@@ -43,12 +43,12 @@ Examples:
   ./bootstrap.sh --interactive-onboard
 
   # Remote one-liner
-  curl -fsSL https://raw.githubusercontent.com/BambooClaw Core-labs/BambooClaw Core/main/scripts/bootstrap.sh | bash
+  curl -fsSL https://raw.githubusercontent.com/bambooclaw-labs/bambooclaw/main/scripts/bootstrap.sh | bash
 
 Environment:
-  BambooClaw Core_API_KEY           Used when --api-key is not provided
-  BambooClaw Core_PROVIDER          Used when --provider is not provided (default: openrouter)
-  BambooClaw Core_MODEL             Used when --model is not provided
+  bambooclaw_API_KEY           Used when --api-key is not provided
+  bambooclaw_PROVIDER          Used when --provider is not provided (default: openrouter)
+  bambooclaw_MODEL             Used when --model is not provided
 USAGE
 }
 
@@ -139,9 +139,9 @@ RUN_ONBOARD=false
 INTERACTIVE_ONBOARD=false
 SKIP_BUILD=false
 SKIP_INSTALL=false
-API_KEY="${BambooClaw Core_API_KEY:-}"
-PROVIDER="${BambooClaw Core_PROVIDER:-openrouter}"
-MODEL="${BambooClaw Core_MODEL:-}"
+API_KEY="${bambooclaw_API_KEY:-}"
+PROVIDER="${bambooclaw_PROVIDER:-openrouter}"
+MODEL="${bambooclaw_MODEL:-}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -252,7 +252,7 @@ if [[ ! -f "$WORK_DIR/Cargo.toml" ]]; then
       exit 1
     fi
 
-    TEMP_DIR="$(mktemp -d -t BambooClaw Core-bootstrap-XXXXXX)"
+    TEMP_DIR="$(mktemp -d -t bambooclaw-bootstrap-XXXXXX)"
     info "No local repository detected; cloning latest main branch"
     git clone --depth 1 "$REPO_URL" "$TEMP_DIR"
     WORK_DIR="$TEMP_DIR"
@@ -260,7 +260,7 @@ if [[ ! -f "$WORK_DIR/Cargo.toml" ]]; then
   fi
 fi
 
-info "BambooClaw Core bootstrap"
+info "bambooclaw bootstrap"
 echo "    workspace: $WORK_DIR"
 
 cd "$WORK_DIR"
@@ -273,29 +273,29 @@ else
 fi
 
 if [[ "$SKIP_INSTALL" == false ]]; then
-  info "Installing BambooClaw Core to cargo bin"
+  info "Installing bambooclaw to cargo bin"
   cargo install --path "$WORK_DIR" --force --locked
 else
   info "Skipping install"
 fi
 
-BambooClaw Core_BIN=""
-if have_cmd BambooClaw Core; then
-  BambooClaw Core_BIN="BambooClaw Core"
-elif [[ -x "$WORK_DIR/target/release/BambooClaw Core" ]]; then
-  BambooClaw Core_BIN="$WORK_DIR/target/release/BambooClaw Core"
+bambooclaw_BIN=""
+if have_cmd bambooclaw; then
+  bambooclaw_BIN="bambooclaw"
+elif [[ -x "$WORK_DIR/target/release/bambooclaw" ]]; then
+  bambooclaw_BIN="$WORK_DIR/target/release/bambooclaw"
 fi
 
 if [[ "$RUN_ONBOARD" == true ]]; then
-  if [[ -z "$BambooClaw Core_BIN" ]]; then
-    error "onboarding requested but BambooClaw Core binary is not available."
-    error "Run without --skip-install, or ensure BambooClaw Core is in PATH."
+  if [[ -z "$bambooclaw_BIN" ]]; then
+    error "onboarding requested but bambooclaw binary is not available."
+    error "Run without --skip-install, or ensure bambooclaw is in PATH."
     exit 1
   fi
 
   if [[ "$INTERACTIVE_ONBOARD" == true ]]; then
     info "Running interactive onboarding"
-    "$BambooClaw Core_BIN" onboard --interactive
+    "$bambooclaw_BIN" onboard --interactive
   else
     if [[ -z "$API_KEY" ]]; then
       cat <<'MSG'
@@ -303,7 +303,7 @@ if [[ "$RUN_ONBOARD" == true ]]; then
 Use either:
   --api-key "sk-..."
 or:
-  BambooClaw Core_API_KEY="sk-..." ./bootstrap.sh --onboard
+  bambooclaw_API_KEY="sk-..." ./bootstrap.sh --onboard
 or run interactive:
   ./bootstrap.sh --interactive-onboard
 MSG
@@ -314,7 +314,7 @@ MSG
     else
       info "Running quick onboarding (provider: $PROVIDER)"
     fi
-    ONBOARD_CMD=("$BambooClaw Core_BIN" onboard --api-key "$API_KEY" --provider "$PROVIDER")
+    ONBOARD_CMD=("$bambooclaw_BIN" onboard --api-key "$API_KEY" --provider "$PROVIDER")
     if [[ -n "$MODEL" ]]; then
       ONBOARD_CMD+=(--model "$MODEL")
     fi
@@ -327,7 +327,7 @@ cat <<'DONE'
 ✅ Bootstrap complete.
 
 Next steps:
-  BambooClaw Core status
-  BambooClaw Core agent -m "Hello, BambooClaw Core!"
-  BambooClaw Core gateway
+  bambooclaw status
+  bambooclaw agent -m "Hello, bambooclaw!"
+  bambooclaw gateway
 DONE
