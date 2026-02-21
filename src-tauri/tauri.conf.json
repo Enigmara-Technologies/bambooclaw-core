@@ -12,7 +12,10 @@
     "bundle": {
       "active": true,
       "identifier": "com.bamboosynergy.bambooclaw",
-      "icon": ["icons/icon.png"]
+      "icon": [
+        "icons/icon.png",
+        "icons/icon.ico"
+      ]
     },
     "windows": [
       {
