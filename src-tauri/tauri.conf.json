@@ -1,28 +1,121 @@
 {
+  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
   "build": {
-    "distDir": "../dist",
+    "beforeBuildCommand": "npm run build",
+    "beforeDevCommand": "npm run dev",
     "devPath": "../dist",
-    "beforeBuildCommand": ""
+    "distDir": "../dist"
   },
   "package": {
     "productName": "BambooClaw",
-    "version": "1.0.2"
+    "version": "0.1.0"
   },
   "tauri": {
+    "allowlist": {
+      "all": false,
+      "fs": {
+        "all": false,
+        "readFile": true,
+        "writeFile": true,
+        "scope": [
+          "$HOME/.bambooclaw/*",
+          "$HOME/.bambooclaw/**/*"
+        ]
+      },
+      "http": {
+        "all": false,
+        "request": true,
+        "scope": [
+          "https://github.com/**",
+          "https://api.github.com/**"
+        ]
+      },
+      "process": {
+        "all": false,
+        "exit": true,
+        "relaunch": true
+      },
+      "shell": {
+        "all": false,
+        "execute": true,
+        "open": true,
+        "scope": [
+          {
+            "name": "run-bambooclaw",
+            "cmd": "bambooclaw",
+            "args": true
+          },
+          {
+            "name": "run-winget",
+            "cmd": "winget",
+            "args": true
+          },
+          {
+            "name": "run-rustup",
+            "cmd": "rustup",
+            "args": true
+          },
+          {
+            "name": "run-cargo",
+            "cmd": "cargo",
+            "args": true
+          }
+        ]
+      }
+    },
     "bundle": {
       "active": true,
-      "identifier": "com.bamboosynergy.bambooclaw",
+      "category": "DeveloperTool",
+      "copyright": "Copyright © 2024 Bamboo Synergy Technologies",
+      "deb": {
+        "depends": []
+      },
+      "externalBin": [],
       "icon": [
-        "icons/icon.png",
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/128x128@2x.png",
+        "icons/icon.icns",
         "icons/icon.ico"
-      ]
+      ],
+      "identifier": "com.bamboosynergy.bambooclaw",
+      "longDescription": "The official desktop companion and installer for the BambooClaw Core and Lite AI edge agents.",
+      "macOS": {
+        "entitlements": null,
+        "exceptionDomain": "",
+        "frameworks": [],
+        "providerShortName": null,
+        "signingIdentity": null
+      },
+      "resources": [],
+      "shortDescription": "BambooClaw AI Agent Installer",
+      "targets": "all",
+      "windows": {
+        "certificateThumbprint": null,
+        "digestAlgorithm": "sha256",
+        "timestampUrl": ""
+      }
+    },
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' https://api.github.com https://github.com; img-src 'self' asset: https:"
+    },
+    "updater": {
+      "active": false
     },
     "windows": [
       {
+        "fullscreen": false,
+        "height": 750,
+        "resizable": true,
         "title": "BambooClaw",
-        "width": 800,
-        "height": 600
+        "width": 1100,
+        "decorations": true
       }
-    ]
+    ],
+    "systemTray": null,
+    "macOSPrivateApi": false,
+    "webviewInstallMode": {
+      "type": "downloadBootstrapper"
+    }
   }
 }

@@ -1,21 +1,32 @@
 [package]
-name = "bambooclaw"
-version = "1.0.1"
+name = "bambooclaw-companion"
+version = "0.1.0"
+description = "BambooClaw Companion Installer"
+authors = ["Bamboo Synergy Technologies"]
+license = "MIT"
+repository = ""
 edition = "2021"
+rust-version = "1.60"
 
-[workspace]
-
-[[bin]]
-name = "bambooclaw"
-path = "src/main.rs"
-
-[dependencies]
-tauri = { version = "1", features = ["shell-open"] }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "1", features = [] }
+tauri-build = { version = "1.5", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+tauri = { version = "1.6", features = ["shell-open", "window-all"] }
+tokio = { version = "1", features = ["full"] } # For async operations
+reqwest = { version = "0.11", features = ["stream"] } # For file downloads
+sysinfo = "0.29" # For process management (start/stop daemon)
+dirs = "5.0" # For finding the home directory
+which = "4.4" # For checking if a binary exists in PATH
 
 [features]
+# by default Tauri runs in production mode
+# when `tauri dev` runs it is executed with `cargo run --no-default-features` if `devPath` is an URL
+default = ["custom-protocol"]
+# this feature is used used for production builds where `devPath` points to the filesystem
+# DO NOT remove this
 custom-protocol = ["tauri/custom-protocol"]

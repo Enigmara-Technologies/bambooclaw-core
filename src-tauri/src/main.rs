@@ -1,364 +1,284 @@
-// src-tauri/src/main.rs
-
+// Prevents a console window from appearing on Windows in release builds.
 #![cfg_attr(
     all(not(debug_assertions), target_os = "windows"),
     windows_subsystem = "windows"
 )]
 
-use std::{
-    collections::HashMap,
-    env,
-    io::{self, Cursor, Write},
-    path::{Path, PathBuf},
-    process::{Command, Stdio},
-    str,
-    sync::{Arc, Mutex},
-};
+use std::path::{Path, PathBuf};
+use std::process::Command;
+use tokio::fs::{self, File};
+use tokio::io::AsyncWriteExt;
 
-use anyhow::{anyhow, Result};
 use futures_util::StreamExt;
-use tauri::{AppHandle, Manager, Wry};
-use tokio::{
-    fs,
-    io::AsyncWriteExt,
-    process::{Child, Command as TokioCommand},
-};
+use sysinfo::{ProcessExt, System, SystemExt};
+use tauri::{AppHandle, Manager};
 
-// Define a global state to keep track of the daemon process ID
-// This is a simple approach. For more robust daemon management, consider a dedicated service.
-lazy_static::lazy_static! {
-    static ref DAEMON_PROCESS: Arc<Mutex<Option<Child>>> = Arc::new(Mutex::new(None));
+// --- Helper Structs ---
+
+/// Payload for the download progress event sent to the frontend.
+#[derive(Clone, serde::Serialize)]
+struct ProgressPayload {
+    downloaded: u64,
+    total: u64,
 }
 
-/// Helper function to get the base configuration directory for BambooClaw.
-/// This will be ~/.bambooclaw/ on Linux/macOS or C:\Users\<user>\.bambooclaw\ on Windows.
-fn get_bambooclaw_config_dir() -> Result<PathBuf> {
-    let home_dir = dirs::home_dir().ok_or_else(|| anyhow!("Could not find home directory"))?;
-    Ok(home_dir.join(".bambooclaw"))
+// --- Main Application Entry Point ---
+
+fn main() {
+    // Build and run the Tauri application.
+    tauri::Builder::default()
+        // Register all our backend commands so the frontend can call them.
+        .invoke_handler(tauri::generate_handler![
+            get_platform,
+            check_prerequisite,
+            run_shell_command,
+            run_bambooclaw,
+            download_binary,
+            start_daemon,
+            stop_daemon,
+            read_config,
+            write_config,
+        ])
+        .run(tauri::generate_context!())
+        .expect("error while running BambooClaw Companion App");
 }
 
-/// Helper function to get the path to the BambooClaw config.toml.
-fn get_bambooclaw_config_path() -> Result<PathBuf> {
-    Ok(get_bambooclaw_config_dir()?.join("config.toml"))
-}
+// --- Tauri Commands ---
 
+/// Returns the current operating system platform.
+/// Expected values: "windows", "macos", "linux".
 #[tauri::command]
-async fn check_prerequisite(app: AppHandle, name: String) -> Result<String, String> {
-    match name.as_str() {
-        "rustc" => {
-            let output = run_shell_command_sync("rustc".into(), vec!["--version".into()])?;
-            Ok(output)
-        }
-        "cargo" => {
-            let output = run_shell_command_sync("cargo".into(), vec!["--version".into()])?;
-            Ok(output)
-        }
-        "visual_studio_build_tools" => {
-            if cfg!(target_os = "windows") {
-                // Check common VS installation paths or environment variables
-                let mut found = false;
-                for arch in ["Hostx64", "Hostx86"].iter() {
-                    let vs_path = PathBuf::from(format!(
-                        r"C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Tools\MSVC\*\bin\{}\cl.exe",
-                        arch
-                    )); // Adjust 2019 to 2022 if preferred
-
-                    if glob::glob(vs_path.to_str().unwrap_or_default())
-                        .map_err(|e| e.to_string())?
-                        .next()
-                        .is_some()
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if found {
-                    Ok("Visual Studio Build Tools found.".into())
-                } else {
-                    Err("Visual Studio Build Tools not found. Required for Rust on Windows."
-                        .into())
-                }
-            } else {
-                Ok("Visual Studio Build Tools not applicable for this OS.".into())
-            }
-        }
-        "bambooclaw_in_path" => {
-            let path_var = env::var("PATH").map_err(|e| e.to_string())?;
-            let binary_name = if cfg!(target_os = "windows") {
-                "bambooclaw.exe"
-            } else {
-                "bambooclaw"
-            };
-
-            for path_entry in path_var.split(if cfg!(target_os = "windows") { ';' } else { ':' }) {
-                let full_path = PathBuf::from(path_entry).join(binary_name);
-                if full_path.exists() {
-                    return Ok(format!("'{}' found in PATH: {}", binary_name, full_path.display()));
-                }
-            }
-            Err(format!("'{}' not found in system PATH.", binary_name))
-        }
-        _ => Err(format!("Unknown prerequisite: {}", name)),
-    }
+fn get_platform() -> String {
+    std::env::consts::OS.to_string()
 }
 
-/// Executes a shell command and returns its combined stdout/stderr.
-///
-/// This function is synchronous and uses `std::process::Command`.
-fn run_shell_command_sync(command: String, args: Vec<String>) -> Result<String, String> {
-    let output = Command::new(&command)
-        .args(&args)
-        .output()
-        .map_err(|e| format!("Failed to execute command '{} {}': {}", command, args.join(" "), e))?;
-
-    if output.status.success() {
-        String::from_utf8(output.stdout)
-            .map_err(|e| format!("Failed to parse stdout as UTF-8: {}", e))
-    } else {
-        String::from_utf8(output.stderr)
-            .map_err(|e| format!("Failed to parse stderr as UTF-8: {}", e))
-            .and_then(|err| Err(format!("Command failed with exit code {}: {}", output.status, err)))
-    }
-}
-
+/// Executes a shell command and returns the combined stdout and stderr.
+/// This is a generic utility for running external processes.
 #[tauri::command]
 async fn run_shell_command(command: String, args: Vec<String>) -> Result<String, String> {
-    tokio::task::spawn_blocking(move || run_shell_command_sync(command, args))
+    // Use tokio::task::spawn_blocking for synchronous I/O operations (like Command::output)
+    // to avoid blocking the async runtime.
+    let result = tokio::task::spawn_blocking(move || Command::new(command).args(args).output())
         .await
-        .map_err(|e| e.to_string())?
+        // Handle potential task panic
+        .map_err(|e| format!("Task execution failed: {}", e))?
+        // Handle potential command execution error
+        .map_err(|e| format!("Failed to execute command: {}", e));
+
+    match result {
+        Ok(output) => {
+            if output.status.success() {
+                // If the command was successful, return its stdout.
+                Ok(String::from_utf8_lossy(&output.stdout).to_string())
+            } else {
+                // If the command failed, return a detailed error with stdout and stderr.
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                Err(format!(
+                    "Command failed with exit code: {:?}\n--- STDOUT ---\n{}\n--- STDERR ---\n{}",
+                    output.status.code(),
+                    stdout,
+                    stderr
+                ))
+            }
+        }
+        Err(e) => Err(e.to_string()),
+    }
 }
 
+/// Checks for a specific prerequisite on the user's system.
+#[tauri::command]
+async fn check_prerequisite(name: String) -> Result<String, String> {
+    match name.as_str() {
+        "rustc" => run_shell_command("rustc".into(), vec!["--version".into()]).await,
+        "cargo" => run_shell_command("cargo".into(), vec!["--version".into()]).await,
+        "bambooclaw" => {
+            // Use the `which` crate for a reliable, cross-platform PATH check.
+            which::which("bambooclaw")
+                .map(|path| format!("Found at: {}", path.display()))
+                .map_err(|e| format!("'bambooclaw' not found in PATH: {}", e))
+        },
+        "vs_build_tools" => {
+             // Platform-specific check for Visual Studio Build Tools on Windows.
+            if cfg!(target_os = "windows") {
+                check_windows_vs_build_tools()
+            } else {
+                // Not applicable on non-Windows systems.
+                Ok("Not applicable on this platform.".to_string())
+            }
+        }
+        _ => Err(format!("Unknown prerequisite check: {}", name)),
+    }
+}
+
+/// A shorthand command to execute the 'bambooclaw' binary with arguments.
+#[tauri::command]
+async fn run_bambooclaw(args: Vec<String>) -> Result<String, String> {
+    run_shell_command("bambooclaw".to_string(), args).await
+}
+
+/// Downloads a file from a URL to a destination, emitting progress events.
 #[tauri::command]
 async fn download_binary(
     app: AppHandle,
     url: String,
     dest: String,
 ) -> Result<(), String> {
+    // Create a reqwest client for making HTTP requests.
     let client = reqwest::Client::new();
-    let res = client
+    let response = client
         .get(&url)
         .send()
         .await
-        .map_err(|e| format!("Failed to send request: {}", e))?;
+        .map_err(|e| format!("Failed to initiate download: {}", e))?;
 
-    let total_size = res.content_length().unwrap_or(0);
+    // Get total file size from the 'content-length' header for progress calculation.
+    let total_size = response
+        .content_length()
+        .ok_or_else(|| "Could not get content length from server.".to_string())?;
+
+    // Ensure the destination directory exists.
+    let dest_path = Path::new(&dest);
+    if let Some(parent) = dest_path.parent() {
+        fs::create_dir_all(parent)
+            .await
+            .map_err(|e| format!("Failed to create destination directory: {}", e))?;
+    }
+    
+    // Create the destination file.
+    let mut file = File::create(&dest_path)
+        .await
+        .map_err(|e| format!("Failed to create destination file: {}", e))?;
+
     let mut downloaded: u64 = 0;
-    let mut stream = res.bytes_stream();
+    let mut stream = response.bytes_stream();
 
-    let dest_path = PathBuf::from(&dest);
-    let parent_dir = dest_path
-        .parent()
-        .ok_or_else(|| String::from("Invalid destination path"))?;
-    fs::create_dir_all(parent_dir)
-        .await
-        .map_err(|e| format!("Failed to create parent directory: {}", e))?;
-
-    let mut file = fs::File::create(&dest_path)
-        .await
-        .map_err(|e| format!("Failed to create file at {}: {}", dest, e))?;
-
-    println!("Starting download from {} to {}", url, dest);
-
+    // Process the download stream chunk by chunk.
     while let Some(item) = stream.next().await {
-        let chunk = item.map_err(|e| format!("Error while downloading: {}", e))?;
+        let chunk = item.map_err(|e| format!("Error while downloading file: {}", e))?;
         file.write_all(&chunk)
             .await
             .map_err(|e| format!("Error writing to file: {}", e))?;
+        
         downloaded += chunk.len() as u64;
 
-        let percentage = if total_size > 0 {
-            (downloaded as f64 / total_size as f64 * 100.0) as u32
-        } else {
-            0
-        };
-
-        // Emit progress event
+        // Emit a progress event to the frontend.
         app.emit_all(
-            "download_progress",
-            HashMap::from([
-                ("url", url.as_str()),
-                ("dest", dest.as_str()),
-                ("progress", &percentage.to_string()),
-                ("downloaded", &downloaded.to_string()),
-                ("total", &total_size.to_string()),
-            ]),
+            "download-progress",
+            ProgressPayload {
+                downloaded,
+                total: total_size,
+            },
         )
-        .map_err(|e| format!("Failed to emit download_progress event: {}", e))?;
+        .map_err(|e| format!("Failed to emit progress event: {}", e))?;
     }
 
     Ok(())
 }
 
+/// Spawns 'bambooclaw daemon' as a detached background process.
 #[tauri::command]
-async fn run_bambooclaw(app: AppHandle, args: Vec<String>) -> Result<String, String> {
-    let bambooclaw_bin = if cfg!(target_os = "windows") {
-        "bambooclaw.exe"
-    } else {
-        "bambooclaw"
-    };
-
-    println!("Running bambooclaw with args: {:?}", args);
-
-    let output = TokioCommand::new(bambooclaw_bin)
-        .args(&args)
-        .output()
-        .await
-        .map_err(|e| format!("Failed to execute bambooclaw: {}", e))?;
-
-    if output.status.success() {
-        String::from_utf8(output.stdout)
-            .map_err(|e| format!("Failed to parse bambooclaw stdout as UTF-8: {}", e))
-    } else {
-        let stderr = String::from_utf8(output.stderr)
-            .map_err(|e| format!("Failed to parse bambooclaw stderr as UTF-8: {}", e))?;
-        Err(format!(
-            "Bambooclaw command failed with exit code {}: {}",
-            output.status, stderr
-        ))
-    }
-}
-
-#[tauri::command]
-async fn start_daemon(app: AppHandle) -> Result<(), String> {
-    let bambooclaw_bin = if cfg!(target_os = "windows") {
-        "bambooclaw.exe"
-    } else {
-        "bambooclaw"
-    };
-
-    let mut daemon_guard = DAEMON_PROCESS.lock().map_err(|e| e.to_string())?;
-
-    if daemon_guard.is_some() {
-        return Err("Bambooclaw daemon is already running.".into());
-    }
-
-    println!("Starting bambooclaw daemon...");
-
-    // Spawn the daemon as a detached process
-    let child = TokioCommand::new(bambooclaw_bin)
+fn start_daemon() -> Result<(), String> {
+    // Use Command::spawn() to run the process without waiting for it.
+    // By not capturing the `Child` process handle, it becomes detached.
+    Command::new("bambooclaw")
         .arg("daemon")
-        .stdin(Stdio::null()) // Detach stdin
-        .stdout(Stdio::null()) // Detach stdout
-        .stderr(Stdio::null()) // Detach stderr
         .spawn()
-        .map_err(|e| format!("Failed to spawn bambooclaw daemon: {}", e))?;
+        .map_err(|e| format!("Failed to start bambooclaw daemon: {}", e))?;
 
-    *daemon_guard = Some(child);
+    Ok(())
+}
 
-    // Optionally, log the PID
-    if let Some(pid) = daemon_guard.as_ref().and_then(|c| c.id()) {
-        println!("Bambooclaw daemon started with PID: {}", pid);
+/// Finds and kills any running 'bambooclaw' daemon processes.
+#[tauri::command]
+fn stop_daemon() -> Result<(), String> {
+    let mut sys = System::new_all();
+    // Refresh the process list to get the current state.
+    sys.refresh_processes();
+
+    // Determine the process name based on the OS.
+    let process_name = if cfg!(target_os = "windows") {
+        "bambooclaw.exe"
+    } else {
+        "bambooclaw"
+    };
+
+    let mut found = false;
+    for process in sys.processes_by_name(process_name) {
+        println!("Found running bambooclaw process with PID: {}", process.pid());
+        // Attempt to kill the process.
+        if process.kill() {
+            println!("Successfully sent kill signal to PID {}", process.pid());
+            found = true;
+        } else {
+            // This might happen due to permissions issues.
+            eprintln!("Failed to kill bambooclaw process with PID {}", process.pid());
+        }
+    }
+
+    if !found {
+        // It's not an error if the process wasn't running.
+        println!("No running bambooclaw daemon process found to stop.");
     }
 
     Ok(())
 }
 
+/// Reads the content of the BambooClaw configuration file.
 #[tauri::command]
-async fn stop_daemon(app: AppHandle) -> Result<(), String> {
-    let mut daemon_guard = DAEMON_PROCESS.lock().map_err(|e| e.to_string())?;
-
-    if let Some(mut child) = daemon_guard.take() {
-        // First, try to gracefully terminate
-        if let Err(e) = child.kill().await {
-            eprintln!("Failed to kill bambooclaw daemon (PID: {:?}): {}", child.id(), e);
-            return Err(format!("Failed to kill bambooclaw daemon: {}", e));
-        }
-        println!("Bambooclaw daemon (PID: {:?}) stopped.", child.id());
-        Ok(())
-    } else {
-        // If not tracked by our state, try to find and kill it manually
-        // This is OS-specific and more complex. For simplicity, we'll
-        // assume `DAEMON_PROCESS` is the primary way of tracking.
-        // A more robust solution would involve PID files or inter-process communication.
-        println!("No bambooclaw daemon process tracked by the installer. Attempting to find and kill processes named 'bambooclaw daemon'...");
-        #[cfg(target_os = "windows")]
-        {
-            let output = TokioCommand::new("taskkill")
-                .args(&["/F", "/IM", "bambooclaw.exe"])
-                .output()
-                .await
-                .map_err(|e| format!("Failed to run taskkill: {}", e))?;
-            if output.status.success() {
-                Ok("bambooclaw.exe processes terminated.".into())
-            } else {
-                Err(format!("taskkill failed: {}", String::from_utf8_lossy(&output.stderr)))
-            }
-        }
-        #[cfg(not(target_os = "windows"))]
-        {
-            let output = TokioCommand::new("pkill")
-                .arg("-f")
-                .arg("bambooclaw daemon") // Match process containing "bambooclaw daemon"
-                .output()
-                .await
-                 .map_err(|e| format!("Failed to run pkill: {}", e))?;
-            if output.status.success() {
-                Ok("bambooclaw daemon processes terminated.".into())
-            } else {
-                Err(format!("pkill failed (maybe no process found?): {}", String::from_utf8_lossy(&output.stderr)))
-            }
-        }
-    }
+async fn read_config() -> Result<String, String> {
+    let config_path = get_config_path()?;
+    fs::read_to_string(config_path)
+        .await
+        .map_err(|e| format!("Failed to read config file: {}", e))
 }
 
+/// Writes content to the BambooClaw configuration file.
 #[tauri::command]
-async fn read_config(app: AppHandle) -> Result<String, String> {
-    let config_path = get_bambooclaw_config_path().map_err(|e| e.to_string())?;
+async fn write_config(content: String) -> Result<(), String> {
+    let config_path = get_config_path()?;
 
-    if !config_path.exists() {
-        // Create an empty config file if it doesn't exist.
-        // It's better to create a default one for the user.
-        let parent_dir = config_path.parent().ok_or_else(|| "Invalid config path".to_string())?;
-        fs::create_dir_all(parent_dir).await.map_err(|e| format!("Failed to create config directory: {}", e))?;
-        fs::write(&config_path, "# Default BambooClaw configuration\n").await.map_err(|e| format!("Failed to create default config file: {}", e))?;
+    // Ensure the parent directory (`~/.bambooclaw`) exists before writing.
+    if let Some(parent) = config_path.parent() {
+        fs::create_dir_all(parent)
+            .await
+            .map_err(|e| format!("Failed to create config directory: {}", e))?;
     }
 
-    fs::read_to_string(&config_path)
+    fs::write(config_path, content)
         .await
-        .map_err(|e| format!("Failed to read config file {}: {}", config_path.display(), e))
+        .map_err(|e| format!("Failed to write to config file: {}", e))
 }
 
-#[tauri::command]
-async fn write_config(app: AppHandle, content: String) -> Result<(), String> {
-    let config_path = get_bambooclaw_config_path().map_err(|e| e.to_string())?;
 
-    let parent_dir = config_path.parent().ok_or_else(|| "Invalid config path".to_string())?;
-    fs::create_dir_all(parent_dir)
-        .await
-        .map_err(|e| format!("Failed to create config directory: {}", e))?;
+// --- Helper Functions ---
 
-    fs::write(&config_path, content)
-        .await
-        .map_err(|e| format!("Failed to write config file {}: {}", config_path.display(), e))
+/// Constructs the full path to the `config.toml` file in a cross-platform way.
+fn get_config_path() -> Result<PathBuf, String> {
+    // Use the `dirs` crate to reliably find the user's home directory.
+    let home_dir = dirs::home_dir().ok_or("Could not find home directory.")?;
+    Ok(home_dir.join(".bambooclaw").join("config.toml"))
 }
 
-#[tauri::command]
-fn get_platform() -> String {
-    if cfg!(target_os = "windows") {
-        "windows".into()
-    } else if cfg!(target_os = "macos") {
-        "macos".into()
-    } else if cfg!(target_os = "linux") {
-        "linux".into()
-    } else {
-        "unknown".into()
-    }
-}
-
-fn main() {
-    tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![
-            check_prerequisite,
-            run_shell_command,
-            download_binary,
-            run_bambooclaw,
-            start_daemon,
-            stop_daemon,
-            read_config,
-            write_config,
-            get_platform
+/// A Windows-specific helper to check for Visual Studio Build Tools.
+/// It uses the `vswhere.exe` utility, which is the official way to locate VS installations.
+#[cfg(target_os = "windows")]
+fn check_windows_vs_build_tools() -> Result<String, String> {
+    let output = Command::new("vswhere")
+        .args([
+            "-latest",
+            "-requires", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+            "-property", "installationPath"
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .output();
+
+    match output {
+        Ok(out) if out.status.success() && !out.stdout.is_empty() => {
+            let path = String::from_utf8_lossy(&out.stdout).trim().to_string();
+            Ok(format!("Found Visual Studio installation at: {}", path))
+        }
+        _ => {
+            Err("Visual Studio Build Tools (C++) not found. Please install them from the Visual Studio Installer.".to_string())
+        }
+    }
 }

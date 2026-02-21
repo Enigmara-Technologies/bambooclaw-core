@@ -1,341 +1,871 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BambooClaw Installer</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BambooClaw Companion</title>
+    <style>
+        /* --- GLOBAL STYLES & THEME --- */
+        :root {
+            --bg-deep-obsidian: #0a0a0f;
+            --bg-obsidian-card: #1a1a2e;
+            --bg-obsidian-card-glass: rgba(26, 26, 46, 0.6);
+            --accent-emerald: #00ff99;
+            --accent-emerald-dark: #00cc7a;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0b0;
+            --border-color: #2a2a3e;
+            --success-color: #34d399;
+            --error-color: #f87171;
+            --warning-color: #fbbf24;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
 
-    :root {
-      --bg: #0a0e14;
-      --surface: #131922;
-      --surface2: #1a2233;
-      --border: #1e2a3a;
-      --text: #e6edf3;
-      --text-muted: #7d8a9a;
-      --primary: #3fb950;
-      --primary-glow: rgba(63, 185, 80, 0.15);
-      --accent: #58a6ff;
-      --warning: #d29922;
-      --radius: 12px;
-    }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-    body {
-      font-family: 'Inter', -apple-system, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      height: 100vh;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-deep-obsidian);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 20px;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
+            background-size: 20px 20px;
+        }
 
-    /* Title bar drag region */
-    .titlebar {
-      height: 32px;
-      background: var(--surface);
-      -webkit-app-region: drag;
-      display: flex;
-      align-items: center;
-      padding: 0 12px;
-      font-size: 11px;
-      color: var(--text-muted);
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-    .titlebar span { opacity: 0.7; }
+        #app-container {
+            width: 100%;
+            height: 100%;
+            max-width: 1024px;
+            max-height: 768px;
+            background: var(--bg-obsidian-card-glass);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
-    .container {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 32px;
-      position: relative;
-      overflow: hidden;
-    }
+        .hidden {
+            display: none !important;
+        }
 
-    /* Animated background grid */
-    .bg-grid {
-      position: absolute;
-      inset: 0;
-      background-image:
-        linear-gradient(var(--border) 1px, transparent 1px),
-        linear-gradient(90deg, var(--border) 1px, transparent 1px);
-      background-size: 40px 40px;
-      opacity: 0.3;
-      animation: gridMove 20s linear infinite;
-    }
-    @keyframes gridMove {
-      0% { transform: translate(0, 0); }
-      100% { transform: translate(40px, 40px); }
-    }
+        /* --- HEADER & LOGO --- */
+        .app-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
 
-    /* Radial glow */
-    .glow {
-      position: absolute;
-      width: 500px; height: 500px;
-      border-radius: 50%;
-      background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      animation: pulse 4s ease-in-out infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
-      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
-    }
+        .app-logo {
+            width: 32px;
+            height: 32px;
+        }
 
-    .content {
-      position: relative;
-      z-index: 1;
-      text-align: center;
-      max-width: 480px;
-      width: 100%;
-    }
+        .app-header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .app-header h1 span {
+            color: var(--accent-emerald);
+        }
 
-    .logo {
-      width: 72px; height: 72px;
-      margin: 0 auto 20px;
-      background: linear-gradient(135deg, var(--primary), var(--accent));
-      border-radius: 18px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 32px; font-weight: 700;
-      box-shadow: 0 0 40px var(--primary-glow);
-      animation: logoFloat 3s ease-in-out infinite;
-    }
-    @keyframes logoFloat {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-6px); }
-    }
+        /* --- INSTALLER WIZARD --- */
+        #installer-wizard {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
 
-    h1 {
-      font-size: 28px;
-      font-weight: 700;
-      margin-bottom: 6px;
-      background: linear-gradient(135deg, var(--text), var(--primary));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .version {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-bottom: 32px;
-    }
+        .installer-content {
+            flex-grow: 1;
+            padding: 24px;
+            overflow-y: auto;
+        }
 
-    /* Steps */
-    .steps {
-      width: 100%;
-      margin-bottom: 28px;
-    }
-    .step {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 16px;
-      border-radius: var(--radius);
-      margin-bottom: 6px;
-      font-size: 13px;
-      color: var(--text-muted);
-      transition: all 0.4s ease;
-      background: transparent;
-    }
-    .step.active {
-      background: var(--surface2);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-    .step.done { color: var(--primary); }
-    .step.done .step-icon { background: var(--primary); color: var(--bg); }
-    .step.active .step-icon { background: var(--accent); color: white; animation: spinIcon 1.5s linear infinite; }
-    .step.pending .step-icon { background: var(--surface2); color: var(--text-muted); }
+        .stepper {
+            display: flex;
+            justify-content: space-around;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(0,0,0,0.2);
+        }
 
-    .step-icon {
-      width: 26px; height: 26px;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 12px; font-weight: 600;
-      flex-shrink: 0;
-      transition: all 0.3s;
-    }
-    @keyframes spinIcon {
-      0% { box-shadow: 0 0 0 0 rgba(88, 166, 255, 0.4); }
-      100% { box-shadow: 0 0 0 8px rgba(88, 166, 255, 0); }
-    }
+        .step {
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            gap: 8px;
+            color: var(--text-secondary);
+            transition: color 0.3s ease;
+        }
+        .step.active { color: var(--accent-emerald); }
+        .step.completed { color: var(--text-primary); }
+        .step.completed .step-circle { border-color: var(--accent-emerald); background-color: var(--accent-emerald); }
+        .step.active .step-circle { border-color: var(--accent-emerald); }
 
-    .step-label { flex: 1; text-align: left; }
-    .step-status { font-size: 11px; opacity: 0.6; }
+        .step-circle {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
 
-    /* Progress bar */
-    .progress-wrap {
-      width: 100%;
-      height: 4px;
-      background: var(--surface2);
-      border-radius: 2px;
-      overflow: hidden;
-      margin-bottom: 12px;
-    }
-    .progress-bar {
-      height: 100%;
-      background: linear-gradient(90deg, var(--primary), var(--accent));
-      border-radius: 2px;
-      width: 0%;
-      transition: width 0.5s ease;
-    }
+        .step-title {
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
 
-    .status-text {
-      font-size: 12px;
-      color: var(--text-muted);
-      min-height: 18px;
-    }
+        .installer-step-content {
+            animation: fadeIn 0.5s ease;
+        }
 
-    /* Complete state */
-    .complete-msg {
-      display: none;
-      animation: fadeIn 0.6s ease;
-    }
-    .complete-msg.show { display: block; }
-    .complete-msg h2 {
-      font-size: 22px;
-      color: var(--primary);
-      margin-bottom: 8px;
-    }
-    .complete-msg p {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-bottom: 20px;
-    }
-    .btn {
-      padding: 10px 28px;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      background: var(--primary);
-      color: var(--bg);
-      transition: all 0.2s;
-    }
-    .btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-  </style>
+        .step-content-title {
+            font-size: 1.25rem;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        /* Installer Step 1: System Check */
+        .prereq-list { list-style: none; }
+        .prereq-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-radius: 6px;
+            background: rgba(0,0,0,0.1);
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        .prereq-name { flex-grow: 1; font-weight: 500; }
+        .prereq-version { color: var(--text-secondary); margin-right: 12px; }
+        .prereq-status .icon { width: 20px; height: 20px; }
+
+        /* Installer Step 2 & 3: Command Output */
+        .command-output {
+            background-color: var(--bg-deep-obsidian);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 16px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            color: var(--text-secondary);
+        }
+
+        .installer-navigation {
+            padding: 20px 24px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: auto;
+        }
+        
+        /* --- COMPANION DASHBOARD --- */
+        #companion-dashboard {
+            display: flex;
+            height: 100%;
+        }
+
+        .dashboard-nav {
+            width: 220px;
+            flex-shrink: 0;
+            border-right: 1px solid var(--border-color);
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .dashboard-nav-header { padding: 0 20px 20px 20px; border-bottom: 1px solid var(--border-color); }
+
+        .nav-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            color: var(--text-secondary);
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item:hover { background-color: rgba(255,255,255,0.05); }
+
+        .nav-item.active {
+            color: var(--text-primary);
+            border-left-color: var(--accent-emerald);
+            background-color: var(--bg-obsidian-card);
+        }
+        
+        .dashboard-nav-footer { margin-top: auto; padding: 20px; font-size: 0.8rem; color: var(--text-secondary); }
+        #installed-version { color: var(--accent-emerald); }
+
+        .dashboard-content {
+            flex-grow: 1;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .tab-content { animation: fadeIn 0.5s ease; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9rem; }
+        
+        .form-row { display: flex; gap: 16px; align-items: center; }
+        .form-row > * { flex: 1; }
+
+        input[type="text"], input[type="password"], select {
+            width: 100%;
+            background-color: var(--bg-deep-obsidian);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px 12px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-emerald);
+            box-shadow: 0 0 0 2px rgba(0, 255, 153, 0.3);
+        }
+
+        /* Special components */
+        .toggle-switch { display: flex; align-items: center; gap: 12px; }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--border-color);
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px; width: 20px;
+            left: 4px; bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--accent-emerald); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        /* --- BUTTONS --- */
+        .button {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: 1px solid var(--accent-emerald);
+            background-color: transparent;
+            color: var(--accent-emerald);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .button:hover {
+            background-color: var(--accent-emerald);
+            color: var(--bg-deep-obsidian);
+        }
+        .button.primary {
+            background-color: var(--accent-emerald);
+            color: var(--bg-deep-obsidian);
+        }
+        .button.primary:hover {
+            background-color: var(--accent-emerald-dark);
+            border-color: var(--accent-emerald-dark);
+        }
+        .button:disabled {
+            border-color: var(--border-color);
+            background-color: transparent;
+            color: var(--text-secondary);
+            cursor: not-allowed;
+        }
+        .button.primary:disabled {
+            background-color: var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        /* --- ICONS --- */
+        .icon-spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .icon-success { color: var(--success-color); }
+        .icon-error { color: var(--error-color); }
+        .icon-warning { color: var(--warning-color); }
+
+        /* --- HELPER CLASSES --- */
+        .card {
+            background: var(--bg-obsidian-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .status-badge.offline { background-color: #4b0000; color: var(--error-color); }
+        .status-badge.online { background-color: #004d33; color: var(--success-color); }
+
+    </style>
 </head>
 <body>
-  <div class="titlebar"><span>🎋 BambooClaw Installer</span></div>
-  <div class="container">
-    <div class="bg-grid"></div>
-    <div class="glow"></div>
-    <div class="content" id="installer">
-      <div class="logo">🎋</div>
-      <h1>BambooClaw</h1>
-      <p class="version">v1.0.1 — Bamboo Synergy Prosperity</p>
+    <!-- App Container -->
+    <div id="app-container">
 
-      <div class="steps" id="steps">
-        <div class="step pending" data-step="0">
-          <div class="step-icon">1</div>
-          <span class="step-label">Checking system requirements</span>
-          <span class="step-status"></span>
-        </div>
-        <div class="step pending" data-step="1">
-          <div class="step-icon">2</div>
-          <span class="step-label">Preparing installation directory</span>
-          <span class="step-status"></span>
-        </div>
-        <div class="step pending" data-step="2">
-          <div class="step-icon">3</div>
-          <span class="step-label">Installing core engines</span>
-          <span class="step-status"></span>
-        </div>
-        <div class="step pending" data-step="3">
-          <div class="step-icon">4</div>
-          <span class="step-label">Configuring environment</span>
-          <span class="step-status"></span>
-        </div>
-        <div class="step pending" data-step="4">
-          <div class="step-icon">5</div>
-          <span class="step-label">Finalizing setup</span>
-          <span class="step-status"></span>
-        </div>
-      </div>
+        <!-- Phase 1: Installer Wizard -->
+        <div id="installer-wizard">
+            <header class="app-header">
+                <svg class="app-logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 8C15 6.34315 13.6569 5 12 5C10.3431 5 9 6.34315 9 8V11H15V8Z" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M12 19.5C14.4853 19.5 16.5 17.4853 16.5 15C16.5 12.5147 14.4853 10.5 12 10.5C9.51472 10.5 7.5 12.5147 7.5 15C7.5 17.4853 9.51472 19.5 12 19.5Z" stroke="var(--accent-emerald)" stroke-width="1.5"/>
+                    <path d="M12 2V3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M22 12L21 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M3 12L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M18.364 5.63604L17.6569 6.34315" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M6.34315 17.6569L5.63604 18.364" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M18.364 18.364L17.6569 17.6569" stroke="var(--accent-emerald)" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M6.34315 6.34315L5.63604 5.63604" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <h1>BambooClaw <span>Companion</span></h1>
+            </header>
 
-      <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
-      <p class="status-text" id="statusText">Initializing…</p>
+            <div class="stepper">
+                <div class="step active" data-step="1">
+                    <div class="step-circle">1</div>
+                    <div class="step-title">System Check</div>
+                </div>
+                <div class="step" data-step="2">
+                    <div class="step-circle">2</div>
+                    <div class="step-title">Prerequisites</div>
+                </div>
+                <div class="step" data-step="3">
+                    <div class="step-circle">3</div>
+                    <div class="step-title">Install Core</div>
+                </div>
+                <div class="step" data-step="4">
+                    <div class="step-circle">4</div>
+                    <div class="step-title">Finalize</div>
+                </div>
+            </div>
+
+            <main class="installer-content">
+                <!-- Step 1: System Check -->
+                <div id="step-1" class="installer-step-content">
+                    <h2 class="step-content-title">Checking Your System...</h2>
+                    <p class="text-secondary" style="margin-bottom: 20px;">We're checking for required tools to install and run BambooClaw.</p>
+                    <ul class="prereq-list" id="prereq-list">
+                        <!-- JS will populate this -->
+                    </ul>
+                </div>
+
+                <!-- Step 2: Install Prerequisites -->
+                <div id="step-2" class="installer-step-content hidden">
+                    <h2 class="step-content-title">Install Prerequisites</h2>
+                    <p class="text-secondary" style="margin-bottom: 20px;">We need to install some tools. This may require administrative privileges.</p>
+                    <div id="prereq-install-output" class="command-output">Ready to install required build tools and Rust...</div>
+                </div>
+
+                <!-- Step 3: Install BambooClaw Core -->
+                <div id="step-3" class="installer-step-content hidden">
+                    <h2 class="step-content-title">Install BambooClaw Core Agent</h2>
+                    <p class="text-secondary" style="margin-bottom: 20px;">Choose your installation method. We recommend the pre-built binary for most users.</p>
+                    <div class="card">
+                        <h3>Recommended: Pre-built Binary</h3>
+                        <p class="text-secondary" style="margin-bottom: 16px;">Fastest and easiest method. Downloads the latest official release for your OS.</p>
+                        <button id="install-binary-btn" class="button primary">Download Latest Release</button>
+                    </div>
+                    <div class="card">
+                        <h3>Advanced: Build from Source</h3>
+                        <p class="text-secondary" style="margin-bottom: 16px;">Compile the latest code directly from the source repository. Requires Git and Rust toolchain.</p>
+                        <button id="install-source-btn" class="button">Build from Source</button>
+                    </div>
+                    <div id="bambooclaw-install-output" class="command-output hidden" style="margin-top: 20px;"></div>
+                </div>
+
+                <!-- Step 4: Finalization -->
+                <div id="step-4" class="installer-step-content hidden">
+                    <h2 class="step-content-title">Installation Complete!</h2>
+                    <p class="text-secondary" style="margin-bottom: 20px;">BambooClaw Core has been successfully installed on your system.</p>
+                    <div class="card">
+                      <h3>Version: <span id="final-version" class="text-primary"></span></h3>
+                      <p>You can now proceed to the dashboard to configure your AI agent.</p>
+                    </div>
+                </div>
+            </main>
+
+            <footer class="installer-navigation">
+                <button id="back-btn" class="button hidden">Back</button>
+                <button id="next-btn" class="button primary">Next</button>
+            </footer>
+        </div>
+
+        <!-- Phase 2: Companion Dashboard -->
+        <div id="companion-dashboard" class="hidden">
+            <nav class="dashboard-nav">
+                <div class="dashboard-nav-header">
+                  <h2 style="font-size:1.1rem">BambooClaw</h2>
+                  <p class="text-secondary" style="font-size:0.9rem">AI Agent Control</p>
+                </div>
+                <div class="nav-item active" data-tab="llm-config">LLM Configuration</div>
+                <div class="nav-item" data-tab="channel-setup">Channel Setup</div>
+                <div class="nav-item" data-tab="agent-control">Agent Control</div>
+                <div class="nav-item" data-tab="settings">Settings</div>
+                <div class="dashboard-nav-footer">
+                  Version: <span id="installed-version"></span>
+                </div>
+            </nav>
+
+            <main class="dashboard-content">
+                <!-- Tab 1: LLM Configuration -->
+                <div id="llm-config" class="tab-content">
+                    <h2 class="step-content-title">LLM Configuration</h2>
+                    <div class="card">
+                        <div class="form-group">
+                            <label for="llm-provider">LLM Provider</label>
+                            <select id="llm-provider">
+                                <option value="openai">OpenAI</option>
+                                <option value="anthropic">Anthropic</option>
+                                <option value="google">Google Gemini</option>
+                                <option value="openrouter">OpenRouter</option>
+                                <option value="ollama">Ollama (local)</option>
+                                <option value="deepseek">DeepSeek</option>
+                                <option value="groq">Groq</option>
+                                <option value="mistral">Mistral AI</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="api-key">API Key</label>
+                            <input type="password" id="api-key" placeholder="Enter your API key">
+                        </div>
+                        <div class="form-row">
+                          <div class="form-group">
+                              <label for="llm-model">Model</label>
+                              <input type="text" id="llm-model" placeholder="e.g., gpt-4o">
+                          </div>
+                          <div class="form-group">
+                              <label for="memory-backend">Memory Backend</label>
+                              <select id="memory-backend">
+                                  <option value="json">JSON File</option>
+                                  <option value="sqlite">SQLite</option>
+                                  <option value="in-memory">In-Memory</option>
+                              </select>
+                          </div>
+                        </div>
+                        <div style="display: flex; gap: 12px; margin-top: 10px;">
+                          <button id="save-llm-btn" class="button primary">Save Config</button>
+                          <button id="test-llm-btn" class="button">Test Connection</button>
+                        </div>
+                        <p id="llm-test-result" class="text-secondary" style="margin-top: 15px;"></p>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Channel Setup -->
+                <div id="channel-setup" class="tab-content hidden">
+                    <h2 class="step-content-title">Channel Setup</h2>
+                    <div class="card">
+                      <h3>Telegram</h3>
+                      <p class="text-secondary" style="margin-bottom:16px;">Connect a Telegram bot. Get a token from <a href="https://t.me/BotFather" target="_blank" style="color: var(--accent-emerald);">@BotFather</a>.</p>
+                      <div class="form-row">
+                        <input type="text" placeholder="Telegram Bot Token">
+                        <button class="button">Test Channel</button>
+                      </div>
+                    </div>
+                    <div class="card">
+                      <h3>Discord</h3>
+                      <p class="text-secondary" style="margin-bottom:16px;">Connect a Discord bot. Get a token from the Discord Developer Portal.</p>
+                      <div class="form-row">
+                        <input type="text" placeholder="Discord Bot Token">
+                        <button class="button">Test Channel</button>
+                      </div>
+                    </div>
+                    
+                </div>
+
+                <!-- Tab 3: Agent Control -->
+                <div id="agent-control" class="tab-content hidden">
+                  <h2 class="step-content-title">Agent Control</h2>
+                  <div class="card">
+                    <div style="display:flex; justify-content: space-between; align-items: start;">
+                      <div>
+                        <h3>Agent Daemon</h3>
+                        <div class="toggle-switch">
+                          <label class="switch">
+                            <input type="checkbox" id="agent-toggle">
+                            <span class="slider"></span>
+                          </label>
+                          <span>Start / Stop Agent</span>
+                        </div>
+                      </div>
+                      <div style="text-align: right;">
+                        <h3>Status</h3>
+                        <span id="agent-status-badge" class="status-badge offline">OFFLINE</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card">
+                      <h3>Live Log Viewer</h3>
+                      <div class="command-output" style="height: 200px;">Waiting for agent to start...</div>
+                  </div>
+                </div>
+
+                <!-- Tab 4: Settings -->
+                <div id="settings" class="tab-content hidden">
+                  <h2 class="step-content-title">General Settings</h2>
+                  <p class="text-secondary">Feature stubs for demonstration.</p>
+                   <div class="card">
+                      <div class="form-group">
+                        <label for="autonomy-level">Autonomy Level</label>
+                        <select id="autonomy-level">
+                          <option>Assistive</option>
+                          <option>Autonomous</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label>Security</label>
+                        <p class="text-secondary">Code Execution Sandbox: Enabled</p>
+                      </div>
+                   </div>
+                </div>
+
+            </main>
+        </div>
     </div>
 
-    <div class="complete-msg" id="complete">
-      <div class="logo">✓</div>
-      <h2>Installation Complete!</h2>
-      <p>BambooClaw is ready. You can close this window.</p>
-      <button class="btn" onclick="window.close()">Close Installer</button>
-    </div>
-  </div>
 
-  <script>
-    const steps = document.querySelectorAll('.step');
-    const bar = document.getElementById('progressBar');
-    const status = document.getElementById('statusText');
-    const installer = document.getElementById('installer');
-    const complete = document.getElementById('complete');
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- TAURI API ---
+        const invoke = window.__TAURI__.invoke;
 
-    const tasks = [
-      { label: 'Verifying OS compatibility…', dur: 1800 },
-      { label: 'Creating application folder…', dur: 1400 },
-      { label: 'Extracting Rust + Go engines…', dur: 3200 },
-      { label: 'Writing config files…', dur: 1600 },
-      { label: 'Registering shortcuts…', dur: 1200 },
-    ];
+        // --- GLOBAL ELEMENTS ---
+        const installerWizard = document.getElementById('installer-wizard');
+        const companionDashboard = document.getElementById('companion-dashboard');
+        const nextBtn = document.getElementById('next-btn');
+        const backBtn = document.getElementById('back-btn');
 
-    let current = 0;
+        // --- SVG ICONS ---
+        const ICONS = {
+            spinner: `<svg class="icon icon-spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v.01" /><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 7.5a9 9 0 1 1-9 9" /></svg>`,
+            success: `<svg class="icon icon-success" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>`,
+            error: `<svg class="icon icon-error" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>`,
+            warning: `<svg class="icon icon-warning" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>`
+        };
+        
+        // --- STATE ---
+        let currentStep = 1;
+        let platform = '';
+        const prereqState = {};
 
-    function runStep() {
-      if (current >= tasks.length) {
-        bar.style.width = '100%';
-        status.textContent = '';
-        setTimeout(() => {
-          installer.style.display = 'none';
-          complete.classList.add('show');
-        }, 500);
-        return;
-      }
+        // --- UI TRANSITIONS ---
+        const showInstaller = () => {
+            installerWizard.classList.remove('hidden');
+            companionDashboard.classList.add('hidden');
+            runStep1_SystemCheck();
+        };
 
-      steps[current].classList.remove('pending');
-      steps[current].classList.add('active');
-      status.textContent = tasks[current].label;
+        const showDashboard = (version) => {
+            document.getElementById('installed-version').textContent = version || 'N/A';
+            installerWizard.classList.add('hidden');
+            companionDashboard.classList.remove('hidden');
+            initDashboard();
+        };
+        
+        const navigateToStep = (step) => {
+            currentStep = step;
+            // Update stepper UI
+            document.querySelectorAll('.stepper .step').forEach(s => {
+                const stepNum = parseInt(s.dataset.step, 10);
+                s.classList.remove('active', 'completed');
+                if (stepNum < currentStep) s.classList.add('completed');
+                if (stepNum === currentStep) s.classList.add('active');
+            });
+            // Show/hide step content
+            document.querySelectorAll('.installer-step-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`step-${currentStep}`).classList.remove('hidden');
+            // Update nav buttons
+            backBtn.classList.toggle('hidden', currentStep === 1);
+            nextBtn.textContent = currentStep === 4 ? 'Go to Dashboard' : 'Next';
+            if (currentStep === 4) { // Finalization
+                const installedVersion = localStorage.getItem('bambooClawVersion') || 'Unknown';
+                document.getElementById('final-version').textContent = installedVersion;
+            }
+        };
 
-      const startPct = (current / tasks.length) * 100;
-      const endPct = ((current + 1) / tasks.length) * 100;
-      bar.style.width = startPct + '%';
+        // --- INSTALLER LOGIC ---
+        const setPrereqStatus = (id, name, status, text = '') => {
+            const list = document.getElementById('prereq-list');
+            let item = document.getElementById(`prereq-${id}`);
+            if (!item) {
+                item = document.createElement('li');
+                item.id = `prereq-${id}`;
+                item.className = 'prereq-item';
+                list.appendChild(item);
+            }
+            item.innerHTML = `<span class="prereq-name">${name}</span><span class="prereq-version">${text}</span><span class="prereq-status">${status}</span>`;
+        };
 
-      // Animate progress within step
-      const start = performance.now();
-      const dur = tasks[current].dur;
-      function tick(now) {
-        const elapsed = now - start;
-        const p = Math.min(elapsed / dur, 1);
-        bar.style.width = (startPct + (endPct - startPct) * p) + '%';
-        if (p < 1) requestAnimationFrame(tick);
-      }
-      requestAnimationFrame(tick);
+        const runStep1_SystemCheck = async () => {
+            nextBtn.disabled = true;
+            try {
+                platform = await invoke('get_platform');
+                setPrereqStatus('os', 'Operating System', ICONS.success, platform);
+            } catch (e) {
+                setPrereqStatus('os', 'Operating System', ICONS.error, 'Detection Failed');
+                nextBtn.disabled = false;
+                return;
+            }
+            
+            const checks = [
+                { id: 'rustc', name: 'Rust Compiler (rustc)' },
+                { id: 'cargo', name: 'Rust Package Manager (cargo)' },
+                { id: 'git', name: 'Git' },
+            ];
+            if (platform === 'windows') checks.push({ id: 'winget', name: 'Winget Package Manager' });
+            
+            for (const check of checks) {
+                setPrereqStatus(check.id, check.name, ICONS.spinner);
+                try {
+                    const version = await invoke('check_prerequisite', { name: check.id });
+                    setPrereqStatus(check.id, check.name, ICONS.success, version);
+                    prereqState[check.id] = { found: true, version };
+                } catch (error) {
+                    setPrereqStatus(check.id, check.name, ICONS.error, 'Not Found');
+                    prereqState[check.id] = { found: false, error };
+                }
+            }
+            nextBtn.disabled = false;
+        };
 
-      setTimeout(() => {
-        steps[current].classList.remove('active');
-        steps[current].classList.add('done');
-        steps[current].querySelector('.step-icon').textContent = '✓';
-        steps[current].querySelector('.step-status').textContent = 'Done';
-        current++;
-        runStep();
-      }, tasks[current].dur);
-    }
+        const runStep2_InstallPrereqs = async () => {
+            nextBtn.disabled = true;
+            backBtn.disabled = true;
+            const outputEl = document.getElementById('prereq-install-output');
+            outputEl.innerHTML = '';
+            
+            const requiredInstalls = [];
+            if (!prereqState.rustc?.found) {
+                requiredInstalls.push(platform === 'windows' ? 'winget install --id Rustlang.Rustup -e --accept-package-agreements --accept-source-agreements' : 'curl --proto \'=https\' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y');
+            }
+            // Simplified logic: Assume build tools need installation if rustc is missing.
+            if (!prereqState.rustc?.found) {
+                if (platform === 'windows') {
+                    requiredInstalls.unshift('winget install --id Microsoft.VisualStudio.2022.BuildTools --override "--wait --quiet --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64" -e --accept-package-agreements');
+                } else if (platform === 'macos') {
+                    requiredInstalls.unshift('xcode-select --install');
+                } else if (platform === 'linux') {
+                    requiredInstalls.unshift('sudo apt-get update && sudo apt-get install build-essential -y');
+                }
+            }
+            
+            if (requiredInstalls.length === 0) {
+                outputEl.innerHTML += 'All prerequisites already satisfied.\n';
+                navigateToStep(3);
+                backBtn.disabled = false;
+                return;
+            }
 
-    // Start after a brief delay
-    setTimeout(runStep, 800);
-  </script>
+            for (const cmd of requiredInstalls) {
+                outputEl.innerHTML += `\n$ ${cmd}\n`;
+                try {
+                    const result = await invoke('run_shell_command', { command: cmd });
+                    outputEl.innerHTML += result + '\n';
+                } catch (e) {
+                    outputEl.innerHTML += `\nERROR: ${e}\nInstallation failed. Please try installing manually and restart the app.`;
+                    backBtn.disabled = false;
+                    return;
+                }
+            }
+            outputEl.innerHTML += '\nPrerequisite installation complete. You may need to restart the application for path changes to take effect.';
+            nextBtn.disabled = false;
+            backBtn.disabled = false;
+        };
+
+        const runStep3_InstallBambooClaw = async (method) => {
+            nextBtn.disabled = true;
+            backBtn.disabled = true;
+            document.getElementById('install-binary-btn').disabled = true;
+            document.getElementById('install-source-btn').disabled = true;
+
+            const outputEl = document.getElementById('bambooclaw-install-output');
+            outputEl.classList.remove('hidden');
+            outputEl.innerHTML = `Starting installation via ${method}...\n`;
+
+            try {
+                let result;
+                if (method === 'binary') {
+                    outputEl.innerHTML += 'Downloading latest release...\n';
+                    result = await invoke('download_binary', { 
+                        repo: 'Enigmara-Technologies/bambooclaw-core' 
+                    });
+                } else {
+                    outputEl.innerHTML += 'Building from source (this may take several minutes)...\n';
+                    const cmd = 'cargo install --git https://github.com/Enigmara-Technologies/bambooclaw-core.git --force';
+                    outputEl.innerHTML += `$ ${cmd}\n`;
+                    result = await invoke('run_shell_command', { command: cmd });
+                }
+                outputEl.innerHTML += result;
+                outputEl.innerHTML += '\n\nVerifying installation...';
+
+                const version = await invoke('run_bambooclaw', { args: ['--version'] });
+                outputEl.innerHTML += `\nSuccess! ${version}`;
+                localStorage.setItem('bambooClawInstalled', 'true');
+                localStorage.setItem('bambooClawVersion', version.trim());
+                nextBtn.disabled = false;
+
+            } catch (e) {
+                outputEl.innerHTML += `\nERROR: Installation failed.\n${e}`;
+            } finally {
+                backBtn.disabled = false;
+                document.getElementById('install-binary-btn').disabled = false;
+                document.getElementById('install-source-btn').disabled = false;
+            }
+        };
+
+        // --- DASHBOARD LOGIC ---
+        const initDashboard = () => {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    document.querySelector('.nav-item.active').classList.remove('active');
+                    item.classList.add('active');
+                    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.add('hidden'));
+                    document.getElementById(item.dataset.tab).classList.remove('hidden');
+                });
+            });
+
+            document.getElementById('save-llm-btn').addEventListener('click', async () => {
+                const config = {
+                    provider: document.getElementById('llm-provider').value,
+                    api_key: document.getElementById('api-key').value,
+                    model: document.getElementById('llm-model').value,
+                    memory_backend: document.getElementById('memory-backend').value,
+                };
+                try {
+                    const result = await invoke('write_config', { config });
+                    alert('Configuration saved successfully!');
+                } catch(e) {
+                    alert(`Error saving config: ${e}`);
+                }
+            });
+
+            document.getElementById('test-llm-btn').addEventListener('click', async () => {
+                const resultEl = document.getElementById('llm-test-result');
+                resultEl.textContent = 'Pinging agent...';
+                try {
+                    const response = await invoke('run_bambooclaw', { args: ['agent', '-m', 'ping'] });
+                    resultEl.textContent = `Success! Response: ${response}`;
+                    resultEl.style.color = 'var(--success-color)';
+                } catch(e) {
+                    resultEl.textContent = `Failed! Error: ${e}`;
+                    resultEl.style.color = 'var(--error-color)';
+                }
+            });
+
+            document.getElementById('agent-toggle').addEventListener('change', (e) => {
+                const badge = document.getElementById('agent-status-badge');
+                if (e.target.checked) {
+                    // invoke('start_agent_daemon')...
+                    badge.textContent = 'ONLINE';
+                    badge.className = 'status-badge online';
+                } else {
+                    // invoke('stop_agent_daemon')...
+                    badge.textContent = 'OFFLINE';
+                    badge.className = 'status-badge offline';
+                }
+            });
+        };
+
+        // --- GLOBAL EVENT LISTENERS ---
+        nextBtn.addEventListener('click', () => {
+            if (currentStep === 1) {
+                const hasMissingPrereqs = Object.values(prereqState).some(p => !p.found);
+                navigateToStep(hasMissingPrereqs ? 2 : 3);
+            } else if (currentStep === 2) {
+                runStep2_InstallPrereqs();
+            } else if (currentStep === 3) {
+                 if (localStorage.getItem('bambooClawInstalled') === 'true') {
+                    navigateToStep(4);
+                 } else {
+                    alert('Please install BambooClaw Core before proceeding.');
+                 }
+            } else if (currentStep === 4) {
+                showDashboard(localStorage.getItem('bambooClawVersion'));
+            }
+        });
+
+        backBtn.addEventListener('click', () => {
+            if (currentStep > 1) {
+                navigateToStep(currentStep - 1);
+            }
+        });
+        
+        document.getElementById('install-binary-btn').addEventListener('click', () => runStep3_InstallBambooClaw('binary'));
+        document.getElementById('install-source-btn').addEventListener('click', () => runStep3_InstallBambooClaw('source'));
+
+
+        // --- INITIALIZATION ---
+        const startup = async () => {
+            try {
+                // A quick check to see if the executable is available.
+                const version = await invoke('run_bambooclaw', { args: ["--version"] }).catch(() => null);
+
+                if (version) {
+                    localStorage.setItem('bambooClawInstalled', 'true');
+                    localStorage.setItem('bambooClawVersion', version.trim());
+                    showDashboard(version);
+                } else {
+                    localStorage.removeItem('bambooClawInstalled');
+                    showInstaller();
+                }
+            } catch (e) {
+                console.error("Initialization check failed, starting installer.", e);
+                showInstaller();
+            }
+        };
+
+        startup();
+    });
+    </script>
 </body>
 </html>
