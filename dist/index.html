@@ -4,1296 +4,561 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BambooClaw Companion</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-primary: #0a0a0f;
-            --bg-secondary: #1a1a2e;
-            --bg-card: #1e1e2e;
-            --text-primary: #e0e0e0;
-            --text-secondary: #a0a0a0;
-            --accent: #10b981; /* Emerald */
-            --accent-hover: #059669;
-            --border: #2d2d44;
+            --bg: #0a0a0f;
+            --card: #12121e;
+            --accent: #10b981;
+            --accent-glow: rgba(16, 185, 129, 0.2);
+            --text: #e2e8f0;
+            --text-dim: #94a3b8;
+            --border: #1e293b;
             --error: #ef4444;
             --warning: #f59e0b;
-            --glass: rgba(26, 26, 46, 0.7);
-            --font-mono: 'Courier New', Courier, monospace;
-            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
         }
 
-        * { box-sizing: border-box; }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
-            font-family: var(--font-sans);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
             overflow: hidden;
+            height: 100vh;
         }
 
-        /* --- Layout & Typography --- */
-        .app-container {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            width: 100%;
-        }
-
-        header {
-            background: var(--bg-secondary);
+        /* Layout */
+        #app { display: flex; flex-direction: column; height: 100vh; }
+        header { 
+            padding: 1.5rem 2rem; 
             border-bottom: 1px solid var(--border);
-            padding: 1rem 1.5rem;
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            backdrop-filter: blur(10px);
-        }
-
-        .brand {
-            font-size: 1.2rem;
-            font-weight: 700;
-            letter-spacing: 1px;
-            color: var(--accent);
-            text-transform: uppercase;
-            display: flex;
             align-items: center;
-            gap: 10px;
+            background: rgba(10, 10, 15, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+        .logo { font-weight: 800; font-size: 1.25rem; letter-spacing: -0.025em; color: var(--accent); }
+        
+        main { flex: 1; overflow-y: auto; padding: 2rem; position: relative; }
+
+        /* Wizard & Dashboard UI */
+        .container { max-width: 800px; margin: 0 auto; }
+        .hidden { display: none !important; }
+
+        /* Step Indicator */
+        .steps { display: flex; gap: 1rem; margin-bottom: 2rem; }
+        .step-dot { flex: 1; height: 4px; background: var(--border); border-radius: 2px; transition: 0.3s; }
+        .step-dot.active { background: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+
+        /* Cards */
+        .glass-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        .brand svg { fill: var(--accent); width: 24px; height: 24px; }
+        h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+        p.subtitle { color: var(--text-dim); margin-bottom: 2rem; }
 
-        h1, h2, h3 { margin: 0; font-weight: 600; }
-        h2 { margin-bottom: 1rem; font-size: 1.5rem; color: var(--text-primary); }
-        p { color: var(--text-secondary); line-height: 1.5; }
+        /* List Rows */
+        .check-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .status-badge { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 4px 8px; border-radius: 4px; }
+        .status-detecting { color: var(--text-dim); }
+        .status-found { color: var(--accent); }
+        .status-not-installed { color: var(--warning); background: rgba(245, 158, 11, 0.1); }
+        .status-error { color: var(--error); }
 
-        /* --- Buttons --- */
-        .btn {
-            padding: 0.6rem 1.2rem;
+        /* Log Panel */
+        .log-container {
+            margin-top: 1.5rem;
+            position: relative;
+            background: #050507;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background: #1a1a2e;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+        #install-log {
+            height: 250px;
+            overflow-y: auto;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+        .copy-btn {
+            background: transparent;
             border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            padding: 4px;
+        }
+        .copy-btn:hover { color: var(--accent); }
+
+        /* Buttons */
+        .btn {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 0.8rem 1.5rem;
             border-radius: 6px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.9rem;
+            transition: 0.2s;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-        }
-
-        .btn-primary {
-            background: var(--accent);
-            color: #000;
-        }
-
-        .btn-primary:hover { background: var(--accent-hover); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .btn-secondary {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-primary);
-        }
-
-        .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
-
-        .btn-ghost {
-            background: transparent;
-            color: var(--text-secondary);
-        }
-        .btn-ghost:hover { color: var(--text-primary); }
-
-        /* --- Content Area --- */
-        main {
-            flex: 1;
-            overflow-y: auto;
-            padding: 2rem;
-            position: relative;
-        }
-
-        .view {
-            display: none;
-            max-width: 900px;
-            margin: 0 auto;
-            animation: fadeIn 0.3s ease-in-out;
-        }
-
-        .view.active { display: block; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* --- Installer Wizard: Cards & Grid --- */
-        .card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-
-        .grid-checks {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .check-item {
-            background: var(--bg-secondary);
-            padding: 1rem;
-            border-radius: 6px;
-            border: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .status-badge {
-            font-size: 0.8rem;
-            padding: 0.2rem 0.6rem;
-            border-radius: 4px;
-            font-family: var(--font-mono);
-            background: #333;
-            color: #999;
-        }
-
-        .status-badge.success { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-        .status-badge.warning { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
-        .status-badge.error { background: rgba(239, 68, 68, 0.2); color: #f87171; }
-        .status-badge.processing { background: rgba(59, 130, 246, 0.2); color: #60a5fa; animation: pulse 1.5s infinite; }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        /* --- Log Panel --- */
-        .log-panel {
-            background: #050508;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            height: 300px;
-            overflow-y: auto;
-            padding: 1rem;
-            font-family: var(--font-mono);
-            font-size: 0.85rem;
-            color: #a0a0a0;
-            position: relative;
-            margin-bottom: 1rem;
-        }
-
-        .log-line { margin-bottom: 4px; word-break: break-all; }
-        .log-line.info { color: #60a5fa; }
-        .log-line.skip { color: #fbbf24; }
-        .log-line.success { color: #34d399; }
-        .log-line.error { color: #f87171; }
-        .log-line.cmd { color: #9ca3af; border-left: 2px solid #4b5563; padding-left: 8px; margin-top: 8px; }
-
-        .copy-btn {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background: rgba(255,255,255,0.1);
-            border: none;
-            border-radius: 4px;
-            padding: 4px 8px;
-            cursor: pointer;
-            font-size: 0.75rem;
-            color: #fff;
-            opacity: 0.6;
-            transition: opacity 0.2s;
-        }
-        .copy-btn:hover { opacity: 1; background: var(--accent); color: #000; }
-
-        /* --- Installer Options --- */
-        .install-options {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .option-card {
-            flex: 1;
-            background: var(--bg-secondary);
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .option-card.selected {
-            border-color: var(--accent);
-            background: rgba(16, 185, 129, 0.05);
-        }
-
-        .option-card:hover { border-color: #555; }
-        .option-title { font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; }
-        .option-desc { font-size: 0.85rem; color: var(--text-secondary); }
-
-        /* --- Dashboard --- */
-        .tabs {
-            display: flex;
             gap: 0.5rem;
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 0.5rem;
         }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-outline:hover { border-color: var(--accent); }
 
-        .tab-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-            font-weight: 600;
-            border-radius: 4px;
-        }
+        /* Tabs */
+        .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 2rem; }
+        .tab { padding: 1rem 2rem; cursor: pointer; color: var(--text-dim); border-bottom: 2px solid transparent; }
+        .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
-        .tab-btn.active {
-            background: var(--accent);
-            color: #000;
-        }
-
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
-        .form-group { margin-bottom: 1rem; }
-        .form-label { display: block; margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.9rem; }
-        .form-input, .form-select, .form-textarea {
+        /* Forms */
+        .form-group { margin-bottom: 1.5rem; }
+        label { display: block; margin-bottom: 0.5rem; color: var(--text-dim); font-size: 0.9rem; }
+        input, select, textarea {
             width: 100%;
-            background: #0f0f14;
+            background: #050507;
             border: 1px solid var(--border);
-            color: var(--text-primary);
-            padding: 0.7rem;
+            color: var(--text);
+            padding: 0.75rem;
             border-radius: 6px;
-            font-family: var(--font-sans);
+            outline: none;
         }
-        .form-input:focus { outline: none; border-color: var(--accent); }
+        input:focus { border-color: var(--accent); }
 
-        .status-card {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            padding: 1rem;
-            border-radius: 6px;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--accent);
-            box-shadow: 0 0 10px var(--accent);
-        }
-
-        .daemon-controls {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .chat-box {
-            height: 200px;
-            background: #050508;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 1rem;
-            overflow-y: auto;
-            margin-bottom: 1rem;
-            font-family: var(--font-mono);
-        }
-
-        .chat-msg { margin-bottom: 0.5rem; }
-        .msg-user { color: var(--accent); }
-        .msg-bot { color: #a0a0a0; }
-
-        /* --- Footer / Nav --- */
-        footer {
-            background: var(--bg-secondary);
-            border-top: 1px solid var(--border);
-            padding: 1rem 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .nav-buttons { display: flex; gap: 1rem; }
-
-        /* --- Spinner --- */
-        .spinner {
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(255,255,255,0.1);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
+        /* Animations */
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .spinner { animation: spin 1s linear infinite; }
     </style>
 </head>
 <body>
 
-<div class="app-container">
+<div id="app">
     <header>
-        <div class="brand">
-            <svg viewBox="0 0 24 24">
-                <path d="M12 2L2 7l10 5 10-5-10-5zm0 9l2.5-1.25L12 8.5l-2.5 1.25L12 11zm0 2.5l-5-2.5-5 2.5 10 5 10-5-5-2.5-5 2.5z"/>
-            </svg>
-            BambooClaw
-        </div>
-        <div id="header-status" style="font-size: 0.8rem; color: var(--text-secondary);">Installer Wizard</div>
+        <div class="logo">BAMBOOCLAW COMPANION</div>
+        <div id="app-status" class="status-badge status-found">v1.0.0-stable</div>
     </header>
 
     <main>
-        <!-- PHASE 1: INSTALLER WIZARD -->
-
-        <!-- Step 1: System Check -->
-        <div id="step-1" class="view active">
-            <h2>System Check</h2>
-            <p>Analyzing your environment for BambooClaw compatibility.</p>
-            
-            <div class="card">
-                <div id="os-status" class="check-item">
-                    <span>Operating System</span>
-                    <span class="status-badge processing">Detecting...</span>
-                </div>
+        <div id="wizard" class="container">
+            <div class="steps">
+                <div class="step-dot active" id="dot-1"></div>
+                <div class="step-dot" id="dot-2"></div>
+                <div class="step-dot" id="dot-3"></div>
+                <div class="step-dot" id="dot-4"></div>
             </div>
 
-            <div class="grid-checks">
-                <div class="check-item">
-                    <span>Rust Toolchain (rustc)</span>
-                    <span id="check-rustc" class="status-badge processing">...</span>
+            <!-- STEP 1: System Check -->
+            <section id="step-1" class="glass-card">
+                <h1>Environment Audit</h1>
+                <p class="subtitle">Ensuring your system is prepared for BambooClaw edge deployment.</p>
+                <div id="check-list">
+                    <div class="check-row"><span>Operating System</span><span id="os-status" class="status-badge status-detecting">Detecting...</span></div>
+                    <div class="check-row"><span>Rust Toolchain</span><span id="rust-status" class="status-badge status-detecting">Detecting...</span></div>
+                    <div class="check-row"><span>Git CLI</span><span id="git-status" class="status-badge status-detecting">Detecting...</span></div>
+                    <div class="check-row"><span>Build Tools</span><span id="build-status" class="status-badge status-detecting">Detecting...</span></div>
                 </div>
-                <div class="check-item">
-                    <span>Package Manager (Cargo)</span>
-                    <span id="check-cargo" class="status-badge processing">...</span>
+                <div style="margin-top:2rem; text-align:right;">
+                    <button class="btn" id="btn-next-1" disabled onclick="navTo(2)">Initialize Environment &rarr;</button>
                 </div>
-                <div class="check-item">
-                    <span>Git</span>
-                    <span id="check-git" class="status-badge processing">...</span>
-                </div>
-                <div class="check-item">
-                    <span>Network Connectivity</span>
-                    <span id="check-net" class="status-badge processing">...</span>
-                </div>
-            </div>
+            </section>
 
-            <p style="font-size: 0.85rem; color: var(--text-secondary);">
-                Note: If a tool is marked "Not Installed", we will install it in the next step.
-            </p>
+            <!-- STEP 2: Prerequisite Installation -->
+            <section id="step-2" class="glass-card hidden">
+                <h1>Readying Prereqs</h1>
+                <p class="subtitle">Applying required system dependencies and development toolchains.</p>
+                <div class="log-container">
+                    <div class="log-header">
+                        <span>SYSTEM INSTALLATION LOG</span>
+                        <button class="copy-btn" onclick="copyLog('install-log')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        </button>
+                    </div>
+                    <div id="install-log"></div>
+                </div>
+                <div style="margin-top:2rem; display:flex; justify-content:space-between; align-items:center;">
+                    <div id="step2-spinner" class="spinner hidden" style="color:var(--accent)">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+                    </div>
+                    <button class="btn" id="btn-next-2" disabled onclick="navTo(3)">Deploy Core Agent &rarr;</button>
+                </div>
+            </section>
+
+            <!-- STEP 3: BambooClaw Install -->
+            <section id="step-3" class="glass-card hidden">
+                <h1>Deploy BambooClaw</h1>
+                <div class="form-group">
+                    <label>Installation Method</label>
+                    <div style="display:flex; gap:1rem;">
+                        <button class="btn" id="method-binary" onclick="setMethod('binary')">Pre-built Binary (Fastest)</button>
+                        <button class="btn btn-outline" id="method-source" onclick="setMethod('source')">Build from Source</button>
+                    </div>
+                </div>
+                <div class="log-container">
+                    <div class="log-header">
+                        <span>DEPLOYMENT LOG</span>
+                        <button class="copy-btn" onclick="copyLog('deploy-log')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        </button>
+                    </div>
+                    <div id="deploy-log"></div>
+                </div>
+                <div style="margin-top:2rem; text-align:right;">
+                    <button class="btn" id="btn-start-deploy" onclick="runDeployment()">Begin Deployment</button>
+                    <button class="btn hidden" id="btn-next-3" onclick="navTo(4)">Finalize &rarr;</button>
+                </div>
+            </section>
+
+            <!-- STEP 4: Finalization -->
+            <section id="step-4" class="glass-card hidden" style="text-align:center;">
+                <div style="color:var(--accent); font-size:4rem; margin-bottom:1rem;">✓</div>
+                <h1>Installation Complete</h1>
+                <p class="subtitle">BambooClaw is now registered as a system service.</p>
+                <div class="form-group" style="text-align:left;">
+                    <label>Storage Path</label>
+                    <input type="text" id="final-path" readonly value="~/.bambooclaw/bin">
+                </div>
+                <button class="btn" style="width:100%" onclick="enterDashboard()">Enter Companion Dashboard</button>
+            </section>
         </div>
 
-        <!-- Step 2: Install Prerequisites -->
-        <div id="step-2" class="view">
-            <h2>Install Prerequisites</h2>
-            <p>Installing required system dependencies based on your OS.</p>
-
-            <div class="log-panel" id="install-log-panel">
-                <button class="copy-btn" onclick="copyLog('install-log-panel')" title="Copy Log">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-                </button>
-                <div id="install-log-content">
-                    <div class="log-line info">[SYSTEM] Waiting to start...</div>
-                </div>
-            </div>
-            
-            <div style="text-align: center; margin-top: 1rem;">
-                <div id="install-spinner" style="display: none;">
-                    <div class="spinner" style="width: 24px; height: 24px; border-width: 3px;"></div>
-                    <span style="margin-left: 10px; vertical-align: top;">Processing installations...</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Step 3: Install BambooClaw -->
-        <div id="step-3" class="view">
-            <h2>Install BambooClaw</h2>
-            <p>Choose your installation method. We recommend downloading the pre-built binary for stability.</p>
-
-            <div class="install-options">
-                <div class="option-card selected" id="opt-download" onclick="selectInstallMethod('download')">
-                    <div class="option-title">Download Pre-built Binary</div>
-                    <div class="option-desc">Fastest. Retrieves the latest release from the private repo via secure proxy. No compiler needed.</div>
-                </div>
-                <div class="option-card" id="opt-build" onclick="selectInstallMethod('build')">
-                    <div class="option-title">Build from Source</div>
-                    <div class="option-desc">Advanced. Compiles the Rust code using Cargo. Requires Git and network access.</div>
-                </div>
-            </div>
-
-            <div class="log-panel" id="bamboo-log-panel">
-                <button class="copy-btn" onclick="copyLog('bamboo-log-panel')" title="Copy Log">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-                </button>
-                <div id="bamboo-log-content">
-                    <div class="log-line info">[INFO] Ready to install BambooClaw.</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Step 4: Finalization -->
-        <div id="step-4" class="view">
-            <div style="text-align: center; padding: 2rem 0;">
-                <div style="font-size: 4rem; margin-bottom: 1rem;">✨</div>
-                <h2>Installation Complete!</h2>
-                <p id="final-msg">BambooClaw has been successfully installed and verified.</p>
-                <div style="margin-top: 2rem;">
-                    <button class="btn btn-primary" onclick="transitionToDashboard()">Launch Companion Dashboard</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- PHASE 2: DASHBOARD -->
-
-        <!-- Dashboard Container -->
-        <div id="dashboard" class="view">
+        <!-- DASHBOARD (Hidden during install) -->
+        <div id="dashboard" class="container hidden">
             <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('config')">LLM Config</button>
-                <button class="tab-btn" onclick="switchTab('channels')">Channels</button>
-                <button class="tab-btn" onclick="switchTab('control')">Agent Control</button>
-                <button class="tab-btn" onclick="switchTab('settings')">Settings</button>
+                <div class="tab active" onclick="switchTab('llm')">LLM Settings</div>
+                <div class="tab" onclick="switchTab('channels')">Channels</div>
+                <div class="tab" onclick="switchTab('control')">Agent Control</div>
+                <div class="tab" onclick="switchTab('settings')">Settings</div>
             </div>
 
-            <!-- Tab 1: LLM Configuration -->
-            <div id="tab-config" class="tab-content active">
-                <div class="card">
-                    <h3>Provider Settings</h3>
+            <div id="tab-llm" class="tab-content">
+                <div class="glass-card">
                     <div class="form-group">
-                        <label class="form-label">AI Provider</label>
-                        <select id="provider-select" class="form-select" onchange="updateModelPlaceholder()">
+                        <label>AI Provider</label>
+                        <select id="config-provider">
                             <option value="openai">OpenAI</option>
                             <option value="anthropic">Anthropic</option>
-                            <option value="gemini">Google Gemini</option>
+                            <option value="groq">Groq (Ultra-Fast)</option>
                             <option value="openrouter">OpenRouter</option>
                             <option value="ollama">Ollama (Local)</option>
-                            <option value="deepseek">DeepSeek</option>
-                            <option value="groq">Groq</option>
-                            <option value="mistral">Mistral AI</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">API Key</label>
-                        <input type="password" id="api-key" class="form-input" placeholder="sk-...">
+                        <label>Secret API Key</label>
+                        <input type="password" id="config-key" placeholder="sk-...">
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Model ID</label>
-                        <input type="text" id="model-id" class="form-input" placeholder="gpt-4-turbo">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Memory Backend</label>
-                        <select id="memory-backend" class="form-select">
-                            <option value="sqlite">SQLite (Local)</option>
-                            <option value="redis">Redis</option>
-                            <option value="mem">In-Memory (Volatile)</option>
-                        </select>
-                    </div>
-                    <button class="btn btn-primary" onclick="saveConfig()">Save Configuration</button>
-                    <button class="btn btn-secondary" onclick="testLLM()">Test Connection</button>
+                    <button class="btn" onclick="saveConfig()">Apply Configuration</button>
                 </div>
-                <div class="log-panel" id="config-log-panel" style="height: 150px;">
-                    <button class="copy-btn" onclick="copyLog('config-log-panel')">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-                    </button>
-                    <div id="config-log-content" class="log-line">Waiting for test...</div>
+            </div>
+            
+            <div id="tab-control" class="tab-content hidden">
+                <div class="glass-card" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <h3>Daemon Status</h3>
+                        <p id="daemon-status-text" class="status-detecting">Service Stopped</p>
+                    </div>
+                    <button id="daemon-toggle" class="btn" onclick="toggleDaemon()">Start Agent Daemon</button>
                 </div>
             </div>
 
-            <!-- Tab 2: Channels -->
-            <div id="tab-channels" class="tab-content">
-                <div class="card">
-                    <h3>Channel Setup Wizards</h3>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
-                        <div class="option-card" style="cursor: default;">
-                            <div class="option-title">Telegram</div>
-                            <input type="text" class="form-input" placeholder="Bot Token (@BotFather)" style="margin: 0.5rem 0;">
-                            <button class="btn btn-ghost btn-sm">Get Token Guide</button>
-                            <button class="btn btn-secondary btn-sm">Test Telegram</button>
-                        </div>
-                        <div class="option-card" style="cursor: default;">
-                            <div class="option-title">Discord</div>
-                            <input type="text" class="form-input" placeholder="Bot Token" style="margin: 0.5rem 0;">
-                            <button class="btn btn-ghost btn-sm">Bot Portal</button>
-                            <button class="btn btn-secondary btn-sm">Test Discord</button>
-                        </div>
-                        <div class="option-card" style="cursor: default;">
-                            <div class="option-title">Slack</div>
-                            <input type="text" class="form-input" placeholder="App Token" style="margin: 0.5rem 0;">
-                            <button class="btn btn-ghost btn-sm">Manifest JSON</button>
-                            <button class="btn btn-secondary btn-sm">Test Slack</button>
-                        </div>
-                        <div class="option-card" style="cursor: default;">
-                            <div class="option-title">WhatsApp</div>
-                            <input type="text" class="form-input" placeholder="Business API Key" style="margin: 0.5rem 0;">
-                            <button class="btn btn-ghost btn-sm">API Docs</button>
-                            <button class="btn btn-secondary btn-sm">Test WhatsApp</button>
-                        </div>
-                    </div>
+            <div id="tab-channels" class="tab-content hidden">
+                <div class="glass-card">
+                    <h3>Active Channels</h3>
+                    <p class="subtitle">Connect your agent to external messaging platforms.</p>
+                    <!-- Simulated List -->
+                    <div class="check-row"><span>Telegram Bot</span><button class="btn btn-outline">Setup</button></div>
+                    <div class="check-row"><span>Discord App</span><button class="btn btn-outline">Setup</button></div>
                 </div>
             </div>
 
-            <!-- Tab 3: Agent Control -->
-            <div id="tab-control" class="tab-content">
-                <div class="card">
-                    <h3>Daemon Control</h3>
-                    <div class="daemon-controls">
-                        <button class="btn btn-primary" onclick="startDaemon()">
-                            <span id="start-icon">▶</span> Start Agent
-                        </button>
-                        <button class="btn btn-secondary" onclick="stopDaemon()">Stop Agent</button>
-                    </div>
-                    
-                    <div id="daemon-status" class="status-card" style="display: none;">
-                        <div class="status-dot" id="status-dot"></div>
-                        <div>
-                            <strong>Status:</strong> <span id="daemon-state-text">Running</span><br>
-                            <span style="font-size: 0.8rem; color: #a0a0a0;">Uptime: <span id="uptime">0s</span></span>
-                        </div>
-                    </div>
-
-                    <h4>Interactive Chat</h4>
-                    <div class="chat-box" id="chat-display">
-                        <div class="chat-msg msg-bot">System: Agent ready. Enter a prompt below.</div>
-                    </div>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <input type="text" id="chat-input" class="form-input" placeholder="Send a message to the agent..." onkeydown="if(event.key==='Enter') sendChat()">
-                        <button class="btn btn-primary" onclick="sendChat()">Send</button>
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <h3>Diagnostics</h3>
-                    <div style="display: flex; gap: 1rem;">
-                        <button class="btn btn-ghost" onclick="runDiagnostics()">Run Diagnostics</button>
-                        <button class="btn btn-ghost" onclick="viewLogs()">View Logs</button>
-                        <button class="btn btn-ghost" onclick="uninstall()">Uninstall</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab 4: Settings -->
-            <div id="tab-settings" class="tab-content">
-                <div class="card">
-                    <h3>Runtime Settings</h3>
+            <div id="tab-settings" class="tab-content hidden">
+                 <div class="glass-card">
                     <div class="form-group">
-                        <label class="form-label">Autonomy Level</label>
-                        <select class="form-select">
-                            <option>Low (Require Approval)</option>
-                            <option>Medium (Review Suggestions)</option>
-                            <option>High (Auto-Execute)</option>
+                        <label>Autonomy Level</label>
+                        <select>
+                            <option>Observation Only</option>
+                            <option>Collaborative (Needs Approval)</option>
+                            <option selected>Full Autonomy</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Security Mode</label>
-                        <select class="form-select">
-                            <option>Standard</option>
-                            <option>Paranoid (Read-only mode)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Tunnel / Gateway Port</label>
-                        <input type="number" class="form-input" value="8080">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Identity Format</label>
-                        <input type="text" class="form-input" value="bamboo_{uuid}">
-                    </div>
-                    <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+                    <p class="subtitle">Security levels determine which shell commands the agent can run without explicit user consent.</p>
                 </div>
             </div>
         </div>
-
     </main>
-
-    <footer>
-        <div style="font-size: 0.8rem; color: var(--text-secondary);">
-            BambooClaw Companion v1.0.0
-        </div>
-        <div class="nav-buttons" id="wizard-nav">
-            <button class="btn btn-secondary" id="prev-btn" onclick="prevStep()" style="display: none;">Previous</button>
-            <button class="btn btn-primary" id="next-btn" onclick="nextStep()" disabled>Next</button>
-        </div>
-    </footer>
 </div>
 
 <script>
-/**
- * BambooClaw Companion App Logic
- * Handles Tauri v2 invocations, Wizard State, and Dashboard functionality.
- */
+    // Constants & Global State
+    let detectedOS = "windows";
+    let installMethod = "binary";
+    const PROXY_URL = "https://mjmdhqglpratbyzmgndm.supabase.co/functions/v1/github-release-proxy";
+    const LONG_TIMEOUT = 600000;
+    const SHORT_TIMEOUT = 8000;
 
-// --- Global State ---
-const state = {
-    currentStep: 1,
-    detectedOS: null, // 'windows', 'macos', 'linux'
-    installMethod: 'download', // 'download' or 'build'
-    prerequisites: {
-        rustc: false,
-        cargo: false,
-        git: false
-    },
-    isInstalling: false,
-    installLog: [],
-    bambooPath: null
-};
-
-// --- Timeout Wrappers (CRITICAL) ---
-
-function invokeWithTimeout(cmd, args = {}, timeoutMs = 8000) {
-    return Promise.race([
-        window.__TAURI__.invoke(cmd, args),
-        new Promise((_, reject) => setTimeout(() => reject(new Error(`Timeout: ${cmd} (${timeoutMs}ms)`)), timeoutMs))
-    ]);
-}
-
-// --- UI Helpers ---
-
-function log(panelId, message, type = 'info') {
-    const panel = document.getElementById(panelId);
-    if (!panel) return;
-    
-    const line = document.createElement('div');
-    line.className = `log-line ${type}`;
-    
-    // Add timestamp
-    const time = new Date().toLocaleTimeString();
-    line.textContent = `[${time}] ${message}`;
-    
-    panel.appendChild(line);
-    panel.scrollTop = panel.scrollHeight;
-    
-    // Keep state for copy
-    state.installLog.push(`[${time}] ${message}`);
-}
-
-function copyLog(panelId) {
-    const panel = document.getElementById(panelId);
-    const text = Array.from(panel.querySelectorAll('.log-line')).map(el => el.textContent).join('\n');
-    navigator.clipboard.writeText(text).then(() => {
-        // Show tooltip or temporary feedback
-        const btn = panel.querySelector('.copy-btn');
-        const original = btn.innerHTML;
-        btn.textContent = 'Copied!';
-        setTimeout(() => btn.innerHTML = original, 2000);
-    });
-}
-
-function updateNextButton(enabled, text = "Next") {
-    const btn = document.getElementById('next-btn');
-    btn.disabled = !enabled;
-    btn.textContent = text;
-}
-
-function showView(viewId) {
-    document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-    document.getElementById(viewId).classList.add('active');
-    
-    // Toggle footer nav
-    const nav = document.getElementById('wizard-nav');
-    if (viewId === 'dashboard') {
-        nav.style.display = 'none';
-        document.getElementById('header-status').textContent = "Companion Dashboard";
-    } else {
-        nav.style.display = 'flex';
-        document.getElementById('header-status').textContent = "Installer Wizard";
-    }
-}
-
-// --- Wizard Logic: Step 1 (System Check) ---
-
-async function runSystemCheck() {
-    // 1. Detect OS (Store global)
-    try {
-        const os = await invokeWithTimeout('get_platform', {}, 5000);
-        state.detectedOS = os;
-        const osBadge = document.getElementById('os-status').querySelector('.status-badge');
-        osBadge.textContent = os.charAt(0).toUpperCase() + os.slice(1);
-        osBadge.className = 'status-badge success';
-        osBadge.style.textTransform = 'capitalize';
-    } catch (err) {
-        console.error("OS Detection failed", err);
-        // Default to windows if detection fails, as per requirements
-        state.detectedOS = "windows";
-        const osBadge = document.getElementById('os-status').querySelector('.status-badge');
-        osBadge.textContent = "Windows (Default)";
-        osBadge.className = 'status-badge warning';
+    // Timeout Wrapper
+    async function invokeWithTimeout(cmd, args = {}, timeoutMs = SHORT_TIMEOUT) {
+        return Promise.race([
+            window.__TAURI__.invoke(cmd, args),
+            new Promise((_, reject) => setTimeout(() => reject(new Error(`Timeout: ${cmd} after ${timeoutMs}ms`)), timeoutMs))
+        ]);
     }
 
-    // 2. Check Prerequisites (Parallel)
-    const checks = [
-        { name: 'rustc', id: 'check-rustc' },
-        { name: 'cargo', id: 'check-cargo' },
-        { name: 'git', id: 'check-git' },
-        // Network check is visual/simulated for now as backend might not have specific net check
-    ];
+    // Step 1: Logic
+    async function runPrerequisiteChecks() {
+        const statuses = {
+            os: document.getElementById('os-status'),
+            rust: document.getElementById('rust-status'),
+            git: document.getElementById('git-status'),
+            build: document.getElementById('build-status')
+        };
 
-    // Helper to update UI for a single check
-    const updateCheckUI = (id, status, text, isFound) => {
-        const el = document.getElementById(id);
-        el.textContent = text;
-        el.className = `status-badge ${status}`;
-        if (isFound !== undefined) {
-            if (id === 'check-rustc') state.prerequisites.rustc = isFound;
-            if (id === 'check-cargo') state.prerequisites.cargo = isFound;
-            if (id === 'check-git') state.prerequisites.git = isFound;
-        }
-    };
-
-    // Run Checks
-    const checkPromises = checks.map(async (check) => {
-        updateCheckUI(check.id, 'processing', 'Detecting...');
+        // Determine OS
         try {
-            // Use a shorter timeout for checks
-            const result = await invokeWithTimeout('check_prerequisite', { name: check.name }, 5000);
-            
-            // Assume success means it returned a version string
-            if (result && result.includes("not found")) {
-                 // Handle cases where backend returns "not found" string explicitly
-                 throw new Error("Not found");
+            detectedOS = await invokeWithTimeout("get_platform");
+            statuses.os.textContent = detectedOS;
+            statuses.os.className = "status-badge status-found";
+        } catch (e) {
+            console.error("OS detection failed", e);
+            detectedOS = "windows"; // Fallback
+            statuses.os.textContent = "windows (fallback)";
+        }
+
+        const checks = [
+            { id: 'rust', name: 'rustc' },
+            { id: 'git', name: 'git' },
+            { id: 'build', name: (detectedOS === "windows" ? "cl" : "make") }
+        ];
+
+        let completedChecks = 0;
+        checks.forEach(async check => {
+            try {
+                const version = await invokeWithTimeout("check_prerequisite", { name: check.name });
+                statuses[check.id].textContent = version || "Found";
+                statuses[check.id].className = "status-badge status-found";
+                statuses[check.id].setAttribute('data-installed', 'true');
+            } catch (err) {
+                const msg = err?.message || err?.toString() || "";
+                if (msg.toLowerCase().includes("not found") || msg.includes("Timeout")) {
+                    statuses[check.id].textContent = "Not Installed";
+                    statuses[check.id].className = "status-badge status-not-installed";
+                } else {
+                    statuses[check.id].textContent = "Error";
+                    statuses[check.id].className = "status-badge status-error";
+                }
+                statuses[check.id].setAttribute('data-installed', 'false');
+            } finally {
+                completedChecks++;
+                if (completedChecks === checks.length) {
+                    document.getElementById('btn-next-1').disabled = false;
+                }
             }
-            
-            updateCheckUI(check.id, 'success', result || 'Installed', true);
-        } catch (err) {
-            const msg = err.message || "Unknown error";
-            // If it's a timeout or Tauri error, show Error. If it's "not found", show Not Installed.
-            if (msg.toLowerCase().includes("not found") || msg.toLowerCase().includes("program not found") || msg.toLowerCase().includes("no such file")) {
-                updateCheckUI(check.id, 'warning', 'Not Installed', false);
+        });
+    }
+
+    // Step 2: Logic
+    async function runPrereqInstallation() {
+        const log = document.getElementById('install-log');
+        const nextBtn = document.getElementById('btn-next-2');
+        const spinner = document.getElementById('step2-spinner');
+        
+        function addLog(text, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'var(--error)' : (type === 'skip' ? 'var(--warning)' : 'var(--text)');
+            log.innerHTML += `<div style="color:${color}">[${time}] ${text}</div>`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        spinner.classList.remove('hidden');
+        addLog(`Detected Environment: ${detectedOS.toUpperCase()}`);
+
+        const installQueue = [];
+        const rustInstalled = document.getElementById('rust-status').getAttribute('data-installed') === 'true';
+
+        if (detectedOS === "windows") {
+            if (!rustInstalled) {
+                installQueue.push({ 
+                    name: "Rust via Winget", 
+                    cmd: "winget", 
+                    args: ["install", "--id", "Rustlang.Rustup", "--silent", "--accept-package-agreements"] 
+                });
+            }
+            installQueue.push({ 
+                name: "VS Build Tools", 
+                cmd: "winget", 
+                args: ["install", "--id", "Microsoft.VisualStudio.2022.BuildTools", "--silent", "--override", "--wait --add Microsoft.VisualStudio.Workload.VCTools ; --includeRecommended"] 
+            });
+        } else if (detectedOS === "macos") {
+            installQueue.push({ name: "Xcode Select", cmd: "xcode-select", args: ["--install"] });
+            if (!rustInstalled) installQueue.push({ name: "Rustup", cmd: "sh", args: ["-c", "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y"] });
+        }
+
+        for (const item of installQueue) {
+            addLog(`Executing Task: ${item.name}...`);
+            try {
+                const output = await invokeWithTimeout("run_shell_command", { 
+                    commandName: item.cmd, 
+                    args: item.args 
+                }, LONG_TIMEOUT);
+                addLog(`Success: ${item.name}`);
+                if (output) addLog(`Output: ${output.substring(0, 200)}...`);
+            } catch (err) {
+                addLog(`Warning: ${item.name} failed. Error: ${err}`, 'error');
+            }
+        }
+
+        addLog(`[DONE] Prerequisite phase complete.`, 'skip');
+        spinner.classList.add('hidden');
+        nextBtn.disabled = false;
+    }
+
+    // Step 3: Logic
+    function setMethod(m) {
+        installMethod = m;
+        document.getElementById('method-binary').className = m === 'binary' ? 'btn' : 'btn btn-outline';
+        document.getElementById('method-source').className = m === 'source' ? 'btn' : 'btn btn-outline';
+    }
+
+    async function runDeployment() {
+        const log = document.getElementById('deploy-log');
+        const startBtn = document.getElementById('btn-start-deploy');
+        startBtn.disabled = true;
+
+        function addLog(text) {
+            log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${text}</div>`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        try {
+            if (installMethod === 'binary') {
+                addLog("Fetching release metadata from proxy...");
+                const res = await fetch(PROXY_URL);
+                const data = await res.json();
+                
+                let ext = detectedOS === 'windows' ? '.exe' : (detectedOS === 'macos' ? '.dmg' : '.AppImage');
+                const asset = data.assets.find(a => a.name.endsWith(ext));
+                
+                if (!asset) throw new Error(`No compatible asset found for ${ext}`);
+                
+                const home = await invokeWithTimeout("run_shell_command", { 
+                    commandName: detectedOS === 'windows' ? 'cmd' : 'sh', 
+                    args: detectedOS === 'windows' ? ["/C", "echo %USERPROFILE%"] : ["-c", "echo $HOME"] 
+                });
+                
+                const filename = detectedOS === 'windows' ? 'bambooclaw.exe' : 'bambooclaw';
+                const dest = `${home.trim()}/.bambooclaw/${filename}`;
+
+                addLog(`Downloading ${asset.name} to ${dest}...`);
+                await invokeWithTimeout("download_binary", {
+                    url: `${PROXY_URL}?asset=${asset.name}`,
+                    dest: dest
+                }, LONG_TIMEOUT);
+
+                addLog("Deployment complete.");
             } else {
-                console.error(`Check failed for ${check.name}:`, err);
-                updateCheckUI(check.id, 'error', 'Error', false);
+                addLog("Initializing source build (this will take several minutes)...");
+                // Using full path trick for Windows
+                const cmd = detectedOS === 'windows' ? 'cmd' : 'cargo';
+                const args = detectedOS === 'windows' 
+                    ? ["/C", "%USERPROFILE%\\.cargo\\bin\\cargo install --git https://github.com/Enigmara-Technologies/bambooclaw-core --force"]
+                    : ["install", "--git", "https://github.com/Enigmara-Technologies/bambooclaw-core"];
+                
+                await invokeWithTimeout("run_shell_command", { commandName: cmd, args }, LONG_TIMEOUT);
+                addLog("Cargo build successful.");
             }
-        }
-    });
-
-    // Network Check (Simulated UI)
-    updateCheckUI('check-net', 'processing', 'Checking...');
-    Promise.race([
-        fetch("https://www.google.com"), // Basic connectivity
-        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 5000))
-    ]).then(() => {
-        updateCheckUI('check-net', 'success', 'Online', true);
-    }).catch(() => {
-        updateCheckUI('check-net', 'error', 'Offline', false);
-    });
-
-    // Wait for all checks to settle, then enable Next
-    await Promise.allSettled(checkPromises);
-    
-    // Enable Next button regardless of success/failure (per requirements)
-    updateNextButton(true);
-}
-
-// --- Wizard Logic: Step 2 (Install Prerequisites) ---
-
-async function startPrerequisiteInstallation() {
-    if (state.isInstalling) return;
-    state.isInstalling = true;
-
-    const logPanelContent = document.getElementById('install-log-content');
-    logPanelContent.innerHTML = ''; // Clear logs
-    document.getElementById('install-spinner').style.display = 'block';
-    updateNextButton(false, 'Installing...');
-    
-    log('install-log-content', `[INFO] Detected OS: ${state.detectedOS}`, 'info');
-    log('install-log-content', `[INFO] Starting prerequisite installation...`, 'info');
-
-    // Helper to run shell commands with long timeout
-    const runCmd = async (commandName, args, skipCondition, skipMessage) => {
-        if (skipCondition) {
-            log('install-log-content', skipMessage, 'skip');
-            return;
-        }
-
-        log('install-log-content', `[INFO] Running: ${commandName} ${args.join(' ')}`, 'cmd');
-        
-        try {
-            const output = await invokeWithTimeout('run_shell_command', {
-                commandName: commandName,
-                args: args
-            }, 600000); // 10 Minute Timeout
-
-            log('install-log-content', `[OK] Output: ${output}`, 'success');
+            
+            document.getElementById('btn-next-3').classList.remove('hidden');
         } catch (err) {
-            const msg = err?.message || err?.toString();
-            log('install-log-content', `[ERROR] ${msg}`, 'error');
-            // Don't throw, continue to next step
+            addLog(`CRITICAL ERROR: ${err?.message || err}`);
+            startBtn.disabled = false;
         }
-    };
-
-    // --- Branch based on OS ---
-    if (state.detectedOS === 'windows') {
-        // Windows: Winget installs
-        // Note: Winget might require user interaction (UAC). 
-        // We attempt to install BuildTools and Rustup.
-        
-        await runCmd('winget', ['install', '--id', 'Microsoft.VisualStudio.2022.BuildTools', '--accept-source-agreements', '--accept-package-agreements'], false, "Skipping VS BuildTools (Already Installed)");
-        await runCmd('winget', ['install', '--id', 'Rustlang.Rustup', '--accept-source-agreements', '--accept-package-agreements'], state.prerequisites.rustc, "Skipping Rust (Already Installed)");
-        
-    } else if (state.detectedOS === 'macos') {
-        // macOS: xcode-select + rustup
-        await runCmd('xcode-select', ['--install'], false, "Skipping Xcode CLI Tools");
-        // Rustup install script
-        await runCmd('sh', ['-c', 'curl --proto \'=https\' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y'], state.prerequisites.rustc, "Skipping Rust install script");
-
-    } else if (state.detectedOS === 'linux') {
-        // Linux: apt-get update + build-essential + rustup
-        // We assume Debian/Ubuntu for this installer, or generic curl
-        await runCmd('sudo', ['apt-get', 'update'], false, "Skipping apt update");
-        await runCmd('sudo', ['apt-get', 'install', '-y', 'build-essential', 'curl'], false, "Skipping build-essential");
-        await runCmd('sh', ['-c', 'curl --proto \'=https\' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y'], state.prerequisites.rustc, "Skipping Rust install script");
     }
 
-    // Verification Step
-    // We check specifically for Rust/Cargo again after installation attempt
-    log('install-log-content', `[INFO] Verifying installation...`, 'info');
-    try {
-        // Windows specific: Reload PATH temporarily
-        let checkCmd = 'cargo';
-        let checkArgs = ['--version'];
+    // Wizard Navigation
+    function navTo(step) {
+        document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+        document.getElementById(`step-${step}`).classList.remove('hidden');
+        document.querySelectorAll('.step-dot').forEach((d, i) => {
+            if (i < step) d.classList.add('active');
+            else d.classList.remove('active');
+        });
         
-        if (state.detectedOS === 'windows') {
-            // Attempt to find cargo in default location
-            checkCmd = 'cmd';
-            checkArgs = ['/C', 'set PATH=%USERPROFILE%\\.cargo\\bin;%PATH% && cargo --version'];
-        }
-
-        const verify = await invokeWithTimeout('run_shell_command', { commandName: checkCmd, args: checkArgs }, 10000);
-        log('install-log-content', `[DONE] Verification passed: ${verify}`, 'success');
-    } catch (e) {
-        log('install-log-content', `[WARN] Verification failed. You may need to restart this app or your terminal.`, 'skip');
+        if (step === 2) runPrereqInstallation();
     }
 
-    document.getElementById('install-spinner').style.display = 'none';
-    log('install-log-content', `[DONE] All prerequisites ready (or attempted).`, 'info');
-    updateNextButton(true);
-    state.isInstalling = false;
-}
+    function copyLog(id) {
+        const text = document.getElementById(id).innerText;
+        navigator.clipboard.writeText(text);
+        alert("Log copied to clipboard!");
+    }
 
-// --- Wizard Logic: Step 3 (Install BambooClaw) ---
+    function enterDashboard() {
+        localStorage.setItem('bc_installed', 'true');
+        document.getElementById('wizard').classList.add('hidden');
+        document.getElementById('dashboard').classList.remove('hidden');
+    }
 
-function selectInstallMethod(method) {
-    state.installMethod = method;
-    document.getElementById('opt-download').className = `option-card ${method === 'download' ? 'selected' : ''}`;
-    document.getElementById('opt-build').className = `option-card ${method === 'build' ? 'selected' : ''}`;
-}
+    // Dashboard Actions
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(`tab-${tab}`).classList.remove('hidden');
+        event.currentTarget.classList.add('active');
+    }
 
-async function startBambooInstallation() {
-    if (state.isInstalling) return;
-    state.isInstalling = true;
-
-    const logPanel = 'bamboo-log-content';
-    document.getElementById(logPanel).innerHTML = '';
-    updateNextButton(false, 'Downloading/Building...');
-
-    log(logPanel, `[INFO] Selected Method: ${state.installMethod}`, 'info');
-    log(logPanel, `[INFO] Detected OS: ${state.detectedOS}`, 'info');
-
-    // Determine Install Path (Using Backend to get User Home)
-    let installDir = "";
-    try {
-        let getHomeCmd = 'echo';
-        let getHomeArgs = ['%USERPROFILE%']; // Windows default
-        if (state.detectedOS === 'linux' || state.detectedOS === 'macos') {
-            getHomeArgs = ['$HOME'];
-        }
+    async function toggleDaemon() {
+        const btn = document.getElementById('daemon-toggle');
+        const status = document.getElementById('daemon-status-text');
         
-        if (state.detectedOS === 'windows') {
-            // Use cmd to resolve env var
-            const home = await invokeWithTimeout('run_shell_command', { commandName: 'cmd', args: ['/C', 'echo %USERPROFILE%'] }, 5000);
-            installDir = home.trim() + "\\.bambooclaw";
+        if (btn.innerText.includes("Start")) {
+            await window.__TAURI__.invoke("start_daemon");
+            btn.innerText = "Stop Agent Daemon";
+            status.innerText = "Service Online";
+            status.className = "status-badge status-found";
         } else {
-            const home = await invokeWithTimeout('run_shell_command', { commandName: 'sh', args: ['-c', 'echo $HOME'] }, 5000);
-            installDir = home.trim() + "/.bambooclaw";
-        }
-        
-        // Create directory if needed (backend usually handles this, but good to log)
-        log(logPanel, `[INFO] Target Directory: ${installDir}`, 'info');
-    } catch (err) {
-        log(logPanel, `[ERROR] Could not determine home directory: ${err.message}`, 'error');
-        state.isInstalling = false;
-        return;
-    }
-
-    // --- METHOD: DOWNLOAD PRE-BUILT (DEFAULT) ---
-    if (state.installMethod === 'download') {
-        try {
-            log(logPanel, `[STEP] Fetching release metadata from private repo proxy...`, 'info');
-            
-            // 1. Fetch Metadata
-            const metaRes = await fetch("https://mjmdhqglpratbyzmgndm.supabase.co/functions/v1/github-release-proxy");
-            if (!metaRes.ok) throw new Error("Failed to fetch metadata");
-            const metaData = await metaRes.json();
-            
-            log(logPanel, `[INFO] Latest Tag: ${metaData.tag_name}`, 'info');
-
-            // 2. Find Asset for Platform
-            let assetName = null;
-            const assets = metaData.assets || [];
-
-            if (state.detectedOS === 'windows') {
-                assetName = assets.find(a => a.name.endsWith('.exe') || a.name.endsWith('.msi'))?.name;
-            } else if (state.detectedOS === 'macos') {
-                assetName = assets.find(a => a.name.endsWith('.dmg'))?.name;
-            } else if (state.detectedOS === 'linux') {
-                assetName = assets.find(a => a.name.endsWith('.AppImage'))?.name;
-            }
-
-            if (!assetName) {
-                throw new Error(`No matching binary found for ${state.detectedOS}. Assets: ${assets.map(a=>a.name).join(', ')}`);
-            }
-
-            log(logPanel, `[INFO] Found Asset: ${assetName}`, 'info');
-
-            // 3. Download via Tauri
-            // Note: We point to the proxy with ?asset= param
-            const downloadUrl = `https://mjmdhqglpratbyzmgndm.supabase.co/functions/v1/github-release-proxy?asset=${encodeURIComponent(assetName)}`;
-            const destPath = installDir + (state.detectedOS === 'windows' ? `\\${assetName}` : `/${assetName}`);
-            
-            // Update global path
-            state.bambooPath = destPath;
-
-            log(logPanel, `[STEP] Downloading binary...`, 'info');
-            
-            // Note: Tauri command handles the actual download progress (if implemented in backend)
-            // We use a long timeout.
-            const downloadResult = await invokeWithTimeout('download_binary', {
-                url: downloadUrl,
-                dest: destPath
-            }, 600000);
-
-            log(logPanel, `[SUCCESS] Downloaded to: ${destPath}`, 'success');
-            log(logPanel, `[INFO] Output: ${downloadResult}`, 'info');
-
-            // 4. Verify Installation
-            log(logPanel, `[STEP] Verifying installation...`, 'info');
-            
-            // On Windows, we might need to set the path or use the full path
-            let verifyCmd = 'cmd';
-            let verifyArgs = ['/C', `"${destPath}"`, '--help']; // Quote path for spaces
-            
-            if (state.detectedOS !== 'windows') {
-                verifyCmd = 'chmod';
-                verifyArgs = ['+x', destPath]; // Make executable first
-                await invokeWithTimeout('run_shell_command', { commandName: verifyCmd, args: verifyArgs }, 10000);
-                verifyCmd = destPath;
-                verifyArgs = ['--help'];
-            }
-
-            const helpOutput = await invokeWithTimeout('run_bambooclaw', { args: ['--help'] }, 30000);
-            log(logPanel, `[DONE] Verification Successful!`, 'success');
-            log(logPanel, helpOutput, 'info');
-            
-            updateNextButton(true);
-            
-        } catch (err) {
-            log(logPanel, `[ERROR] Download failed: ${err.message}`, 'error');
-            updateNextButton(true); // Allow retry or proceed
-            state.isInstalling = false;
-        }
-
-    // --- METHOD: BUILD FROM SOURCE ---
-    } else if (state.installMethod === 'build') {
-        try {
-            log(logPanel, `[STEP] Starting build from source...`, 'info');
-            
-            // CRITICAL: Need full path to cargo if installed in this session
-            let cargoBin = "cargo";
-            if (state.detectedOS === 'windows') {
-                cargoBin = "%USERPROFILE%\\.cargo\\bin\\cargo";
-            } else {
-                cargoBin = "$HOME/.cargo/bin/cargo";
-            }
-
-            // Note: Building requires GITHUB_PAT for private repos unless public. 
-            // Since instructions say it's PRIVATE, we assume the user has set PAT or we rely on the proxy logic if available.
-            // However, 'cargo install --git' directly accesses GitHub. This will likely FAIL for private repos without PAT.
-            // We will proceed with the command but log a warning.
-
-            log(logPanel, `[WARN] This requires a GitHub PAT for private repos. If build fails, use "Download Pre-built".`, 'skip');
-
-            // Windows specific command wrapping to expand env vars
-            let cmdName = 'cargo';
-            let args = ['install', '--git', 'https://github.com/Enigmara-Technologies/bambooclaw-core', '--force', '--locked'];
-
-            if (state.detectedOS === 'windows') {
-                cmdName = 'cmd';
-                args = ['/C', `${cargoBin} install --git https://github.com/Enigmara-Technologies/bambooclaw-core --force --locked`];
-            } else {
-                // Linux/Mac: Use shell expansion
-                cmdName = 'sh';
-                args = ['-c', `${cargoBin} install --git https://github.com/Enigmara-Technologies/bambooclaw-core --force --locked`];
-            }
-
-            log(logPanel, `[CMD] ${cmdName} ${args.join(' ')}`, 'cmd');
-            
-            const buildOutput = await invokeWithTimeout('run_shell_command', {
-                commandName: cmdName,
-                args: args
-            }, 600000); // 10 Minutes
-
-            log(logPanel, `[SUCCESS] Build completed.`, 'success');
-            
-            // Verify
-            const verify = await invokeWithTimeout('run_bambooclaw', { args: ['--help'] }, 10000);
-            log(logPanel, verify, 'info');
-
-            updateNextButton(true);
-        } catch (err) {
-            log(logPanel, `[ERROR] Build failed: ${err.message}`, 'error');
-            updateNextButton(true);
-            state.isInstalling = false;
+            await window.__TAURI__.invoke("stop_daemon");
+            btn.innerText = "Start Agent Daemon";
+            status.innerText = "Service Offline";
+            status.className = "status-badge status-detecting";
         }
     }
-}
 
-// --- Wizard Navigation ---
-
-function nextStep() {
-    if (state.currentStep === 1) {
-        // Moving to Install Prereqs
-        state.currentStep = 2;
-        showView('step-2');
-        updatePrevButton(true);
-        updateNextButton(false, 'Install Prereqs');
-        
-        // Hook up the Next button to trigger installation in Step 2
-        document.getElementById('next-btn').onclick = startPrerequisiteInstallation;
-        
-    } else if (state.currentStep === 2) {
-        // Moving to Bamboo Install
-        state.currentStep = 3;
-        showView('step-3');
-        document.getElementById('next-btn').textContent = 'Install';
-        document.getElementById('next-btn').onclick = startBambooInstallation;
-        
-    } else if (state.currentStep === 3) {
-        // Moving to Finalization
-        state.currentStep = 4;
-        showView('step-4');
-        // Hide Nav buttons in step 4 (header is hidden in dashboard transition)
-        document.getElementById('wizard-nav').style.display = 'none';
-        
-        // Save to local storage
-        localStorage.setItem('bambooclaw_installed', 'true');
-        
-    } else if (state.currentStep === 4) {
-        transitionToDashboard();
-    }
-}
-
-function prevStep() {
-    if (state.currentStep > 1) {
-        state.currentStep--;
-        showView(`step-${state.currentStep}`);
-        
-        // Reset button handlers
-        const btn = document.getElementById('next-btn');
-        btn.disabled = false;
-        
-        if (state.currentStep === 1) {
-            btn.textContent = 'Next';
-            btn.onclick = nextStep;
-        } else if (state.currentStep === 2) {
-            btn.textContent = 'Install Prereqs';
-            btn.onclick = startPrerequisiteInstallation;
-        } else if (state.currentStep === 3) {
-            btn.textContent = 'Install';
-            btn.onclick = startBambooInstallation;
+    // Init
+    window.addEventListener('DOMContentLoaded', () => {
+        if (localStorage.getItem('bc_installed')) {
+            enterDashboard();
+        } else {
+            runPrerequisiteChecks();
         }
-    }
-}
-
-function updatePrevButton(show) {
-    document.getElementById('prev-btn').style.display = show ? 'inline-block' : 'none';
-}
-
-// --- Dashboard Logic ---
-
-function transitionToDashboard() {
-    showView('dashboard');
-    // Initialize dashboard if needed
-    loadDashboardState();
-}
-
-function switchTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.getElementById(`tab-${tabId}`).classList.add('active');
-    
-    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-    event.target.classList.add('active');
-}
-
-// Tab 1: Config
-async function saveConfig() {
-    const provider = document.getElementById('provider-select').value;
-    const apiKey = document.getElementById('api-key').value;
-    const model = document.getElementById('model-id').value;
-    const memory = document.getElementById('memory-backend').value;
-
-    const configContent = `[llm]\nprovider = "${provider}"\napi_key = "${apiKey}"\nmodel = "${model}"\nmemory = "${memory}"`;
-
-    try {
-        await invokeWithTimeout('write_config', { content: configContent }, 10000);
-        log('config-log-content', 'Configuration saved successfully.', 'success');
-    } catch (err) {
-        log('config-log-content', `Save failed: ${err.message}`, 'error');
-    }
-}
-
-async function testLLM() {
-    log('config-log-content', 'Sending ping to agent...', 'info');
-    try {
-        // This relies on the agent being somewhat configured. 
-        const result = await invokeWithTimeout('run_bambooclaw', { args: ['agent', '-m', 'ping'] }, 30000);
-        log('config-log-content', result, 'success');
-    } catch (err) {
-        log('config-log-content', `Test failed (Agent might not be running): ${err.message}`, 'error');
-    }
-}
-
-// Tab 3: Control
-let daemonInterval = null;
-let startTime = null;
-
-async function startDaemon() {
-    try {
-        await invokeWithTimeout('start_daemon', {}, 10000);
-        
-        document.getElementById('daemon-status').style.display = 'flex';
-        document.getElementById('daemon-state-text').textContent = "Running";
-        document.getElementById('status-dot').style.backgroundColor = '#10b981';
-        document.getElementById('status-dot').style.boxShadow = '0 0 10px #10b981';
-        
-        startTime = Date.now();
-        if (daemonInterval) clearInterval(daemonInterval);
-        daemonInterval = setInterval(() => {
-            const diff = Math.floor((Date.now() - startTime) / 1000);
-            document.getElementById('uptime').textContent = diff + 's';
-        }, 1000);
-        
-        log('config-log-content', 'Daemon started.', 'success');
-    } catch (err) {
-        alert("Failed to start daemon: " + err.message);
-    }
-}
-
-async function stopDaemon() {
-    try {
-        await invokeWithTimeout('stop_daemon', {}, 10000);
-        document.getElementById('daemon-state-text').textContent = "Stopped";
-        document.getElementById('status-dot').style.backgroundColor = '#ef4444';
-        document.getElementById('status-dot').style.boxShadow = 'none';
-        if (daemonInterval) clearInterval(daemonInterval);
-        log('config-log-content', 'Daemon stopped.', 'info');
-    } catch (err) {
-        alert("Failed to stop daemon: " + err.message);
-    }
-}
-
-async function sendChat() {
-    const input = document.getElementById('chat-input');
-    const msg = input.value.trim();
-    if (!msg) return;
-
-    const chatDisplay = document.getElementById('chat-display');
-    
-    // Add User Msg
-    const userMsg = document.createElement('div');
-    userMsg.className = 'chat-msg msg-user';
-    userMsg.textContent = `> ${msg}`;
-    chatDisplay.appendChild(userMsg);
-    
-    input.value = '';
-    chatDisplay.scrollTop = chatDisplay.scrollHeight;
-
-    // Add Bot Thinking
-    const botMsg = document.createElement('div');
-    botMsg.className = 'chat-msg msg-bot';
-    botMsg.textContent = '...';
-    chatDisplay.appendChild(botMsg);
-    chatDisplay.scrollTop = chatDisplay.scrollHeight;
-
-    try {
-        // We construct a prompt for the agent
-        const args = ['chat', '--message', `"${msg}"`];
-        const response = await invokeWithTimeout('run_bambooclaw', { args: args }, 30000);
-        
-        botMsg.textContent = response;
-    } catch (err) {
-        botMsg.textContent = `Error: ${err.message}`;
-        botMsg.style.color = 'var(--error)';
-    }
-    chatDisplay.scrollTop = chatDisplay.scrollHeight;
-}
-
-async function runDiagnostics() {
-    // Visualize logs in a modal or the log panel
-    alert("Diagnostics: This would check network tunnel status, config file integrity, and running processes. (Simulated)");
-}
-
-async function viewLogs() {
-    // Simply try to read a log file if it exists
-    try {
-        const logs = await invokeWithTimeout('read_config', {}); // Assuming this reads standard config/log
-        alert("Config Content:\n" + logs);
-    } catch (e) {
-        alert("Could not read logs/config.");
-    }
-}
-
-async function uninstall() {
-    if (!confirm("Are you sure you want to uninstall BambooClaw?")) return;
-    alert("Uninstall logic would remove the binary and config files. (Simulated)");
-}
-
-async function saveSettings() {
-    alert("Settings saved to daemon config.");
-}
-
-function updateModelPlaceholder() {
-    const provider = document.getElementById('provider-select').value;
-    const input = document.getElementById('model-id');
-    if (provider === 'openai') input.placeholder = 'gpt-4-turbo';
-    else if (provider === 'anthropic') input.placeholder = 'claude-3-opus-20240229';
-    else if (provider === 'gemini') input.placeholder = 'gemini-1.5-pro';
-    else if (provider === 'ollama') input.placeholder = 'llama3';
-    else if (provider === 'groq') input.placeholder = 'mixtral-8x7b-32768';
-    else input.placeholder = 'model-id';
-}
-
-function loadDashboardState() {
-    // Load saved config if any (simulated)
-    document.getElementById('provider-select').value = localStorage.getItem('provider') || 'openai';
-}
-
-// --- Initialization ---
-
-window.addEventListener('DOMContentLoaded', async () => {
-    // Check if already installed
-    if (localStorage.getItem('bambooclaw_installed') === 'true') {
-        // Optionally verify it's actually runnable before skipping
-        transitionToDashboard();
-    } else {
-        // Start Wizard
-        showView('step-1');
-        updateNextButton(false);
-        // Run checks immediately
-        await runSystemCheck();
-    }
-});
-
+    });
 </script>
+
 </body>
 </html>
