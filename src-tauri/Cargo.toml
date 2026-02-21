@@ -3,6 +3,10 @@ name = "bambooclaw"
 version = "1.0.1"
 edition = "2021"
 
+[[bin]]
+name = "bambooclaw"
+path = "src/main.rs"
+
 [dependencies]
 tauri = { version = "1", features = ["shell-open"] }
 serde = { version = "1", features = ["derive"] }
