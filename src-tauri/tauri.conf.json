@@ -10,53 +10,8 @@
     "beforeBuildCommand": ""
   },
   "tauri": {
-    "bundle": {
-      "active": true,
-      "targets": "all",
-      "identifier": "com.bamboosynergy.bambooclaw",
-      "icon": [
-        "icons/icon.png",
-        "icons/icon.ico"
-      ],
-      "resources": [],
-      "externalBin": [],
-      "copyright": "Copyright © 2024 Bamboo Synergy Technologies",
-      "category": "Utility",
-      "shortDescription": "Edge AI agent companion and installer",
-      "longDescription": "The companion application for managing BambooClaw Core and Lite instances.",
-      "deb": {
-        "depends": []
-      },
-      "macOS": {
-        "frameworks": [],
-        "minimumSystemVersion": "10.13",
-        "exceptionDomain": "",
-        "signingConfig": {
-          "debug": {
-            "identity": null,
-            "provider": null
-          },
-          "release": {
-            "identity": null,
-            "provider": null
-          }
-        },
-        "entitlements": null
-      },
-      "windows": {
-        "certificateThumbprint": null,
-        "digestAlgorithm": "sha256",
-        "timestampUrl": ""
-      }
-    },
     "allowlist": {
       "all": false,
-      "shell": {
-        "all": false,
-        "execute": false,
-        "sidecar": false,
-        "open": true
-      },
       "fs": {
         "all": false,
         "readFile": true,
@@ -78,27 +33,55 @@
         "all": false,
         "exit": true,
         "relaunch": true
+      },
+      "shell": {
+        "all": false,
+        "execute": false,
+        "sidecar": false,
+        "open": true
       }
     },
-    "windows": [
-      {
-        "title": "BambooClaw",
-        "width": 1100,
-        "height": 750,
-        "resizable": true,
-        "decorations": true,
-        "fullscreen": false
+    "bundle": {
+      "active": true,
+      "category": "DeveloperTool",
+      "copyright": "Copyright 2024 Bamboo Synergy Technologies",
+      "deb": {
+        "depends": []
+      },
+      "externalBin": [],
+      "icon": [
+        "icons/icon.png",
+        "icons/icon.ico"
+      ],
+      "identifier": "com.bamboosynergy.bambooclaw",
+      "longDescription": "BambooClaw Installer for AI edge agents.",
+      "macOS": {
+        "entitlements": null,
+        "exceptionDomain": "",
+        "frameworks": [],
+        "providerBundleIdentifier": null
+      },
+      "resources": [],
+      "shortDescription": "BambooClaw Installer",
+      "targets": "all",
+      "windows": {
+        "certificateThumbprint": null,
+        "digestAlgorithm": "sha256",
+        "timestampServer": ""
       }
-    ],
+    },
     "security": {
       "csp": "default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://* http://localhost:*; img-src 'self' data:"
     },
-    "updater": {
-      "active": false
-    },
-    "systemTray": {
-      "iconPath": "icons/icon.png",
-      "iconAsTemplate": true
-    }
+    "windows": [
+      {
+        "fullscreen": false,
+        "resizable": true,
+        "title": "BambooClaw",
+        "width": 1100,
+        "height": 750,
+        "decorations": true
+      }
+    ]
   }
 }
