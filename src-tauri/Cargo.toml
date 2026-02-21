@@ -3,6 +3,8 @@ name = "bambooclaw"
 version = "1.0.1"
 edition = "2021"
 
+[workspace]
+
 [[bin]]
 name = "bambooclaw"
 path = "src/main.rs"
