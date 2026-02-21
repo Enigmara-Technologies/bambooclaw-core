@@ -1,10 +1,10 @@
 {
-  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
   "build": {
-    "beforeBuildCommand": "",
-    "beforeDevCommand": "",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
     "devPath": "../dist",
-    "distDir": "../dist"
+    "distDir": "../dist",
+    "withGlobalTauri": true
   },
   "package": {
     "productName": "BambooClaw",
@@ -14,6 +14,7 @@
     "allowlist": {
       "all": false,
       "fs": {
+        "all": false,
         "readFile": true,
         "writeFile": true,
         "scope": [
@@ -21,6 +22,7 @@
         ]
       },
       "http": {
+        "all": false,
         "request": true,
         "scope": [
           "https://github.com/*",
@@ -28,47 +30,24 @@
         ]
       },
       "process": {
+        "all": false,
         "exit": true,
         "relaunch": true
       },
       "shell": {
+        "all": false,
         "execute": true,
-        "open": true,
-        "scope": []
+        "open": true
       }
     },
     "bundle": {
       "active": true,
-      "category": "DeveloperTool",
-      "copyright": "",
-      "deb": {
-        "depends": []
-      },
-      "externalBin": [],
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ],
-      "identifier": "com.bamboosynergy.bambooclaw",
-      "longDescription": "",
-      "macOS": {
-        "entitlements": null,
-        "exceptionDomain": "",
-        "frameworks": [],
-        "providerShortName": null,
-        "signingIdentity": null
-      },
-      "resources": [],
-      "shortDescription": "",
       "targets": "all",
-      "windows": {
-        "certificateThumbprint": null,
-        "digestAlgorithm": "sha256",
-        "timestampUrl": ""
-      }
+      "identifier": "com.bamboosynergy.bambooclaw",
+      "icon": [
+        "icons/icon.png",
+        "icons/icon.ico"
+      ]
     },
     "security": {
       "csp": null
@@ -78,12 +57,12 @@
     },
     "windows": [
       {
-        "fullscreen": false,
-        "height": 750,
-        "resizable": true,
         "title": "BambooClaw",
         "width": 1100,
-        "decorations": true
+        "height": 750,
+        "decorations": true,
+        "resizable": true,
+        "fullscreen": false
       }
     ]
   }
