@@ -1,91 +1,58 @@
-# IMPORTANT: This empty workspace declaration is mandatory.
-# It prevents Cargo from searching parent directories for a workspace,
-# ensuring that this `src-tauri` crate is treated as a standalone project
-# within the larger frontend project structure.
+# BambooClaw Companion App - Cargo.toml
+# This file defines the Rust backend's metadata and dependencies for the Tauri application.
+# CRITICAL: The empty [workspace] table is required for monorepo setups and must be the first item.
+
 [workspace]
 
 [package]
 name = "bambooclaw-app"
 version = "0.1.0"
-description = "The BambooClaw Companion App for managing Core and Lite agents."
+description = "BambooClaw Companion: Install and manage BambooClaw Core & Lite agents."
 authors = ["Bamboo Synergy Technologies"]
-license = "MIT OR Apache-2.0"
+license = "MIT"
 repository = "https://github.com/bamboosynergy/bambooclaw-installer"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-# Defines the binary executable for the application.
+# The binary definition for the application.
 [[bin]]
 name = "bambooclaw-app"
 path = "src/main.rs"
 
 [build-dependencies]
-# Required for building the Tauri application and integrating with the frontend.
-tauri-build = { version = "1.5", features = [] }
+# Required for Tauri's build process.
+tauri-build = { version = "1", features = [] }
 
 [dependencies]
-# The core Tauri framework. Features are enabled below in the [features] section.
-tauri = { version = "1.6", features = [] }
-
-# Serialization and deserialization framework.
-# The "derive" feature enables procedural macros (#_#[derive(Serialize, Deserialize)])
-# for automatically implementing traits on custom structs used in Tauri commands.
-serde = { version = "1.0", features = ["derive"] }
-
-# JSON support for the Serde framework, used for payloads between Rust and TypeScript.
-serde_json = "1.0"
-
-# Asynchronous runtime for Rust. The "full" feature flag enables all
-# tokio features, including I/O, networking, timers, and the multi-threaded scheduler,
-# which are essential for handling downloads, file operations, and process management concurrently.
-tokio = { version = "1.35", features = ["full"] }
-
-# A library to find platform-specific user directories like home, config, and data.
-# Crucial for storing agent configurations and binaries in standard, cross-platform locations.
-dirs = "5.0"
-
-# A modern, ergonomic HTTP client for making web requests.
-# The "stream" feature is necessary for downloading large files (like agent binaries)
-# with progress reporting, as it allows processing the response as a byte stream.
-reqwest = { version = "0.11", features = ["stream"] }
-
-# Utilities for working with asynchronous streams.
-# `StreamExt` is used here to iterate over the byte stream from a reqwest download,
-# which is how we can report download progress to the frontend.
+# Utility for finding the user's home directory across different operating systems.
+dirs = "5"
+# Asynchronous stream utilities, used here with reqwest for download progress.
 futures-util = "0.3"
-
-# A library to get system information, such as running processes, CPU, and memory usage.
-# Used to check if BambooClaw agents are already running before starting or stopping them.
+# The reqwest HTTP client, with streaming enabled for downloading large binaries.
+reqwest = { version = "0.12", features = ["stream"] }
+# Serde is a framework for serializing and deserializing Rust data structures efficiently.
+serde = { version = "1.0", features = ["derive"] }
+# Serde support for JSON, the data format for communication between Rust and the frontend.
+serde_json = "1.0"
+# A cross-platform library for getting system information, like running processes.
 sysinfo = "0.30"
-
-# A cross-platform library to find the full path of an executable in the system's PATH.
-# Useful for checking if required system dependencies (like git) are installed and accessible.
-which = "4.4"
+# The core Tauri framework dependency. The "shell-open-api" feature allows opening URLs and files in the default system application.
+tauri = { version = "1", features = ["shell-open-api"] }
+# An asynchronous runtime for Rust, essential for handling concurrent operations like downloads and background tasks.
+tokio = { version = "1", features = ["full"] }
+# A cross-platform utility to find executables in the system's PATH.
+which = "4"
 
 [features]
-# This feature enables Tauri's custom protocol. The custom protocol allows the application
-# to serve frontend assets directly from the compiled binary (using `asset://...`),
-# removing the need for a local HTTP server in production. This results in a smaller,
-# more secure, and more self-contained application bundle.
+# By default, we enable the custom-protocol feature.
+default = ["custom-protocol"]
+# This feature is used by Tauri to serve frontend assets from a custom protocol
+# (e.g., `tauri://localhost`) instead of a local HTTP server, enhancing security.
 custom-protocol = ["tauri/custom-protocol"]
 
 [profile.release]
-# Panic behavior: "abort" creates a slightly smaller binary but prevents stack unwinding.
-# panic = "abort"
-
-# Link-Time Optimization: Performs optimizations across the entire crate graph,
-# resulting in a smaller and faster binary at the cost of longer compile times.
-lto = true
-
-# Optimization Level: "s" optimizes for binary size. "z" is an alternative for
-# even more aggressive size optimization, sometimes at a small performance cost.
-opt-level = "s"
-
-# Strip Symbols: Removes debugging symbols from the final executable,
-# significantly reducing its size.
+# `strip = true` removes debugging symbols from the binary, reducing its size.
 strip = true
-
-# Codegen Units: Setting this to 1 allows for the most optimal code generation
-# with LTO, but it disables parallel codegen, increasing compile time.
-codegen-units = 1
+# `lto = true` enables Link-Time Optimization, which can improve performance and reduce binary size.
+lto = true
+# `opt-level = "s"` optimizes the binary for size, which is crucial for a distributable desktop application.
+opt-level = "s"
