@@ -1,1 +1,341 @@
-<!DOCTYPE html><html><head></head><body></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BambooClaw Installer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --bg: #0a0e14;
+      --surface: #131922;
+      --surface2: #1a2233;
+      --border: #1e2a3a;
+      --text: #e6edf3;
+      --text-muted: #7d8a9a;
+      --primary: #3fb950;
+      --primary-glow: rgba(63, 185, 80, 0.15);
+      --accent: #58a6ff;
+      --warning: #d29922;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Title bar drag region */
+    .titlebar {
+      height: 32px;
+      background: var(--surface);
+      -webkit-app-region: drag;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .titlebar span { opacity: 0.7; }
+
+    .container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Animated background grid */
+    .bg-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 40px 40px;
+      opacity: 0.3;
+      animation: gridMove 20s linear infinite;
+    }
+    @keyframes gridMove {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(40px, 40px); }
+    }
+
+    /* Radial glow */
+    .glow {
+      position: absolute;
+      width: 500px; height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      animation: pulse 4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+    }
+
+    .content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      max-width: 480px;
+      width: 100%;
+    }
+
+    .logo {
+      width: 72px; height: 72px;
+      margin: 0 auto 20px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 18px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px; font-weight: 700;
+      box-shadow: 0 0 40px var(--primary-glow);
+      animation: logoFloat 3s ease-in-out infinite;
+    }
+    @keyframes logoFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      background: linear-gradient(135deg, var(--text), var(--primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .version {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+    }
+
+    /* Steps */
+    .steps {
+      width: 100%;
+      margin-bottom: 28px;
+    }
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      border-radius: var(--radius);
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: var(--text-muted);
+      transition: all 0.4s ease;
+      background: transparent;
+    }
+    .step.active {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .step.done { color: var(--primary); }
+    .step.done .step-icon { background: var(--primary); color: var(--bg); }
+    .step.active .step-icon { background: var(--accent); color: white; animation: spinIcon 1.5s linear infinite; }
+    .step.pending .step-icon { background: var(--surface2); color: var(--text-muted); }
+
+    .step-icon {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600;
+      flex-shrink: 0;
+      transition: all 0.3s;
+    }
+    @keyframes spinIcon {
+      0% { box-shadow: 0 0 0 0 rgba(88, 166, 255, 0.4); }
+      100% { box-shadow: 0 0 0 8px rgba(88, 166, 255, 0); }
+    }
+
+    .step-label { flex: 1; text-align: left; }
+    .step-status { font-size: 11px; opacity: 0.6; }
+
+    /* Progress bar */
+    .progress-wrap {
+      width: 100%;
+      height: 4px;
+      background: var(--surface2);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+
+    .status-text {
+      font-size: 12px;
+      color: var(--text-muted);
+      min-height: 18px;
+    }
+
+    /* Complete state */
+    .complete-msg {
+      display: none;
+      animation: fadeIn 0.6s ease;
+    }
+    .complete-msg.show { display: block; }
+    .complete-msg h2 {
+      font-size: 22px;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+    .complete-msg p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+    .btn {
+      padding: 10px 28px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--primary);
+      color: var(--bg);
+      transition: all 0.2s;
+    }
+    .btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="titlebar"><span>🎋 BambooClaw Installer</span></div>
+  <div class="container">
+    <div class="bg-grid"></div>
+    <div class="glow"></div>
+    <div class="content" id="installer">
+      <div class="logo">🎋</div>
+      <h1>BambooClaw</h1>
+      <p class="version">v1.0.1 — Bamboo Synergy Prosperity</p>
+
+      <div class="steps" id="steps">
+        <div class="step pending" data-step="0">
+          <div class="step-icon">1</div>
+          <span class="step-label">Checking system requirements</span>
+          <span class="step-status"></span>
+        </div>
+        <div class="step pending" data-step="1">
+          <div class="step-icon">2</div>
+          <span class="step-label">Preparing installation directory</span>
+          <span class="step-status"></span>
+        </div>
+        <div class="step pending" data-step="2">
+          <div class="step-icon">3</div>
+          <span class="step-label">Installing core engines</span>
+          <span class="step-status"></span>
+        </div>
+        <div class="step pending" data-step="3">
+          <div class="step-icon">4</div>
+          <span class="step-label">Configuring environment</span>
+          <span class="step-status"></span>
+        </div>
+        <div class="step pending" data-step="4">
+          <div class="step-icon">5</div>
+          <span class="step-label">Finalizing setup</span>
+          <span class="step-status"></span>
+        </div>
+      </div>
+
+      <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+      <p class="status-text" id="statusText">Initializing…</p>
+    </div>
+
+    <div class="complete-msg" id="complete">
+      <div class="logo">✓</div>
+      <h2>Installation Complete!</h2>
+      <p>BambooClaw is ready. You can close this window.</p>
+      <button class="btn" onclick="window.close()">Close Installer</button>
+    </div>
+  </div>
+
+  <script>
+    const steps = document.querySelectorAll('.step');
+    const bar = document.getElementById('progressBar');
+    const status = document.getElementById('statusText');
+    const installer = document.getElementById('installer');
+    const complete = document.getElementById('complete');
+
+    const tasks = [
+      { label: 'Verifying OS compatibility…', dur: 1800 },
+      { label: 'Creating application folder…', dur: 1400 },
+      { label: 'Extracting Rust + Go engines…', dur: 3200 },
+      { label: 'Writing config files…', dur: 1600 },
+      { label: 'Registering shortcuts…', dur: 1200 },
+    ];
+
+    let current = 0;
+
+    function runStep() {
+      if (current >= tasks.length) {
+        bar.style.width = '100%';
+        status.textContent = '';
+        setTimeout(() => {
+          installer.style.display = 'none';
+          complete.classList.add('show');
+        }, 500);
+        return;
+      }
+
+      steps[current].classList.remove('pending');
+      steps[current].classList.add('active');
+      status.textContent = tasks[current].label;
+
+      const startPct = (current / tasks.length) * 100;
+      const endPct = ((current + 1) / tasks.length) * 100;
+      bar.style.width = startPct + '%';
+
+      // Animate progress within step
+      const start = performance.now();
+      const dur = tasks[current].dur;
+      function tick(now) {
+        const elapsed = now - start;
+        const p = Math.min(elapsed / dur, 1);
+        bar.style.width = (startPct + (endPct - startPct) * p) + '%';
+        if (p < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+
+      setTimeout(() => {
+        steps[current].classList.remove('active');
+        steps[current].classList.add('done');
+        steps[current].querySelector('.step-icon').textContent = '✓';
+        steps[current].querySelector('.step-status').textContent = 'Done';
+        current++;
+        runStep();
+      }, tasks[current].dur);
+    }
+
+    // Start after a brief delay
+    setTimeout(runStep, 800);
+  </script>
+</body>
+</html>
