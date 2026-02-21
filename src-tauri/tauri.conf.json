@@ -1,10 +1,10 @@
 {
-  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
   "build": {
-    "beforeBuildCommand": "npm run build",
     "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
     "devPath": "../dist",
-    "distDir": "../dist"
+    "distDir": "../dist",
+    "withGlobalTauri": true
   },
   "package": {
     "productName": "BambooClaw",
@@ -17,14 +17,18 @@
         "all": false,
         "readFile": true,
         "writeFile": true,
+        // Scope is restricted to a dedicated directory within the user's home folder.
+        // This is a security best practice to avoid unintentional access to other files.
+        // It allows reading/writing the config.toml and managing agent binaries.
         "scope": [
-          "$HOME/.bambooclaw/*",
-          "$HOME/.bambooclaw/**/*"
+          "$HOME/.bambooclaw/**",
+          "$APPCONFIG/**"
         ]
       },
       "http": {
         "all": false,
         "request": true,
+        // Scope is limited to GitHub domains for downloading releases and checking for updates.
         "scope": [
           "https://github.com/**",
           "https://api.github.com/**"
@@ -38,26 +42,35 @@
       "shell": {
         "all": false,
         "execute": true,
-        "open": true,
+        "open": true, // Allows opening external URLs, e.g., documentation, Telegram links.
+        // The 'execute' scope explicitly lists which commands the frontend is allowed to run.
+        // This is a critical security measure to prevent arbitrary command execution.
+        // '$RESOURCE' is a variable that points to the app's resource directory,
+        // which is the standard place for bundled sidecar binaries.
         "scope": [
           {
-            "name": "run-bambooclaw",
-            "cmd": "bambooclaw",
+            "name": "run-bambooclaw-core",
+            "cmd": "$RESOURCE/bin/bambooclaw-core",
             "args": true
           },
           {
-            "name": "run-winget",
+            "name": "run-bambooclaw-lite",
+            "cmd": "$RESOURCE/bin/bambooclaw-lite",
+            "args": true
+          },
+          {
+            "name": "winget",
             "cmd": "winget",
             "args": true
           },
           {
-            "name": "run-rustup",
-            "cmd": "rustup",
+            "name": "cargo",
+            "cmd": "cargo",
             "args": true
           },
           {
-            "name": "run-cargo",
-            "cmd": "cargo",
+            "name": "rustup",
+            "cmd": "rustup",
             "args": true
           }
         ]
@@ -70,7 +83,10 @@
       "deb": {
         "depends": []
       },
-      "externalBin": [],
+      "externalBin": [
+        "bin/bambooclaw-core",
+        "bin/bambooclaw-lite"
+      ],
       "icon": [
         "icons/32x32.png",
         "icons/128x128.png",
@@ -79,7 +95,7 @@
         "icons/icon.ico"
       ],
       "identifier": "com.bamboosynergy.bambooclaw",
-      "longDescription": "The official desktop companion and installer for the BambooClaw Core and Lite AI edge agents.",
+      "longDescription": "Installer and companion app for the BambooClaw Core and Lite AI edge agents.",
       "macOS": {
         "entitlements": null,
         "exceptionDomain": "",
@@ -87,17 +103,25 @@
         "providerShortName": null,
         "signingIdentity": null
       },
-      "resources": [],
-      "shortDescription": "BambooClaw AI Agent Installer",
+      "shortDescription": "BambooClaw AI Agent Companion",
       "targets": "all",
       "windows": {
         "certificateThumbprint": null,
         "digestAlgorithm": "sha256",
-        "timestampUrl": ""
+        "timestampUrl": "",
+        "wix": {
+          "language": "en-US",
+          "license": "LICENSE.md",
+          "banner": "assets/banner.bmp",
+          "dialog": "assets/dialog.bmp",
+          // A unique GUID for the MSI installer. Generate a new one for your actual project.
+          "upgradeCode": "a35d5a86-3532-441f-b0a1-799d506d3383"
+        },
+        "nsis": null
       }
     },
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' https://api.github.com https://github.com; img-src 'self' asset: https:"
+      "csp": null
     },
     "updater": {
       "active": false
@@ -109,13 +133,9 @@
         "resizable": true,
         "title": "BambooClaw",
         "width": 1100,
-        "decorations": true
+        "decorations": true,
+        "center": true
       }
-    ],
-    "systemTray": null,
-    "macOSPrivateApi": false,
-    "webviewInstallMode": {
-      "type": "downloadBootstrapper"
-    }
+    ]
   }
 }
