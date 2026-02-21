@@ -1224,15 +1224,26 @@
     }
 
     // =========== STARTUP ===========
-    // Run immediately — the DOM is already available since this script is at the end of <body>.
-    // Using DOMContentLoaded here would MISS the event if it already fired, causing the
-    // Environment Audit to hang forever on "Detecting..."
-    (function init() {
+    // Wait for Tauri's __TAURI__ IPC bridge to be injected before running system checks.
+    // In Tauri v1, the bridge may not exist yet when inline scripts execute, even at </body>.
+    // We poll briefly (up to 3 s) then proceed regardless so the UI never hangs.
+    function boot() {
         if (localStorage.getItem("bambooclaw-installed") === "true") {
             enterDashboard();
         } else {
             runSystemChecks();
         }
+    }
+
+    (function waitForTauri() {
+        var waited = 0;
+        var interval = setInterval(function() {
+            waited += 50;
+            if (window.__TAURI__ || waited >= 3000) {
+                clearInterval(interval);
+                boot();
+            }
+        }, 50);
     })();
     </script>
 </body>
