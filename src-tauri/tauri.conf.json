@@ -1,7 +1,7 @@
 {
   "build": {
-    "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build",
+    "beforeDevCommand": "",
+    "beforeBuildCommand": "",
     "devPath": "../dist",
     "distDir": "../dist",
     "withGlobalTauri": true
@@ -18,7 +18,8 @@
         "readFile": true,
         "writeFile": true,
         "scope": [
-          "$HOME/*"
+          "$HOME/*",
+          "$HOME/.bambooclaw/*"
         ]
       },
       "http": {
@@ -36,18 +37,40 @@
       },
       "shell": {
         "all": false,
-        "execute": true,
-        "open": true
+        "execute": false,
+        "open": true,
+        "sidecar": false
       }
     },
     "bundle": {
       "active": true,
-      "targets": "all",
-      "identifier": "com.bamboosynergy.bambooclaw",
+      "category": "DeveloperTool",
+      "copyright": "",
+      "deb": {
+        "depends": []
+      },
+      "externalBin": [],
       "icon": [
         "icons/icon.png",
         "icons/icon.ico"
-      ]
+      ],
+      "identifier": "com.bamboosynergy.bambooclaw",
+      "longDescription": "",
+      "macOS": {
+        "entitlements": null,
+        "exceptionDomain": "",
+        "frameworks": [],
+        "providerShortName": null,
+        "signingIdentity": null
+      },
+      "resources": [],
+      "shortDescription": "",
+      "targets": "all",
+      "windows": {
+        "certificateThumbprint": null,
+        "digestAlgorithm": "sha256",
+        "timestampUrl": ""
+      }
     },
     "security": {
       "csp": null
@@ -57,12 +80,12 @@
     },
     "windows": [
       {
+        "fullscreen": false,
+        "height": 750,
+        "resizable": true,
         "title": "BambooClaw",
         "width": 1100,
-        "height": 750,
-        "decorations": true,
-        "resizable": true,
-        "fullscreen": false
+        "decorations": true
       }
     ]
   }
