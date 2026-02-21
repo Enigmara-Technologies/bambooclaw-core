@@ -296,6 +296,13 @@
                             <span class="status-badge status-detecting" id="chk-build">Detecting...</span>
                         </div>
                     </div>
+                    <div class="log-container">
+                        <div class="log-header">
+                            <span>BOOT TRACE LOG</span>
+                            <button class="copy-btn" onclick="copyLog('boot-log')">&#128203;</button>
+                        </div>
+                        <div class="log-body" id="boot-log"></div>
+                    </div>
                     <div style="margin-top: 1.5rem; text-align: right;">
                         <button class="btn" id="btn-step0-next" disabled>Initialize Environment →</button>
                     </div>
@@ -619,34 +626,49 @@
     }
 
     async function runSystemChecks() {
+        appendLog("boot-log", "[CHECK] runSystemChecks() called");
+
+        appendLog("boot-log", "[CHECK] get_platform: invoking...");
         var checkOS = invokeShort("get_platform").then(function(os) {
             detectedOS = os || "unknown";
             var osLabel = detectedOS === "windows" ? "Windows" : detectedOS === "macos" ? "macOS" : detectedOS === "linux" ? "Linux" : detectedOS;
             updateBadge("chk-os", osLabel, "status-found");
+            appendLog("boot-log", "[CHECK] get_platform: resolved -> \"" + osLabel + "\"");
         }).catch(function(e) {
             detectedOS = "windows";
             updateBadge("chk-os", "Windows (assumed)", "status-not-installed");
+            appendLog("boot-log", "[CHECK] get_platform: ERROR -> " + (e.message || e));
         });
 
+        appendLog("boot-log", "[CHECK] check_prerequisite(rustc): invoking...");
         var checkRust = invokeShort("check_prerequisite", { name: "rustc" }).then(function(rv) {
             updateBadge("chk-rust", rv.trim().split("\n")[0], "status-found");
+            appendLog("boot-log", "[CHECK] check_prerequisite(rustc): resolved -> \"" + rv.trim().split("\n")[0] + "\"");
         }).catch(function(e) {
             updateBadge("chk-rust", "Not Installed", "status-not-installed");
+            appendLog("boot-log", "[CHECK] check_prerequisite(rustc): ERROR -> " + (e.message || e));
         });
 
+        appendLog("boot-log", "[CHECK] run_shell_command(git --version): invoking...");
         var checkGit = invokeShort("run_shell_command", { commandName: "git", args: ["--version"] }).then(function(gv) {
             updateBadge("chk-git", gv.trim().split("\n")[0], "status-found");
+            appendLog("boot-log", "[CHECK] run_shell_command(git): resolved -> \"" + gv.trim().split("\n")[0] + "\"");
         }).catch(function(e) {
             updateBadge("chk-git", "Not Installed", "status-not-installed");
+            appendLog("boot-log", "[CHECK] run_shell_command(git): ERROR -> " + (e.message || e));
         });
 
+        appendLog("boot-log", "[CHECK] check_prerequisite(vs_build_tools): invoking...");
         var checkBuild = invokeShort("check_prerequisite", { name: "vs_build_tools" }).then(function(bv) {
             updateBadge("chk-build", bv.trim() || "Found", "status-found");
+            appendLog("boot-log", "[CHECK] check_prerequisite(vs_build_tools): resolved -> \"" + (bv.trim() || "Found") + "\"");
         }).catch(function(e) {
             updateBadge("chk-build", detectedOS === "windows" ? "Not Installed" : "N/A", detectedOS === "windows" ? "status-not-installed" : "status-found");
+            appendLog("boot-log", "[CHECK] check_prerequisite(vs_build_tools): ERROR -> " + (e.message || e));
         });
 
         await Promise.allSettled([checkOS, checkRust, checkGit, checkBuild]);
+        appendLog("boot-log", "[BOOT] All checks settled. Enabling Next button.");
         document.getElementById("btn-step0-next").disabled = false;
     }
 
@@ -1228,19 +1250,30 @@
     // In Tauri v1, the bridge may not exist yet when inline scripts execute, even at </body>.
     // We poll briefly (up to 3 s) then proceed regardless so the UI never hangs.
     function boot() {
-        if (localStorage.getItem("bambooclaw-installed") === "true") {
+        var installedFlag = localStorage.getItem("bambooclaw-installed");
+        appendLog("boot-log", "[BOOT] boot(): localStorage bambooclaw-installed = " + JSON.stringify(installedFlag));
+        if (installedFlag === "true") {
+            appendLog("boot-log", "[BOOT] boot(): entering dashboard (already installed)");
             enterDashboard();
         } else {
+            appendLog("boot-log", "[BOOT] boot(): calling runSystemChecks()");
             runSystemChecks();
         }
     }
 
     (function waitForTauri() {
+        appendLog("boot-log", "[BOOT] waitForTauri: polling started...");
+        var startTime = Date.now();
         var waited = 0;
         var interval = setInterval(function() {
             waited += 50;
-            if (window.__TAURI__ || waited >= 3000) {
+            if (window.__TAURI__) {
                 clearInterval(interval);
+                appendLog("boot-log", "[BOOT] waitForTauri: __TAURI__ found after " + (Date.now() - startTime) + "ms");
+                boot();
+            } else if (waited >= 3000) {
+                clearInterval(interval);
+                appendLog("boot-log", "[BOOT] waitForTauri: timeout after " + (Date.now() - startTime) + "ms, proceeding WITHOUT __TAURI__");
                 boot();
             }
         }, 50);
