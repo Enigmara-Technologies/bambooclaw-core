@@ -1,69 +1,89 @@
-# Cargo.toml for the BambooClaw Companion App (Tauri v1 Backend)
-#
-# This file defines the Rust backend's metadata, dependencies, and build profiles.
-# It is configured for a cross-platform Tauri desktop application that handles
-# asynchronous operations, file system interactions, and network requests.
+# Cargo.toml for the BambooClaw Companion App (Tauri backend)
+# This file defines the Rust crate's metadata, dependencies, and build profiles.
 
 # CRITICAL: This empty workspace declaration is mandatory.
 # It prevents Cargo from mistakenly linking this crate to a parent workspace,
-# ensuring it's treated as a standalone project root for the backend.
+# which can cause build conflicts in monorepo or complex project structures.
 [workspace]
 
 [package]
 name = "bambooclaw-app"
 version = "0.1.0"
-description = "Installer and management companion for BambooClaw AI Agents"
+description = "BambooClaw Companion: Installer and manager for BambooClaw AI Edge Agents"
 authors = ["Bamboo Synergy Technologies"]
-license = "MIT"
-repository = "https://github.com/bamboosynergy/bambooclaw-installer"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/bamboosynergy/bambooclaw-companion"
 edition = "2021"
+rust-version = "1.70"
 
-# Specifies the entry point for the application binary.
+# Defines the binary executable for the application.
 [[bin]]
 name = "bambooclaw-app"
 path = "src/main.rs"
 
-# Defines dependencies needed only during the build process.
+# Dependencies required during the build process (e.g., for codegen).
 [build-dependencies]
+# Tauri's build dependency, necessary for integrating with the frontend.
 tauri-build = { version = "1.5", features = [] }
 
-# Defines the core runtime dependencies for the application.
+# Core dependencies for the application's runtime logic.
 [dependencies]
-# The main Tauri framework for building the desktop application.
-tauri = { version = "1.6", features = [] }
+# The main Tauri framework library.
+# "custom-protocol" is enabled for serving assets from the application binary.
+tauri = { version = "1.6", features = ["shell-open"] }
 
-# Serde is used for serializing and deserializing data structures,
-# essential for communicating between the Rust backend and the web frontend.
+# Serialization and deserialization framework.
+# The "derive" feature enables attribute-based (de)serialization.
 serde = { version = "1.0", features = ["derive"] }
+# JSON serialization support for the Serde framework.
 serde_json = "1.0"
 
-# Tokio is an asynchronous runtime for Rust, crucial for handling
-# non-blocking operations like network requests and file I/O without
-# freezing the UI. The "full" feature set provides all necessary utilities.
-tokio = { version = "1", features = ["full"] }
+# Asynchronous runtime for high-performance I/O operations.
+# "full" enables all features, including networking, file I/O, and timers,
+# which is useful for managing downloads and background processes.
+tokio = { version = "1.35", features = ["full"] }
 
-# `dirs` provides a cross-platform way to find standard system directories,
-# such as the user's home or config directory. This is vital for storing
-# downloaded binaries and configuration files in the correct location.
+# Cross-platform library to find standard system directories like home, config, etc.
+# Essential for storing configuration files and downloaded binaries consistently.
 dirs = "5.0"
 
-# `reqwest` is a powerful and ergonomic HTTP client. The "stream" feature
-# is enabled to handle large file downloads (like AI models or agent binaries)
-# efficiently, allowing for progress tracking.
-reqwest = { version = "0.12", features = ["stream"] }
+# A powerful and ergonomic HTTP client.
+# The "stream" feature is crucial for downloading large files (like agent binaries)
+# efficiently, allowing for progress tracking and reduced memory usage.
+reqwest = { version = "0.11", features = ["stream"] }
+
+# Utilities for working with asynchronous streams.
+# `StreamExt` is used to process the byte stream from a `reqwest` download response.
+futures-util = "0.3"
+
+# A library to fetch system information, such as running processes.
+# Used to check if BambooClaw Core or Lite agents are already running.
+sysinfo = "0.30"
+
+# A library to find executables in the system's PATH environment variable.
+# Useful for detecting if a user has a previous version of an agent installed.
+which = "4.4"
 
 [features]
-# This feature is used by Tauri for bundling and is required for many production setups.
-# It enables the WebView to load assets from a custom protocol (e.g., tauri://)
-# instead of a local HTTP server, enhancing security and performance.
+# This section is required to enable the Tauri custom protocol feature,
+# which bundles all web assets into the final binary.
+# This results in a single-file executable with no external web assets.
 custom-protocol = ["tauri/custom-protocol"]
 
-# Configures build settings specifically for the release profile.
-# These optimizations are crucial for producing a small, fast, and secure
-# production binary for distribution to end-users.
 [profile.release]
-panic = "abort"      # Abort on panic for smaller binaries.
-codegen-units = 1    # Maximize optimizations by using a single codegen unit.
-lto = true           # Enable Link-Time Optimization to optimize across crates.
-opt-level = "s"      # Optimize for binary size ("s") or "z" for even smaller.
-strip = true         # Strip symbols from the binary to further reduce its size.
+# Configuration for `cargo build --release`
+
+# Abort on panic for smaller binary size.
+panic = "abort"
+
+# Enable Link Time Optimization (LTO) for better whole-program optimizations.
+lto = true
+
+# Optimize for binary size ("s") rather than speed ("z" is even smaller but can be slower).
+opt-level = "s"
+
+# Reduces binary size by stripping debug symbols.
+strip = true
+
+# Use a single codegen unit to allow for more aggressive optimizations.
+codegen-units = 1
