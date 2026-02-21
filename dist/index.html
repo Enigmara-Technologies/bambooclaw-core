@@ -18,8 +18,8 @@
             --border: #1e293b;
             --error: #ef4444;
             --warning: #f59e0b;
+            --success: #10b981;
         }
-
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Inter', sans-serif;
@@ -28,11 +28,9 @@
             overflow: hidden;
             height: 100vh;
         }
-
-        /* Layout */
         #app { display: flex; flex-direction: column; height: 100vh; }
-        header { 
-            padding: 1.5rem 2rem; 
+        header {
+            padding: 1.5rem 2rem;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
@@ -42,10 +40,7 @@
             z-index: 100;
         }
         .logo { font-weight: 800; font-size: 1.25rem; letter-spacing: -0.025em; color: var(--accent); }
-        
         main { flex: 1; overflow-y: auto; padding: 2rem; position: relative; }
-
-        /* Wizard & Dashboard UI */
         .container { max-width: 800px; margin: 0 auto; }
         .hidden { display: none !important; }
 
@@ -62,7 +57,6 @@
             padding: 2rem;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-
         h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
         p.subtitle { color: var(--text-dim); margin-bottom: 2rem; }
 
@@ -98,7 +92,7 @@
             font-size: 0.75rem;
             color: var(--text-dim);
         }
-        #install-log {
+        .log-body {
             height: 250px;
             overflow-y: auto;
             padding: 1rem;
@@ -130,13 +124,17 @@
             align-items: center;
             gap: 0.5rem;
         }
+        .btn:hover { filter: brightness(1.1); }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
         .btn-outline:hover { border-color: var(--accent); }
+        .btn-sm { padding: 0.5rem 1rem; font-size: 0.85rem; }
+        .btn-danger { background: var(--error); }
 
         /* Tabs */
         .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 2rem; }
-        .tab { padding: 1rem 2rem; cursor: pointer; color: var(--text-dim); border-bottom: 2px solid transparent; }
+        .tab { padding: 1rem 2rem; cursor: pointer; color: var(--text-dim); border-bottom: 2px solid transparent; transition: 0.2s; user-select: none; }
+        .tab:hover { color: var(--text); }
         .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
         /* Forms */
@@ -150,415 +148,1104 @@
             padding: 0.75rem;
             border-radius: 6px;
             outline: none;
+            font-family: inherit;
         }
-        input:focus { border-color: var(--accent); }
+        input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+
+        /* Status indicators */
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .status-pill.running { background: rgba(16,185,129,0.15); color: var(--success); }
+        .status-pill.stopped { background: rgba(239,68,68,0.15); color: var(--error); }
+
+        /* Channel row */
+        .channel-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        }
+        .channel-row .channel-name { font-weight: 600; }
+        .channel-row .channel-status { font-size: 0.8rem; color: var(--text-dim); }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .toast {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            font-size: 0.9rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            animation: slideIn 0.3s ease;
+            max-width: 350px;
+        }
+        .toast.success { border-left: 3px solid var(--success); }
+        .toast.error { border-left: 3px solid var(--error); }
+        .toast.info { border-left: 3px solid var(--accent); }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(100px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-20px); } }
 
         /* Animations */
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .spinner { animation: spin 1s linear infinite; }
+        .spinner { animation: spin 1s linear infinite; display: inline-block; }
+
+        /* Chat */
+        .chat-container {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+        .chat-messages {
+            height: 200px;
+            overflow-y: auto;
+            padding: 1rem;
+            background: #050507;
+        }
+        .chat-input-row {
+            display: flex;
+            border-top: 1px solid var(--border);
+        }
+        .chat-input-row input {
+            flex: 1;
+            border: none;
+            border-radius: 0;
+        }
+        .chat-input-row button {
+            border-radius: 0;
+            white-space: nowrap;
+        }
+        .chat-msg {
+            margin-bottom: 0.75rem;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+        .chat-msg .role {
+            font-weight: 700;
+            color: var(--accent);
+            margin-right: 0.5rem;
+        }
+        .chat-msg.assistant .role { color: var(--warning); }
+
+        /* Settings grid */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        @media (max-width: 600px) {
+            .settings-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
+    <div id="app">
+        <header>
+            <div class="logo">BAMBOOCLAW COMPANION</div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent);">v1.0.0-stable</div>
+        </header>
+        <main>
+            <!-- ========== WIZARD ========== -->
+            <div id="wizard-view" class="container">
+                <div class="steps">
+                    <div class="step-dot active" id="dot-0"></div>
+                    <div class="step-dot" id="dot-1"></div>
+                    <div class="step-dot" id="dot-2"></div>
+                    <div class="step-dot" id="dot-3"></div>
+                </div>
 
-<div id="app">
-    <header>
-        <div class="logo">BAMBOOCLAW COMPANION</div>
-        <div id="app-status" class="status-badge status-found">v1.0.0-stable</div>
-    </header>
+                <!-- Step 1: System Check -->
+                <div class="glass-card wizard-step" id="step-0">
+                    <h1>Environment Audit</h1>
+                    <p class="subtitle">Ensuring your system is prepared for BambooClaw edge deployment.</p>
+                    <div>
+                        <div class="check-row">
+                            <span>Operating System</span>
+                            <span class="status-badge status-detecting" id="chk-os">Detecting...</span>
+                        </div>
+                        <div class="check-row">
+                            <span>Rust Toolchain</span>
+                            <span class="status-badge status-detecting" id="chk-rust">Detecting...</span>
+                        </div>
+                        <div class="check-row">
+                            <span>Git CLI</span>
+                            <span class="status-badge status-detecting" id="chk-git">Detecting...</span>
+                        </div>
+                        <div class="check-row">
+                            <span>Build Tools</span>
+                            <span class="status-badge status-detecting" id="chk-build">Detecting...</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1.5rem; text-align: right;">
+                        <button class="btn" id="btn-step0-next" disabled>Initialize Environment →</button>
+                    </div>
+                </div>
 
-    <main>
-        <div id="wizard" class="container">
-            <div class="steps">
-                <div class="step-dot active" id="dot-1"></div>
-                <div class="step-dot" id="dot-2"></div>
-                <div class="step-dot" id="dot-3"></div>
-                <div class="step-dot" id="dot-4"></div>
+                <!-- Step 2: Install Prerequisites -->
+                <div class="glass-card wizard-step hidden" id="step-1">
+                    <h1>Readying Prereqs</h1>
+                    <p class="subtitle">Applying required system dependencies and development toolchains.</p>
+                    <div class="log-container">
+                        <div class="log-header">
+                            <span>SYSTEM INSTALLATION LOG</span>
+                            <button class="copy-btn" onclick="copyLog('install-log')">&#128203;</button>
+                        </div>
+                        <div class="log-body" id="install-log"></div>
+                    </div>
+                    <div style="margin-top: 1.5rem; display: flex; justify-content: space-between;">
+                        <button class="btn btn-outline" onclick="wizardGo(0)">← Back</button>
+                        <button class="btn" id="btn-step1-next" disabled>Deploy Core Agent →</button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Install BambooClaw -->
+                <div class="glass-card wizard-step hidden" id="step-2">
+                    <h1>Deploy BambooClaw</h1>
+                    <div class="form-group">
+                        <label>Installation Method</label>
+                        <select id="install-method">
+                            <option value="binary" selected>Pre-built Binary (Fastest)</option>
+                            <option value="source">Build from Source</option>
+                        </select>
+                    </div>
+                    <div class="log-container">
+                        <div class="log-header">
+                            <span>DEPLOYMENT LOG</span>
+                            <button class="copy-btn" onclick="copyLog('deploy-log')">&#128203;</button>
+                        </div>
+                        <div class="log-body" id="deploy-log"></div>
+                    </div>
+                    <div style="margin-top: 1.5rem; display: flex; justify-content: space-between;">
+                        <button class="btn btn-outline" onclick="wizardGo(1)">← Back</button>
+                        <button class="btn" id="btn-step2-deploy">Begin Deployment</button>
+                        <button class="btn hidden" id="btn-step2-next">Finalize →</button>
+                    </div>
+                </div>
+
+                <!-- Step 4: Done -->
+                <div class="glass-card wizard-step hidden" id="step-3">
+                    <div style="text-align: center; padding: 2rem 0;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">✓</div>
+                        <h1>Installation Complete</h1>
+                        <p class="subtitle">BambooClaw is now registered as a system service.</p>
+                        <div class="form-group" style="text-align: left;">
+                            <label>Storage Path</label>
+                            <input type="text" id="install-path-display" readonly value="~/.bambooclaw/bambooclaw" />
+                        </div>
+                        <button class="btn" onclick="enterDashboard()">Enter Companion Dashboard</button>
+                    </div>
+                </div>
             </div>
 
-            <!-- STEP 1: System Check -->
-            <section id="step-1" class="glass-card">
-                <h1>Environment Audit</h1>
-                <p class="subtitle">Ensuring your system is prepared for BambooClaw edge deployment.</p>
-                <div id="check-list">
-                    <div class="check-row"><span>Operating System</span><span id="os-status" class="status-badge status-detecting">Detecting...</span></div>
-                    <div class="check-row"><span>Rust Toolchain</span><span id="rust-status" class="status-badge status-detecting">Detecting...</span></div>
-                    <div class="check-row"><span>Git CLI</span><span id="git-status" class="status-badge status-detecting">Detecting...</span></div>
-                    <div class="check-row"><span>Build Tools</span><span id="build-status" class="status-badge status-detecting">Detecting...</span></div>
+            <!-- ========== DASHBOARD ========== -->
+            <div id="dashboard-view" class="container hidden">
+                <div class="tabs">
+                    <div class="tab active" data-tab="tab-llm">LLM Settings</div>
+                    <div class="tab" data-tab="tab-channels">Channels</div>
+                    <div class="tab" data-tab="tab-agent">Agent Control</div>
+                    <div class="tab" data-tab="tab-settings">Settings</div>
                 </div>
-                <div style="margin-top:2rem; text-align:right;">
-                    <button class="btn" id="btn-next-1" disabled onclick="navTo(2)">Initialize Environment &rarr;</button>
-                </div>
-            </section>
 
-            <!-- STEP 2: Prerequisite Installation -->
-            <section id="step-2" class="glass-card hidden">
-                <h1>Readying Prereqs</h1>
-                <p class="subtitle">Applying required system dependencies and development toolchains.</p>
-                <div class="log-container">
-                    <div class="log-header">
-                        <span>SYSTEM INSTALLATION LOG</span>
-                        <button class="copy-btn" onclick="copyLog('install-log')">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                        </button>
-                    </div>
-                    <div id="install-log"></div>
-                </div>
-                <div style="margin-top:2rem; display:flex; justify-content:space-between; align-items:center;">
-                    <div id="step2-spinner" class="spinner hidden" style="color:var(--accent)">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
-                    </div>
-                    <button class="btn" id="btn-next-2" disabled onclick="navTo(3)">Deploy Core Agent &rarr;</button>
-                </div>
-            </section>
-
-            <!-- STEP 3: BambooClaw Install -->
-            <section id="step-3" class="glass-card hidden">
-                <h1>Deploy BambooClaw</h1>
-                <div class="form-group">
-                    <label>Installation Method</label>
-                    <div style="display:flex; gap:1rem;">
-                        <button class="btn" id="method-binary" onclick="setMethod('binary')">Pre-built Binary (Fastest)</button>
-                        <button class="btn btn-outline" id="method-source" onclick="setMethod('source')">Build from Source</button>
-                    </div>
-                </div>
-                <div class="log-container">
-                    <div class="log-header">
-                        <span>DEPLOYMENT LOG</span>
-                        <button class="copy-btn" onclick="copyLog('deploy-log')">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                        </button>
-                    </div>
-                    <div id="deploy-log"></div>
-                </div>
-                <div style="margin-top:2rem; text-align:right;">
-                    <button class="btn" id="btn-start-deploy" onclick="runDeployment()">Begin Deployment</button>
-                    <button class="btn hidden" id="btn-next-3" onclick="navTo(4)">Finalize &rarr;</button>
-                </div>
-            </section>
-
-            <!-- STEP 4: Finalization -->
-            <section id="step-4" class="glass-card hidden" style="text-align:center;">
-                <div style="color:var(--accent); font-size:4rem; margin-bottom:1rem;">✓</div>
-                <h1>Installation Complete</h1>
-                <p class="subtitle">BambooClaw is now registered as a system service.</p>
-                <div class="form-group" style="text-align:left;">
-                    <label>Storage Path</label>
-                    <input type="text" id="final-path" readonly value="~/.bambooclaw/bin">
-                </div>
-                <button class="btn" style="width:100%" onclick="enterDashboard()">Enter Companion Dashboard</button>
-            </section>
-        </div>
-
-        <!-- DASHBOARD (Hidden during install) -->
-        <div id="dashboard" class="container hidden">
-            <div class="tabs">
-                <div class="tab active" onclick="switchTab('llm')">LLM Settings</div>
-                <div class="tab" onclick="switchTab('channels')">Channels</div>
-                <div class="tab" onclick="switchTab('control')">Agent Control</div>
-                <div class="tab" onclick="switchTab('settings')">Settings</div>
-            </div>
-
-            <div id="tab-llm" class="tab-content">
-                <div class="glass-card">
+                <!-- Tab: LLM Settings -->
+                <div class="glass-card tab-panel" id="tab-llm">
                     <div class="form-group">
                         <label>AI Provider</label>
-                        <select id="config-provider">
+                        <select id="llm-provider">
                             <option value="openai">OpenAI</option>
                             <option value="anthropic">Anthropic</option>
+                            <option value="google">Google Gemini</option>
                             <option value="groq">Groq (Ultra-Fast)</option>
                             <option value="openrouter">OpenRouter</option>
                             <option value="ollama">Ollama (Local)</option>
+                            <option value="deepseek">DeepSeek</option>
+                            <option value="mistral">Mistral</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label>Secret API Key</label>
-                        <input type="password" id="config-key" placeholder="sk-...">
+                        <input type="password" id="llm-api-key" placeholder="sk-..." />
                     </div>
-                    <button class="btn" onclick="saveConfig()">Apply Configuration</button>
-                </div>
-            </div>
-            
-            <div id="tab-control" class="tab-content hidden">
-                <div class="glass-card" style="display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <h3>Daemon Status</h3>
-                        <p id="daemon-status-text" class="status-detecting">Service Stopped</p>
-                    </div>
-                    <button id="daemon-toggle" class="btn" onclick="toggleDaemon()">Start Agent Daemon</button>
-                </div>
-            </div>
-
-            <div id="tab-channels" class="tab-content hidden">
-                <div class="glass-card">
-                    <h3>Active Channels</h3>
-                    <p class="subtitle">Connect your agent to external messaging platforms.</p>
-                    <!-- Simulated List -->
-                    <div class="check-row"><span>Telegram Bot</span><button class="btn btn-outline">Setup</button></div>
-                    <div class="check-row"><span>Discord App</span><button class="btn btn-outline">Setup</button></div>
-                </div>
-            </div>
-
-            <div id="tab-settings" class="tab-content hidden">
-                 <div class="glass-card">
-                    <div class="form-group">
-                        <label>Autonomy Level</label>
-                        <select>
-                            <option>Observation Only</option>
-                            <option>Collaborative (Needs Approval)</option>
-                            <option selected>Full Autonomy</option>
+                    <div class="form-group" id="llm-model-group">
+                        <label>Model</label>
+                        <select id="llm-model">
+                            <option value="">Select provider first</option>
                         </select>
                     </div>
-                    <p class="subtitle">Security levels determine which shell commands the agent can run without explicit user consent.</p>
+                    <div class="form-group">
+                        <label>System Prompt (optional)</label>
+                        <textarea id="llm-system-prompt" rows="3" placeholder="Custom instructions for the agent..."></textarea>
+                    </div>
+                    <button class="btn" onclick="applyLLMConfig()">Apply Configuration</button>
+                    <button class="btn btn-outline" style="margin-left: 0.5rem;" onclick="testLLMConfig()">Test Connection</button>
+                </div>
+
+                <!-- Tab: Channels -->
+                <div class="glass-card tab-panel hidden" id="tab-channels">
+                    <h1 style="font-size: 1.3rem; margin-bottom: 0.5rem;">Active Channels</h1>
+                    <p class="subtitle">Connect your agent to external messaging platforms.</p>
+
+                    <div class="channel-row">
+                        <div>
+                            <div class="channel-name">🤖 Telegram Bot</div>
+                            <div class="channel-status" id="tg-status">Not configured</div>
+                        </div>
+                        <button class="btn btn-sm btn-outline" onclick="setupTelegram()">Setup</button>
+                    </div>
+
+                    <div class="channel-row">
+                        <div>
+                            <div class="channel-name">💬 Discord App</div>
+                            <div class="channel-status" id="dc-status">Not configured</div>
+                        </div>
+                        <button class="btn btn-sm btn-outline" onclick="setupDiscord()">Setup</button>
+                    </div>
+
+                    <div class="channel-row">
+                        <div>
+                            <div class="channel-name">📱 WhatsApp</div>
+                            <div class="channel-status" id="wa-status">Not configured</div>
+                        </div>
+                        <button class="btn btn-sm btn-outline" onclick="setupWhatsApp()">Setup</button>
+                    </div>
+
+                    <div class="channel-row">
+                        <div>
+                            <div class="channel-name">🔗 Slack</div>
+                            <div class="channel-status" id="sl-status">Not configured</div>
+                        </div>
+                        <button class="btn btn-sm btn-outline" onclick="setupSlack()">Setup</button>
+                    </div>
+
+                    <!-- Channel setup modal area -->
+                    <div id="channel-setup-area" class="hidden" style="margin-top: 1.5rem; padding: 1.5rem; border: 1px solid var(--border); border-radius: 8px; background: #050507;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h2 style="font-size: 1.1rem;" id="channel-setup-title">Setup</h2>
+                            <button class="copy-btn" onclick="closeChannelSetup()" style="font-size: 1.2rem;">✕</button>
+                        </div>
+                        <div id="channel-setup-body"></div>
+                    </div>
+                </div>
+
+                <!-- Tab: Agent Control -->
+                <div class="glass-card tab-panel hidden" id="tab-agent">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <div>
+                            <h1 style="font-size: 1.3rem; margin-bottom: 0.25rem;">Daemon Status</h1>
+                            <span class="status-pill stopped" id="daemon-status-pill">
+                                <span id="daemon-status-dot">●</span>
+                                <span id="daemon-status-text">Stopped</span>
+                            </span>
+                        </div>
+                        <button class="btn" id="btn-daemon-toggle" onclick="toggleDaemon()">Start Agent Daemon</button>
+                    </div>
+
+                    <h2 style="font-size: 1rem; margin-bottom: 0.5rem; color: var(--text-dim);">Agent Chat</h2>
+                    <div class="chat-container">
+                        <div class="chat-messages" id="agent-chat-messages">
+                            <div class="chat-msg assistant"><span class="role">Agent:</span> Daemon is offline. Start the daemon to begin chatting.</div>
+                        </div>
+                        <div class="chat-input-row">
+                            <input type="text" id="agent-chat-input" placeholder="Send a message to the agent..." onkeydown="if(event.key==='Enter')sendAgentMessage()" />
+                            <button class="btn" style="border-radius: 0;" onclick="sendAgentMessage()">Send</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1.5rem;">
+                        <h2 style="font-size: 1rem; margin-bottom: 0.5rem; color: var(--text-dim);">Daemon Log</h2>
+                        <div class="log-container">
+                            <div class="log-header">
+                                <span>RUNTIME LOG</span>
+                                <button class="copy-btn" onclick="copyLog('daemon-log')">&#128203;</button>
+                            </div>
+                            <div class="log-body" id="daemon-log">[INFO] Daemon not started.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Settings -->
+                <div class="glass-card tab-panel hidden" id="tab-settings">
+                    <h1 style="font-size: 1.3rem; margin-bottom: 1.5rem;">Agent Settings</h1>
+                    <div class="settings-grid">
+                        <div class="form-group">
+                            <label>Autonomy Level</label>
+                            <select id="set-autonomy">
+                                <option value="observe">Observation Only</option>
+                                <option value="collaborative" selected>Collaborative (Needs Approval)</option>
+                                <option value="autonomous">Full Autonomy</option>
+                            </select>
+                            <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.4rem;">
+                                Determines which shell commands the agent can run without explicit user consent.
+                            </p>
+                        </div>
+                        <div class="form-group">
+                            <label>Gateway Port</label>
+                            <input type="number" id="set-port" value="7331" min="1024" max="65535" />
+                        </div>
+                        <div class="form-group">
+                            <label>Tunnel Provider</label>
+                            <select id="set-tunnel">
+                                <option value="none" selected>None (Local Only)</option>
+                                <option value="cloudflared">Cloudflare Tunnel</option>
+                                <option value="tailscale">Tailscale</option>
+                                <option value="ngrok">ngrok</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Identity Format</label>
+                            <select id="set-identity">
+                                <option value="bamboo" selected>BambooClaw Default</option>
+                                <option value="custom">Custom Persona</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Runtime Adapter</label>
+                            <select id="set-runtime">
+                                <option value="native" selected>Native (Recommended)</option>
+                                <option value="docker">Docker Container</option>
+                                <option value="wasm">WASM Sandbox</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Log Level</label>
+                            <select id="set-loglevel">
+                                <option value="info" selected>Info</option>
+                                <option value="debug">Debug</option>
+                                <option value="trace">Trace</option>
+                                <option value="warn">Warn</option>
+                                <option value="error">Error Only</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <button class="btn" onclick="saveSettings()">Save Settings</button>
+                        <button class="btn btn-outline" style="margin-left: 0.5rem;" onclick="resetSettings()">Reset Defaults</button>
+                    </div>
                 </div>
             </div>
-        </div>
-    </main>
-</div>
+        </main>
+    </div>
 
-<script>
-    // Constants & Global State
-    let detectedOS = "windows";
-    let installMethod = "binary";
+    <!-- Toast container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+    // =========== GLOBALS ===========
+    let detectedOS = "unknown";
+    let daemonRunning = false;
+    let currentConfig = {};
     const PROXY_URL = "https://mjmdhqglpratbyzmgndm.supabase.co/functions/v1/github-release-proxy";
-    const LONG_TIMEOUT = 600000;
-    const SHORT_TIMEOUT = 8000;
 
-    // Timeout Wrapper
-    async function invokeWithTimeout(cmd, args = {}, timeoutMs = SHORT_TIMEOUT) {
+    // =========== TOAST ===========
+    function showToast(message, type = "info") {
+        const container = document.getElementById("toast-container");
+        const toast = document.createElement("div");
+        toast.className = "toast " + type;
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.animation = "slideOut 0.3s ease forwards";
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    // =========== TAURI HELPERS ===========
+    function invokeShort(cmd, args) {
+        if (!window.__TAURI__) return Promise.reject(new Error("Tauri not available (running in browser)"));
         return Promise.race([
-            window.__TAURI__.invoke(cmd, args),
-            new Promise((_, reject) => setTimeout(() => reject(new Error(`Timeout: ${cmd} after ${timeoutMs}ms`)), timeoutMs))
+            window.__TAURI__.invoke(cmd, args || {}),
+            new Promise(function(_, reject) { setTimeout(function() { reject(new Error("Timeout: " + cmd)); }, 8000); })
+        ]);
+    }
+    function invokeLong(cmd, args, ms) {
+        if (!window.__TAURI__) return Promise.reject(new Error("Tauri not available (running in browser)"));
+        return Promise.race([
+            window.__TAURI__.invoke(cmd, args || {}),
+            new Promise(function(_, reject) { setTimeout(function() { reject(new Error("Timeout: " + cmd)); }, ms || 600000); })
         ]);
     }
 
-    // Step 1: Logic
-    async function runPrerequisiteChecks() {
-        const statuses = {
-            os: document.getElementById('os-status'),
-            rust: document.getElementById('rust-status'),
-            git: document.getElementById('git-status'),
-            build: document.getElementById('build-status')
-        };
-
-        // Determine OS
-        try {
-            detectedOS = await invokeWithTimeout("get_platform");
-            statuses.os.textContent = detectedOS;
-            statuses.os.className = "status-badge status-found";
-        } catch (e) {
-            console.error("OS detection failed", e);
-            detectedOS = "windows"; // Fallback
-            statuses.os.textContent = "windows (fallback)";
-        }
-
-        const checks = [
-            { id: 'rust', name: 'rustc' },
-            { id: 'git', name: 'git' },
-            { id: 'build', name: (detectedOS === "windows" ? "cl" : "make") }
-        ];
-
-        let completedChecks = 0;
-        checks.forEach(async check => {
-            try {
-                const version = await invokeWithTimeout("check_prerequisite", { name: check.name });
-                statuses[check.id].textContent = version || "Found";
-                statuses[check.id].className = "status-badge status-found";
-                statuses[check.id].setAttribute('data-installed', 'true');
-            } catch (err) {
-                const msg = err?.message || err?.toString() || "";
-                if (msg.toLowerCase().includes("not found") || msg.includes("Timeout")) {
-                    statuses[check.id].textContent = "Not Installed";
-                    statuses[check.id].className = "status-badge status-not-installed";
-                } else {
-                    statuses[check.id].textContent = "Error";
-                    statuses[check.id].className = "status-badge status-error";
-                }
-                statuses[check.id].setAttribute('data-installed', 'false');
-            } finally {
-                completedChecks++;
-                if (completedChecks === checks.length) {
-                    document.getElementById('btn-next-1').disabled = false;
-                }
-            }
-        });
-    }
-
-    // Step 2: Logic
-    async function runPrereqInstallation() {
-        const log = document.getElementById('install-log');
-        const nextBtn = document.getElementById('btn-next-2');
-        const spinner = document.getElementById('step2-spinner');
-        
-        function addLog(text, type = 'info') {
-            const time = new Date().toLocaleTimeString();
-            const color = type === 'error' ? 'var(--error)' : (type === 'skip' ? 'var(--warning)' : 'var(--text)');
-            log.innerHTML += `<div style="color:${color}">[${time}] ${text}</div>`;
-            log.scrollTop = log.scrollHeight;
-        }
-
-        spinner.classList.remove('hidden');
-        addLog(`Detected Environment: ${detectedOS.toUpperCase()}`);
-
-        const installQueue = [];
-        const rustInstalled = document.getElementById('rust-status').getAttribute('data-installed') === 'true';
-
-        if (detectedOS === "windows") {
-            if (!rustInstalled) {
-                installQueue.push({ 
-                    name: "Rust via Winget", 
-                    cmd: "winget", 
-                    args: ["install", "--id", "Rustlang.Rustup", "--silent", "--accept-package-agreements"] 
-                });
-            }
-            installQueue.push({ 
-                name: "VS Build Tools", 
-                cmd: "winget", 
-                args: ["install", "--id", "Microsoft.VisualStudio.2022.BuildTools", "--silent", "--override", "--wait --add Microsoft.VisualStudio.Workload.VCTools ; --includeRecommended"] 
+    // =========== COPY LOG ===========
+    function copyLog(logId) {
+        var el = document.getElementById(logId);
+        if (el) {
+            navigator.clipboard.writeText(el.textContent).then(function() {
+                showToast("Log copied to clipboard", "success");
             });
-        } else if (detectedOS === "macos") {
-            installQueue.push({ name: "Xcode Select", cmd: "xcode-select", args: ["--install"] });
-            if (!rustInstalled) installQueue.push({ name: "Rustup", cmd: "sh", args: ["-c", "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y"] });
-        }
-
-        for (const item of installQueue) {
-            addLog(`Executing Task: ${item.name}...`);
-            try {
-                const output = await invokeWithTimeout("run_shell_command", { 
-                    commandName: item.cmd, 
-                    args: item.args 
-                }, LONG_TIMEOUT);
-                addLog(`Success: ${item.name}`);
-                if (output) addLog(`Output: ${output.substring(0, 200)}...`);
-            } catch (err) {
-                addLog(`Warning: ${item.name} failed. Error: ${err}`, 'error');
-            }
-        }
-
-        addLog(`[DONE] Prerequisite phase complete.`, 'skip');
-        spinner.classList.add('hidden');
-        nextBtn.disabled = false;
-    }
-
-    // Step 3: Logic
-    function setMethod(m) {
-        installMethod = m;
-        document.getElementById('method-binary').className = m === 'binary' ? 'btn' : 'btn btn-outline';
-        document.getElementById('method-source').className = m === 'source' ? 'btn' : 'btn btn-outline';
-    }
-
-    async function runDeployment() {
-        const log = document.getElementById('deploy-log');
-        const startBtn = document.getElementById('btn-start-deploy');
-        startBtn.disabled = true;
-
-        function addLog(text) {
-            log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${text}</div>`;
-            log.scrollTop = log.scrollHeight;
-        }
-
-        try {
-            if (installMethod === 'binary') {
-                addLog("Fetching release metadata from proxy...");
-                const res = await fetch(PROXY_URL);
-                const data = await res.json();
-                
-                let ext = detectedOS === 'windows' ? '.exe' : (detectedOS === 'macos' ? '.dmg' : '.AppImage');
-                const asset = data.assets.find(a => a.name.endsWith(ext));
-                
-                if (!asset) throw new Error(`No compatible asset found for ${ext}`);
-                
-                const home = await invokeWithTimeout("run_shell_command", { 
-                    commandName: detectedOS === 'windows' ? 'cmd' : 'sh', 
-                    args: detectedOS === 'windows' ? ["/C", "echo %USERPROFILE%"] : ["-c", "echo $HOME"] 
-                });
-                
-                const filename = detectedOS === 'windows' ? 'bambooclaw.exe' : 'bambooclaw';
-                const dest = `${home.trim()}/.bambooclaw/${filename}`;
-
-                addLog(`Downloading ${asset.name} to ${dest}...`);
-                await invokeWithTimeout("download_binary", {
-                    url: `${PROXY_URL}?asset=${asset.name}`,
-                    dest: dest
-                }, LONG_TIMEOUT);
-
-                addLog("Deployment complete.");
-            } else {
-                addLog("Initializing source build (this will take several minutes)...");
-                // Using full path trick for Windows
-                const cmd = detectedOS === 'windows' ? 'cmd' : 'cargo';
-                const args = detectedOS === 'windows' 
-                    ? ["/C", "%USERPROFILE%\\.cargo\\bin\\cargo install --git https://github.com/Enigmara-Technologies/bambooclaw-core --force"]
-                    : ["install", "--git", "https://github.com/Enigmara-Technologies/bambooclaw-core"];
-                
-                await invokeWithTimeout("run_shell_command", { commandName: cmd, args }, LONG_TIMEOUT);
-                addLog("Cargo build successful.");
-            }
-            
-            document.getElementById('btn-next-3').classList.remove('hidden');
-        } catch (err) {
-            addLog(`CRITICAL ERROR: ${err?.message || err}`);
-            startBtn.disabled = false;
         }
     }
+    function appendLog(logId, line) {
+        var el = document.getElementById(logId);
+        if (el) { el.textContent += line + "\n"; el.scrollTop = el.scrollHeight; }
+    }
 
-    // Wizard Navigation
-    function navTo(step) {
-        document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
-        document.getElementById(`step-${step}`).classList.remove('hidden');
-        document.querySelectorAll('.step-dot').forEach((d, i) => {
-            if (i < step) d.classList.add('active');
-            else d.classList.remove('active');
+    // =========== WIZARD ===========
+    var currentStep = 0;
+    function wizardGo(step) {
+        document.querySelectorAll(".wizard-step").forEach(function(s, i) {
+            s.classList.toggle("hidden", i !== step);
         });
-        
-        if (step === 2) runPrereqInstallation();
+        document.querySelectorAll(".step-dot").forEach(function(d, i) {
+            d.classList.toggle("active", i <= step);
+        });
+        currentStep = step;
+        if (step === 0) runSystemChecks();
+        if (step === 1) runPrereqInstall();
     }
 
-    function copyLog(id) {
-        const text = document.getElementById(id).innerText;
-        navigator.clipboard.writeText(text);
-        alert("Log copied to clipboard!");
-    }
-
-    function enterDashboard() {
-        localStorage.setItem('bc_installed', 'true');
-        document.getElementById('wizard').classList.add('hidden');
-        document.getElementById('dashboard').classList.remove('hidden');
-    }
-
-    // Dashboard Actions
-    function switchTab(tab) {
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.getElementById(`tab-${tab}`).classList.remove('hidden');
-        event.currentTarget.classList.add('active');
-    }
-
-    async function toggleDaemon() {
-        const btn = document.getElementById('daemon-toggle');
-        const status = document.getElementById('daemon-status-text');
-        
-        if (btn.innerText.includes("Start")) {
-            await window.__TAURI__.invoke("start_daemon");
-            btn.innerText = "Stop Agent Daemon";
-            status.innerText = "Service Online";
-            status.className = "status-badge status-found";
-        } else {
-            await window.__TAURI__.invoke("stop_daemon");
-            btn.innerText = "Start Agent Daemon";
-            status.innerText = "Service Offline";
-            status.className = "status-badge status-detecting";
+    // Step 1: System Checks
+    async function runSystemChecks() {
+        var checksCompleted = 0;
+        var totalChecks = 4;
+        function checkDone() {
+            checksCompleted++;
+            if (checksCompleted >= totalChecks) document.getElementById("btn-step0-next").disabled = false;
         }
+        function updateBadge(id, text, cls) {
+            var el = document.getElementById(id);
+            el.textContent = text;
+            el.className = "status-badge " + cls;
+        }
+
+        // OS
+        try {
+            var os = await invokeShort("get_platform");
+            detectedOS = os || "unknown";
+            var osLabel = detectedOS === "windows" ? "Windows" : detectedOS === "macos" ? "macOS" : detectedOS === "linux" ? "Linux" : detectedOS;
+            updateBadge("chk-os", osLabel, "status-found");
+        } catch(e) {
+            detectedOS = "windows";
+            updateBadge("chk-os", "Windows (assumed)", "status-not-installed");
+        }
+        checkDone();
+
+        // Rust
+        try {
+            var rv = await invokeShort("check_prerequisite", { name: "rustc" });
+            updateBadge("chk-rust", rv.trim().split("\n")[0], "status-found");
+        } catch(e) {
+            updateBadge("chk-rust", "Not Installed", "status-not-installed");
+        }
+        checkDone();
+
+        // Git
+        try {
+            var gv = await invokeShort("run_shell_command", { commandName: "git", args: ["--version"] });
+            updateBadge("chk-git", gv.trim().split("\n")[0], "status-found");
+        } catch(e) {
+            updateBadge("chk-git", "Not Installed", "status-not-installed");
+        }
+        checkDone();
+
+        // Build Tools
+        try {
+            var bv = await invokeShort("check_prerequisite", { name: "vs_build_tools" });
+            updateBadge("chk-build", bv.trim() || "Found", "status-found");
+        } catch(e) {
+            updateBadge("chk-build", detectedOS === "windows" ? "Not Installed" : "N/A", detectedOS === "windows" ? "status-not-installed" : "status-found");
+        }
+        checkDone();
     }
 
-    // Init
-    window.addEventListener('DOMContentLoaded', () => {
-        if (localStorage.getItem('bc_installed')) {
-            enterDashboard();
+    document.getElementById("btn-step0-next").addEventListener("click", function() { wizardGo(1); });
+
+    // Step 2: Install Prerequisites
+    async function runPrereqInstall() {
+        var log = "install-log";
+        document.getElementById(log).textContent = "";
+        appendLog(log, "[INFO] Detected OS: " + detectedOS);
+        appendLog(log, "[INFO] Starting prerequisite installation...");
+
+        var rustBadge = document.getElementById("chk-rust");
+        var rustInstalled = rustBadge && rustBadge.classList.contains("status-found");
+
+        if (rustInstalled) {
+            appendLog(log, "[SKIP] Rust already installed.");
         } else {
-            runPrerequisiteChecks();
+            appendLog(log, "[INFO] Installing Rust toolchain...");
+            try {
+                if (detectedOS === "windows") {
+                    var result = await invokeLong("run_shell_command", { commandName: "winget", args: ["install", "--id", "Rustlang.Rustup", "-e", "--silent"] });
+                    appendLog(log, result);
+                } else {
+                    var result = await invokeLong("run_shell_command", { commandName: "sh", args: ["-c", "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y"] });
+                    appendLog(log, result);
+                }
+                appendLog(log, "[OK] Rust installation completed.");
+            } catch(e) {
+                appendLog(log, "[ERROR] Rust installation failed: " + (e.message || e));
+            }
+        }
+
+        var buildBadge = document.getElementById("chk-build");
+        var buildInstalled = buildBadge && buildBadge.classList.contains("status-found");
+
+        if (detectedOS === "windows" && !buildInstalled) {
+            appendLog(log, "[INFO] Installing Visual Studio Build Tools...");
+            try {
+                var result = await invokeLong("run_shell_command", {
+                    commandName: "winget",
+                    args: ["install", "--id", "Microsoft.VisualStudio.2022.BuildTools", "-e", "--silent", "--override", "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"]
+                });
+                appendLog(log, result);
+                appendLog(log, "[OK] Build Tools installation completed.");
+            } catch(e) {
+                appendLog(log, "[ERROR] Build Tools installation failed: " + (e.message || e));
+            }
+        } else if (detectedOS === "macos") {
+            appendLog(log, "[INFO] Checking Xcode Command Line Tools...");
+            try {
+                var result = await invokeLong("run_shell_command", { commandName: "xcode-select", args: ["--install"] }, 120000);
+                appendLog(log, result || "[OK] Xcode CLT ready.");
+            } catch(e) {
+                appendLog(log, "[INFO] Xcode CLT may already be installed: " + (e.message || e));
+            }
+        }
+
+        appendLog(log, "[DONE] All prerequisites ready.");
+        document.getElementById("btn-step1-next").disabled = false;
+    }
+
+    document.getElementById("btn-step1-next").addEventListener("click", function() { wizardGo(2); });
+
+    // Step 3: Deploy BambooClaw
+    document.getElementById("btn-step2-deploy").addEventListener("click", async function() {
+        var log = "deploy-log";
+        var method = document.getElementById("install-method").value;
+        document.getElementById(log).textContent = "";
+        this.disabled = true;
+
+        if (method === "binary") {
+            appendLog(log, "[INFO] Downloading pre-built binary via release proxy...");
+            try {
+                // Get release metadata
+                appendLog(log, "[INFO] Fetching release metadata...");
+                var metaRes = await fetch(PROXY_URL);
+                if (!metaRes.ok) throw new Error("Proxy returned " + metaRes.status);
+                var meta = await metaRes.json();
+                appendLog(log, "[INFO] Latest release: " + (meta.tag_name || "unknown"));
+
+                // Find asset
+                var assets = meta.assets || [];
+                var assetName = "";
+                if (detectedOS === "windows") {
+                    var asset = assets.find(function(a) { return a.name.endsWith(".exe"); }) || assets.find(function(a) { return a.name.endsWith(".msi"); });
+                    assetName = asset ? asset.name : "";
+                } else if (detectedOS === "macos") {
+                    var asset = assets.find(function(a) { return a.name.endsWith(".dmg"); }) || assets.find(function(a) { return a.name.includes("macos"); });
+                    assetName = asset ? asset.name : "";
+                } else {
+                    var asset = assets.find(function(a) { return a.name.endsWith(".AppImage"); }) || assets.find(function(a) { return a.name.includes("linux"); });
+                    assetName = asset ? asset.name : "";
+                }
+
+                if (!assetName) {
+                    appendLog(log, "[WARN] No matching asset found. Available: " + assets.map(function(a){return a.name;}).join(", "));
+                    appendLog(log, "[INFO] Falling back to build from source...");
+                    // Fall through to source build
+                } else {
+                    appendLog(log, "[INFO] Downloading asset: " + assetName);
+                    // Get home dir for dest path
+                    var homePath = "~";
+                    try {
+                        if (detectedOS === "windows") {
+                            homePath = (await invokeShort("run_shell_command", { commandName: "cmd", args: ["/C", "echo %USERPROFILE%"] })).trim();
+                        } else {
+                            homePath = (await invokeShort("run_shell_command", { commandName: "sh", args: ["-c", "echo $HOME"] })).trim();
+                        }
+                    } catch(e) { /* use ~ fallback */ }
+
+                    var sep = detectedOS === "windows" ? "\\" : "/";
+                    var destDir = homePath + sep + ".bambooclaw";
+                    var destFile = destDir + sep + (detectedOS === "windows" ? "bambooclaw.exe" : "bambooclaw");
+
+                    // Ensure directory
+                    try {
+                        if (detectedOS === "windows") {
+                            await invokeShort("run_shell_command", { commandName: "cmd", args: ["/C", "mkdir \"" + destDir + "\" 2>nul || echo exists"] });
+                        } else {
+                            await invokeShort("run_shell_command", { commandName: "mkdir", args: ["-p", destDir] });
+                        }
+                    } catch(e) { /* dir may already exist */ }
+
+                    appendLog(log, "[INFO] Saving to: " + destFile);
+                    var dlUrl = PROXY_URL + "?asset=" + encodeURIComponent(assetName);
+                    await invokeLong("download_binary", { url: dlUrl, dest: destFile });
+                    appendLog(log, "[OK] Binary downloaded successfully.");
+
+                    // Make executable on unix
+                    if (detectedOS !== "windows") {
+                        try { await invokeShort("run_shell_command", { commandName: "chmod", args: ["+x", destFile] }); } catch(e) {}
+                    }
+
+                    document.getElementById("install-path-display").value = destFile;
+                    appendLog(log, "[DONE] BambooClaw deployed.");
+                    document.getElementById("btn-step2-next").classList.remove("hidden");
+                    return;
+                }
+            } catch(e) {
+                appendLog(log, "[ERROR] Binary download failed: " + (e.message || e));
+                appendLog(log, "[INFO] You can try 'Build from Source' instead.");
+                this.disabled = false;
+                return;
+            }
+        }
+
+        // Build from source
+        appendLog(log, "[INFO] Building from source (this may take several minutes)...");
+        try {
+            var cargoCmd = detectedOS === "windows"
+                ? { commandName: "cmd", args: ["/C", "%USERPROFILE%\\.cargo\\bin\\cargo install --git https://github.com/Enigmara-Technologies/bambooclaw-core --force --locked"] }
+                : { commandName: "sh", args: ["-c", "$HOME/.cargo/bin/cargo install --git https://github.com/Enigmara-Technologies/bambooclaw-core --force --locked"] };
+            var result = await invokeLong("run_shell_command", cargoCmd);
+            appendLog(log, result);
+            appendLog(log, "[DONE] BambooClaw built and installed.");
+            document.getElementById("btn-step2-next").classList.remove("hidden");
+        } catch(e) {
+            appendLog(log, "[ERROR] Build failed: " + (e.message || e));
+            this.disabled = false;
         }
     });
-</script>
 
+    document.getElementById("btn-step2-next").addEventListener("click", function() { wizardGo(3); });
+
+    function enterDashboard() {
+        localStorage.setItem("bambooclaw-installed", "true");
+        document.getElementById("wizard-view").classList.add("hidden");
+        document.getElementById("dashboard-view").classList.remove("hidden");
+        loadConfig();
+    }
+
+    // =========== TAB SWITCHING ===========
+    document.querySelectorAll(".tab").forEach(function(tab) {
+        tab.addEventListener("click", function() {
+            var target = this.getAttribute("data-tab");
+            document.querySelectorAll(".tab").forEach(function(t) { t.classList.remove("active"); });
+            this.classList.add("active");
+            document.querySelectorAll(".tab-panel").forEach(function(p) { p.classList.add("hidden"); });
+            document.getElementById(target).classList.remove("hidden");
+        });
+    });
+
+    // =========== LLM PROVIDER MODELS ===========
+    var providerModels = {
+        openai: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo", "o1-preview", "o1-mini"],
+        anthropic: ["claude-opus-4-20250514", "claude-sonnet-4-20250514", "claude-3.5-sonnet-20241022", "claude-3-haiku-20240307"],
+        google: ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"],
+        groq: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"],
+        openrouter: ["(fetched from API — enter key first)"],
+        ollama: ["llama3.2", "mistral", "codellama", "phi3"],
+        deepseek: ["deepseek-chat", "deepseek-coder", "deepseek-reasoner"],
+        mistral: ["mistral-large-latest", "mistral-medium-latest", "mistral-small-latest", "codestral-latest"]
+    };
+
+    document.getElementById("llm-provider").addEventListener("change", function() {
+        var models = providerModels[this.value] || [];
+        var sel = document.getElementById("llm-model");
+        sel.innerHTML = "";
+        models.forEach(function(m) {
+            var opt = document.createElement("option");
+            opt.value = m;
+            opt.textContent = m;
+            sel.appendChild(opt);
+        });
+    });
+    // Trigger initial population
+    document.getElementById("llm-provider").dispatchEvent(new Event("change"));
+
+    // =========== LLM CONFIG ===========
+    async function applyLLMConfig() {
+        var provider = document.getElementById("llm-provider").value;
+        var apiKey = document.getElementById("llm-api-key").value;
+        var model = document.getElementById("llm-model").value;
+        var systemPrompt = document.getElementById("llm-system-prompt").value;
+
+        if (!apiKey.trim() && provider !== "ollama") {
+            showToast("API key is required for " + provider, "error");
+            return;
+        }
+
+        currentConfig.llm = { provider: provider, api_key: apiKey, model: model, system_prompt: systemPrompt };
+
+        var tomlContent = buildConfigToml();
+
+        try {
+            await invokeShort("write_config", { content: tomlContent });
+            showToast("LLM configuration saved to ~/.bambooclaw/config.toml", "success");
+        } catch(e) {
+            // If not in Tauri, save to localStorage as fallback
+            localStorage.setItem("bambooclaw-config", JSON.stringify(currentConfig));
+            showToast("Configuration saved locally (Tauri not available)", "info");
+        }
+    }
+
+    async function testLLMConfig() {
+        showToast("Testing connection...", "info");
+        try {
+            var result = await invokeShort("run_bambooclaw", { args: ["agent", "-m", "ping"] });
+            showToast("Connection successful: " + (result || "OK"), "success");
+        } catch(e) {
+            showToast("Connection test failed: " + (e.message || e), "error");
+        }
+    }
+
+    // =========== CONFIG SERIALIZATION ===========
+    function buildConfigToml() {
+        var lines = ["# BambooClaw Agent Configuration", "# Auto-generated by BambooClaw Companion", ""];
+
+        if (currentConfig.llm) {
+            lines.push("[llm]");
+            lines.push('provider = "' + currentConfig.llm.provider + '"');
+            if (currentConfig.llm.api_key) lines.push('api_key = "' + currentConfig.llm.api_key + '"');
+            if (currentConfig.llm.model) lines.push('model = "' + currentConfig.llm.model + '"');
+            if (currentConfig.llm.system_prompt) lines.push('system_prompt = "' + currentConfig.llm.system_prompt.replace(/"/g, '\\"') + '"');
+            lines.push("");
+        }
+
+        if (currentConfig.channels) {
+            Object.keys(currentConfig.channels).forEach(function(ch) {
+                lines.push("[channels." + ch + "]");
+                var c = currentConfig.channels[ch];
+                Object.keys(c).forEach(function(k) {
+                    lines.push(k + ' = "' + c[k] + '"');
+                });
+                lines.push("");
+            });
+        }
+
+        if (currentConfig.settings) {
+            lines.push("[agent]");
+            var s = currentConfig.settings;
+            if (s.autonomy) lines.push('autonomy = "' + s.autonomy + '"');
+            if (s.port) lines.push("gateway_port = " + s.port);
+            if (s.tunnel) lines.push('tunnel = "' + s.tunnel + '"');
+            if (s.identity) lines.push('identity = "' + s.identity + '"');
+            if (s.runtime) lines.push('runtime = "' + s.runtime + '"');
+            if (s.loglevel) lines.push('log_level = "' + s.loglevel + '"');
+            lines.push("");
+        }
+
+        return lines.join("\n");
+    }
+
+    async function loadConfig() {
+        try {
+            var raw = await invokeShort("read_config");
+            showToast("Configuration loaded from disk", "info");
+            // Basic TOML parsing for known fields
+            parseAndApplyConfig(raw);
+        } catch(e) {
+            // Try localStorage fallback
+            var saved = localStorage.getItem("bambooclaw-config");
+            if (saved) {
+                try {
+                    currentConfig = JSON.parse(saved);
+                    applyConfigToUI();
+                } catch(e2) {}
+            }
+        }
+    }
+
+    function parseAndApplyConfig(toml) {
+        // Very simple TOML parser for our known structure
+        var lines = toml.split("\n");
+        var section = "";
+        lines.forEach(function(line) {
+            line = line.trim();
+            if (!line || line.startsWith("#")) return;
+            var secMatch = line.match(/^\[(.+)\]$/);
+            if (secMatch) { section = secMatch[1]; return; }
+            var kvMatch = line.match(/^(\w+)\s*=\s*"?([^"]*)"?$/);
+            if (kvMatch) {
+                var key = kvMatch[1], val = kvMatch[2];
+                if (section === "llm") {
+                    if (!currentConfig.llm) currentConfig.llm = {};
+                    currentConfig.llm[key] = val;
+                }
+                if (section.startsWith("channels.")) {
+                    var ch = section.replace("channels.", "");
+                    if (!currentConfig.channels) currentConfig.channels = {};
+                    if (!currentConfig.channels[ch]) currentConfig.channels[ch] = {};
+                    currentConfig.channels[ch][key] = val;
+                }
+                if (section === "agent") {
+                    if (!currentConfig.settings) currentConfig.settings = {};
+                    currentConfig.settings[key] = val;
+                }
+            }
+        });
+        applyConfigToUI();
+    }
+
+    function applyConfigToUI() {
+        if (currentConfig.llm) {
+            if (currentConfig.llm.provider) {
+                document.getElementById("llm-provider").value = currentConfig.llm.provider;
+                document.getElementById("llm-provider").dispatchEvent(new Event("change"));
+            }
+            if (currentConfig.llm.api_key) document.getElementById("llm-api-key").value = currentConfig.llm.api_key;
+            if (currentConfig.llm.model) {
+                setTimeout(function() { document.getElementById("llm-model").value = currentConfig.llm.model; }, 50);
+            }
+            if (currentConfig.llm.system_prompt) document.getElementById("llm-system-prompt").value = currentConfig.llm.system_prompt;
+        }
+        if (currentConfig.channels) {
+            if (currentConfig.channels.telegram) document.getElementById("tg-status").textContent = "Token: " + currentConfig.channels.telegram.token.substring(0, 8) + "...";
+            if (currentConfig.channels.discord) document.getElementById("dc-status").textContent = "Token: " + currentConfig.channels.discord.token.substring(0, 8) + "...";
+        }
+        if (currentConfig.settings) {
+            var s = currentConfig.settings;
+            if (s.autonomy) document.getElementById("set-autonomy").value = s.autonomy;
+            if (s.port || s.gateway_port) document.getElementById("set-port").value = s.port || s.gateway_port;
+            if (s.tunnel) document.getElementById("set-tunnel").value = s.tunnel;
+            if (s.identity) document.getElementById("set-identity").value = s.identity;
+            if (s.runtime) document.getElementById("set-runtime").value = s.runtime;
+            if (s.loglevel || s.log_level) document.getElementById("set-loglevel").value = s.loglevel || s.log_level;
+        }
+    }
+
+    // =========== CHANNEL SETUP ===========
+    function closeChannelSetup() {
+        document.getElementById("channel-setup-area").classList.add("hidden");
+    }
+
+    function setupTelegram() {
+        document.getElementById("channel-setup-title").textContent = "Telegram Bot Setup";
+        document.getElementById("channel-setup-body").innerHTML =
+            '<p style="margin-bottom:1rem;color:var(--text-dim);">1. Open Telegram and talk to <strong>@BotFather</strong><br>2. Send /newbot and follow the prompts<br>3. Copy the bot token and paste it below</p>' +
+            '<div class="form-group"><label>Bot Token</label><input type="text" id="tg-token" placeholder="123456:ABC-DEF1234ghIkl..." /></div>' +
+            '<button class="btn btn-sm" onclick="saveTelegramToken()">Save Token</button>' +
+            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" onclick="testChannel('telegram')">Test</button>';
+        document.getElementById("channel-setup-area").classList.remove("hidden");
+        // Try to open BotFather in Telegram
+        try {
+            if (window.__TAURI__) window.__TAURI__.shell.open("https://t.me/BotFather");
+        } catch(e) {}
+    }
+
+    function saveTelegramToken() {
+        var token = document.getElementById("tg-token").value.trim();
+        if (!token) { showToast("Please enter a bot token", "error"); return; }
+        if (!currentConfig.channels) currentConfig.channels = {};
+        currentConfig.channels.telegram = { token: token };
+        document.getElementById("tg-status").textContent = "Token: " + token.substring(0, 8) + "...";
+        saveAllConfig();
+        showToast("Telegram bot token saved", "success");
+        closeChannelSetup();
+    }
+
+    function setupDiscord() {
+        document.getElementById("channel-setup-title").textContent = "Discord App Setup";
+        document.getElementById("channel-setup-body").innerHTML =
+            '<p style="margin-bottom:1rem;color:var(--text-dim);">1. Go to <strong>discord.com/developers/applications</strong><br>2. Create a new application → Bot → Reset Token<br>3. Enable MESSAGE CONTENT INTENT<br>4. Paste the bot token below</p>' +
+            '<div class="form-group"><label>Bot Token</label><input type="text" id="dc-token" placeholder="MTA..." /></div>' +
+            '<div class="form-group"><label>Guild ID (optional)</label><input type="text" id="dc-guild" placeholder="Server ID for slash commands" /></div>' +
+            '<button class="btn btn-sm" onclick="saveDiscordToken()">Save Token</button>' +
+            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" onclick="testChannel('discord')">Test</button>';
+        document.getElementById("channel-setup-area").classList.remove("hidden");
+    }
+
+    function saveDiscordToken() {
+        var token = document.getElementById("dc-token").value.trim();
+        if (!token) { showToast("Please enter a bot token", "error"); return; }
+        if (!currentConfig.channels) currentConfig.channels = {};
+        currentConfig.channels.discord = { token: token, guild_id: document.getElementById("dc-guild").value.trim() };
+        document.getElementById("dc-status").textContent = "Token: " + token.substring(0, 8) + "...";
+        saveAllConfig();
+        showToast("Discord bot token saved", "success");
+        closeChannelSetup();
+    }
+
+    function setupWhatsApp() {
+        document.getElementById("channel-setup-title").textContent = "WhatsApp Business Setup";
+        document.getElementById("channel-setup-body").innerHTML =
+            '<p style="margin-bottom:1rem;color:var(--text-dim);">WhatsApp Business Cloud API requires a Meta Business account and approved app.</p>' +
+            '<div class="form-group"><label>Phone Number ID</label><input type="text" id="wa-phone-id" placeholder="From Meta Developer Console" /></div>' +
+            '<div class="form-group"><label>Access Token</label><input type="text" id="wa-token" placeholder="EAA..." /></div>' +
+            '<div class="form-group"><label>Webhook Verify Token</label><input type="text" id="wa-verify" placeholder="Your custom verify string" /></div>' +
+            '<button class="btn btn-sm" onclick="saveWhatsApp()">Save Configuration</button>' +
+            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" onclick="testChannel('whatsapp')">Test</button>';
+        document.getElementById("channel-setup-area").classList.remove("hidden");
+    }
+
+    function saveWhatsApp() {
+        var phoneId = document.getElementById("wa-phone-id").value.trim();
+        var token = document.getElementById("wa-token").value.trim();
+        var verify = document.getElementById("wa-verify").value.trim();
+        if (!phoneId || !token) { showToast("Phone Number ID and Access Token are required", "error"); return; }
+        if (!currentConfig.channels) currentConfig.channels = {};
+        currentConfig.channels.whatsapp = { phone_number_id: phoneId, access_token: token, verify_token: verify };
+        document.getElementById("wa-status").textContent = "Phone: " + phoneId;
+        saveAllConfig();
+        showToast("WhatsApp configuration saved", "success");
+        closeChannelSetup();
+    }
+
+    function setupSlack() {
+        document.getElementById("channel-setup-title").textContent = "Slack App Setup";
+        document.getElementById("channel-setup-body").innerHTML =
+            '<p style="margin-bottom:1rem;color:var(--text-dim);">1. Go to <strong>api.slack.com/apps</strong> and create a new app<br>2. Enable Socket Mode and Event Subscriptions<br>3. Add bot scopes: chat:write, app_mentions:read, channels:history</p>' +
+            '<div class="form-group"><label>Bot Token</label><input type="text" id="sl-bot-token" placeholder="xoxb-..." /></div>' +
+            '<div class="form-group"><label>App Token</label><input type="text" id="sl-app-token" placeholder="xapp-..." /></div>' +
+            '<button class="btn btn-sm" onclick="saveSlack()">Save Configuration</button>' +
+            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" onclick="testChannel('slack')">Test</button>';
+        document.getElementById("channel-setup-area").classList.remove("hidden");
+    }
+
+    function saveSlack() {
+        var botToken = document.getElementById("sl-bot-token").value.trim();
+        var appToken = document.getElementById("sl-app-token").value.trim();
+        if (!botToken) { showToast("Bot token is required", "error"); return; }
+        if (!currentConfig.channels) currentConfig.channels = {};
+        currentConfig.channels.slack = { bot_token: botToken, app_token: appToken };
+        document.getElementById("sl-status").textContent = "Token: " + botToken.substring(0, 10) + "...";
+        saveAllConfig();
+        showToast("Slack configuration saved", "success");
+        closeChannelSetup();
+    }
+
+    async function testChannel(channel) {
+        showToast("Testing " + channel + " connection...", "info");
+        try {
+            var result = await invokeShort("run_bambooclaw", { args: ["channel", "test", channel] });
+            showToast(channel + " test: " + (result || "OK"), "success");
+        } catch(e) {
+            showToast(channel + " test failed: " + (e.message || e), "error");
+        }
+    }
+
+    // =========== AGENT CONTROL ===========
+    async function toggleDaemon() {
+        var btn = document.getElementById("btn-daemon-toggle");
+        if (daemonRunning) {
+            try {
+                await invokeShort("stop_daemon");
+                daemonRunning = false;
+                updateDaemonUI();
+                appendLog("daemon-log", "[INFO] Daemon stopped.");
+                showToast("Agent daemon stopped", "info");
+            } catch(e) {
+                showToast("Failed to stop daemon: " + (e.message || e), "error");
+            }
+        } else {
+            try {
+                await invokeShort("start_daemon");
+                daemonRunning = true;
+                updateDaemonUI();
+                appendLog("daemon-log", "[INFO] Daemon started.");
+                showToast("Agent daemon started", "success");
+            } catch(e) {
+                showToast("Failed to start daemon: " + (e.message || e), "error");
+            }
+        }
+    }
+
+    function updateDaemonUI() {
+        var pill = document.getElementById("daemon-status-pill");
+        var text = document.getElementById("daemon-status-text");
+        var btn = document.getElementById("btn-daemon-toggle");
+        if (daemonRunning) {
+            pill.className = "status-pill running";
+            text.textContent = "Running";
+            btn.textContent = "Stop Agent Daemon";
+            btn.classList.add("btn-danger");
+        } else {
+            pill.className = "status-pill stopped";
+            text.textContent = "Stopped";
+            btn.textContent = "Start Agent Daemon";
+            btn.classList.remove("btn-danger");
+        }
+    }
+
+    async function sendAgentMessage() {
+        var input = document.getElementById("agent-chat-input");
+        var msg = input.value.trim();
+        if (!msg) return;
+        input.value = "";
+
+        var chatEl = document.getElementById("agent-chat-messages");
+        chatEl.innerHTML += '<div class="chat-msg"><span class="role">You:</span> ' + escapeHtml(msg) + '</div>';
+        chatEl.scrollTop = chatEl.scrollHeight;
+
+        if (!daemonRunning) {
+            chatEl.innerHTML += '<div class="chat-msg assistant"><span class="role">Agent:</span> Daemon is not running. Please start it first.</div>';
+            chatEl.scrollTop = chatEl.scrollHeight;
+            return;
+        }
+
+        try {
+            var result = await invokeLong("run_bambooclaw", { args: ["agent", "-m", msg] }, 30000);
+            chatEl.innerHTML += '<div class="chat-msg assistant"><span class="role">Agent:</span> ' + escapeHtml(result || "(no response)") + '</div>';
+        } catch(e) {
+            chatEl.innerHTML += '<div class="chat-msg assistant"><span class="role">Agent:</span> Error: ' + escapeHtml(e.message || String(e)) + '</div>';
+        }
+        chatEl.scrollTop = chatEl.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    // =========== SETTINGS ===========
+    async function saveSettings() {
+        currentConfig.settings = {
+            autonomy: document.getElementById("set-autonomy").value,
+            port: document.getElementById("set-port").value,
+            tunnel: document.getElementById("set-tunnel").value,
+            identity: document.getElementById("set-identity").value,
+            runtime: document.getElementById("set-runtime").value,
+            loglevel: document.getElementById("set-loglevel").value,
+        };
+        saveAllConfig();
+        showToast("Settings saved", "success");
+    }
+
+    function resetSettings() {
+        document.getElementById("set-autonomy").value = "collaborative";
+        document.getElementById("set-port").value = "7331";
+        document.getElementById("set-tunnel").value = "none";
+        document.getElementById("set-identity").value = "bamboo";
+        document.getElementById("set-runtime").value = "native";
+        document.getElementById("set-loglevel").value = "info";
+        showToast("Settings reset to defaults", "info");
+    }
+
+    // =========== SAVE ALL ===========
+    async function saveAllConfig() {
+        var toml = buildConfigToml();
+        try {
+            await invokeShort("write_config", { content: toml });
+        } catch(e) {
+            localStorage.setItem("bambooclaw-config", JSON.stringify(currentConfig));
+        }
+    }
+
+    // =========== STARTUP ===========
+    window.addEventListener("DOMContentLoaded", function() {
+        if (localStorage.getItem("bambooclaw-installed") === "true") {
+            enterDashboard();
+        } else {
+            runSystemChecks();
+        }
+    });
+    </script>
 </body>
 </html>
