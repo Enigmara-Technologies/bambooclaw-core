@@ -10,9 +10,12 @@ name = "bambooclaw"
 path = "src/main.rs"
 
 [dependencies]
-tauri = { version = "1", features = ["shell-open", "custom-protocol"] }
+tauri = { version = "1", features = ["shell-open"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
 [build-dependencies]
 tauri-build = { version = "1", features = [] }
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]
