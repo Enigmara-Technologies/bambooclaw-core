@@ -612,58 +612,42 @@
         if (step === 1) runPrereqInstall();
     }
 
-    // Step 1: System Checks
-    async function runSystemChecks() {
-        var checksCompleted = 0;
-        var totalChecks = 4;
-        function checkDone() {
-            checksCompleted++;
-            if (checksCompleted >= totalChecks) document.getElementById("btn-step0-next").disabled = false;
-        }
-        function updateBadge(id, text, cls) {
-            var el = document.getElementById(id);
-            el.textContent = text;
-            el.className = "status-badge " + cls;
-        }
+    // Step 1: System Checks — all run in PARALLEL to avoid sequential timeout hangs
+    function updateBadge(id, text, cls) {
+        var el = document.getElementById(id);
+        if (el) { el.textContent = text; el.className = "status-badge " + cls; }
+    }
 
-        // OS
-        try {
-            var os = await invokeShort("get_platform");
+    async function runSystemChecks() {
+        var checkOS = invokeShort("get_platform").then(function(os) {
             detectedOS = os || "unknown";
             var osLabel = detectedOS === "windows" ? "Windows" : detectedOS === "macos" ? "macOS" : detectedOS === "linux" ? "Linux" : detectedOS;
             updateBadge("chk-os", osLabel, "status-found");
-        } catch(e) {
+        }).catch(function(e) {
             detectedOS = "windows";
             updateBadge("chk-os", "Windows (assumed)", "status-not-installed");
-        }
-        checkDone();
+        });
 
-        // Rust
-        try {
-            var rv = await invokeShort("check_prerequisite", { name: "rustc" });
+        var checkRust = invokeShort("check_prerequisite", { name: "rustc" }).then(function(rv) {
             updateBadge("chk-rust", rv.trim().split("\n")[0], "status-found");
-        } catch(e) {
+        }).catch(function(e) {
             updateBadge("chk-rust", "Not Installed", "status-not-installed");
-        }
-        checkDone();
+        });
 
-        // Git
-        try {
-            var gv = await invokeShort("run_shell_command", { commandName: "git", args: ["--version"] });
+        var checkGit = invokeShort("run_shell_command", { commandName: "git", args: ["--version"] }).then(function(gv) {
             updateBadge("chk-git", gv.trim().split("\n")[0], "status-found");
-        } catch(e) {
+        }).catch(function(e) {
             updateBadge("chk-git", "Not Installed", "status-not-installed");
-        }
-        checkDone();
+        });
 
-        // Build Tools
-        try {
-            var bv = await invokeShort("check_prerequisite", { name: "vs_build_tools" });
+        var checkBuild = invokeShort("check_prerequisite", { name: "vs_build_tools" }).then(function(bv) {
             updateBadge("chk-build", bv.trim() || "Found", "status-found");
-        } catch(e) {
+        }).catch(function(e) {
             updateBadge("chk-build", detectedOS === "windows" ? "Not Installed" : "N/A", detectedOS === "windows" ? "status-not-installed" : "status-found");
-        }
-        checkDone();
+        });
+
+        await Promise.allSettled([checkOS, checkRust, checkGit, checkBuild]);
+        document.getElementById("btn-step0-next").disabled = false;
     }
 
     document.getElementById("btn-step0-next").addEventListener("click", function() { wizardGo(1); });
@@ -1240,13 +1224,16 @@
     }
 
     // =========== STARTUP ===========
-    window.addEventListener("DOMContentLoaded", function() {
+    // Run immediately — the DOM is already available since this script is at the end of <body>.
+    // Using DOMContentLoaded here would MISS the event if it already fired, causing the
+    // Environment Audit to hang forever on "Detecting..."
+    (function init() {
         if (localStorage.getItem("bambooclaw-installed") === "true") {
             enterDashboard();
         } else {
             runSystemChecks();
         }
-    });
+    })();
     </script>
 </body>
 </html>
