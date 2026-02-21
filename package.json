@@ -1,6 +1,7 @@
 {
   "name": "bambooclaw-core",
   "version": "1.0.0",
+  "productName": "BambooClaw",
   "scripts": {
     "build": "echo 'no frontend build'"
   }
