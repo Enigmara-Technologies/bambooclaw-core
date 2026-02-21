@@ -1,89 +1,91 @@
-# Cargo.toml for the BambooClaw Companion App (Tauri backend)
-# This file defines the Rust crate's metadata, dependencies, and build profiles.
-
-# CRITICAL: This empty workspace declaration is mandatory.
-# It prevents Cargo from mistakenly linking this crate to a parent workspace,
-# which can cause build conflicts in monorepo or complex project structures.
+# IMPORTANT: This empty workspace declaration is mandatory.
+# It prevents Cargo from searching parent directories for a workspace,
+# ensuring that this `src-tauri` crate is treated as a standalone project
+# within the larger frontend project structure.
 [workspace]
 
 [package]
 name = "bambooclaw-app"
 version = "0.1.0"
-description = "BambooClaw Companion: Installer and manager for BambooClaw AI Edge Agents"
+description = "The BambooClaw Companion App for managing Core and Lite agents."
 authors = ["Bamboo Synergy Technologies"]
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/bamboosynergy/bambooclaw-companion"
+repository = "https://github.com/bamboosynergy/bambooclaw-installer"
 edition = "2021"
-rust-version = "1.70"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 # Defines the binary executable for the application.
 [[bin]]
 name = "bambooclaw-app"
 path = "src/main.rs"
 
-# Dependencies required during the build process (e.g., for codegen).
 [build-dependencies]
-# Tauri's build dependency, necessary for integrating with the frontend.
+# Required for building the Tauri application and integrating with the frontend.
 tauri-build = { version = "1.5", features = [] }
 
-# Core dependencies for the application's runtime logic.
 [dependencies]
-# The main Tauri framework library.
-# "custom-protocol" is enabled for serving assets from the application binary.
-tauri = { version = "1.6", features = ["shell-open"] }
+# The core Tauri framework. Features are enabled below in the [features] section.
+tauri = { version = "1.6", features = [] }
 
 # Serialization and deserialization framework.
-# The "derive" feature enables attribute-based (de)serialization.
+# The "derive" feature enables procedural macros (#_#[derive(Serialize, Deserialize)])
+# for automatically implementing traits on custom structs used in Tauri commands.
 serde = { version = "1.0", features = ["derive"] }
-# JSON serialization support for the Serde framework.
+
+# JSON support for the Serde framework, used for payloads between Rust and TypeScript.
 serde_json = "1.0"
 
-# Asynchronous runtime for high-performance I/O operations.
-# "full" enables all features, including networking, file I/O, and timers,
-# which is useful for managing downloads and background processes.
+# Asynchronous runtime for Rust. The "full" feature flag enables all
+# tokio features, including I/O, networking, timers, and the multi-threaded scheduler,
+# which are essential for handling downloads, file operations, and process management concurrently.
 tokio = { version = "1.35", features = ["full"] }
 
-# Cross-platform library to find standard system directories like home, config, etc.
-# Essential for storing configuration files and downloaded binaries consistently.
+# A library to find platform-specific user directories like home, config, and data.
+# Crucial for storing agent configurations and binaries in standard, cross-platform locations.
 dirs = "5.0"
 
-# A powerful and ergonomic HTTP client.
-# The "stream" feature is crucial for downloading large files (like agent binaries)
-# efficiently, allowing for progress tracking and reduced memory usage.
+# A modern, ergonomic HTTP client for making web requests.
+# The "stream" feature is necessary for downloading large files (like agent binaries)
+# with progress reporting, as it allows processing the response as a byte stream.
 reqwest = { version = "0.11", features = ["stream"] }
 
 # Utilities for working with asynchronous streams.
-# `StreamExt` is used to process the byte stream from a `reqwest` download response.
+# `StreamExt` is used here to iterate over the byte stream from a reqwest download,
+# which is how we can report download progress to the frontend.
 futures-util = "0.3"
 
-# A library to fetch system information, such as running processes.
-# Used to check if BambooClaw Core or Lite agents are already running.
+# A library to get system information, such as running processes, CPU, and memory usage.
+# Used to check if BambooClaw agents are already running before starting or stopping them.
 sysinfo = "0.30"
 
-# A library to find executables in the system's PATH environment variable.
-# Useful for detecting if a user has a previous version of an agent installed.
+# A cross-platform library to find the full path of an executable in the system's PATH.
+# Useful for checking if required system dependencies (like git) are installed and accessible.
 which = "4.4"
 
 [features]
-# This section is required to enable the Tauri custom protocol feature,
-# which bundles all web assets into the final binary.
-# This results in a single-file executable with no external web assets.
+# This feature enables Tauri's custom protocol. The custom protocol allows the application
+# to serve frontend assets directly from the compiled binary (using `asset://...`),
+# removing the need for a local HTTP server in production. This results in a smaller,
+# more secure, and more self-contained application bundle.
 custom-protocol = ["tauri/custom-protocol"]
 
 [profile.release]
-# Configuration for `cargo build --release`
+# Panic behavior: "abort" creates a slightly smaller binary but prevents stack unwinding.
+# panic = "abort"
 
-# Abort on panic for smaller binary size.
-panic = "abort"
-
-# Enable Link Time Optimization (LTO) for better whole-program optimizations.
+# Link-Time Optimization: Performs optimizations across the entire crate graph,
+# resulting in a smaller and faster binary at the cost of longer compile times.
 lto = true
 
-# Optimize for binary size ("s") rather than speed ("z" is even smaller but can be slower).
+# Optimization Level: "s" optimizes for binary size. "z" is an alternative for
+# even more aggressive size optimization, sometimes at a small performance cost.
 opt-level = "s"
 
-# Reduces binary size by stripping debug symbols.
+# Strip Symbols: Removes debugging symbols from the final executable,
+# significantly reducing its size.
 strip = true
 
-# Use a single codegen unit to allow for more aggressive optimizations.
+# Codegen Units: Setting this to 1 allows for the most optimal code generation
+# with LTO, but it disables parallel codegen, increasing compile time.
 codegen-units = 1
