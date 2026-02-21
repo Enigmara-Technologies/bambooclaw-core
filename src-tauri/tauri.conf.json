@@ -1,10 +1,10 @@
 {
+  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
   "build": {
-    "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build",
+    "beforeBuildCommand": "",
+    "beforeDevCommand": "",
     "devPath": "../dist",
-    "distDir": "../dist",
-    "withGlobalTauri": true
+    "distDir": "../dist"
   },
   "package": {
     "productName": "BambooClaw",
@@ -14,79 +14,37 @@
     "allowlist": {
       "all": false,
       "fs": {
-        "all": false,
         "readFile": true,
         "writeFile": true,
-        // Scope is restricted to a dedicated directory within the user's home folder.
-        // This is a security best practice to avoid unintentional access to other files.
-        // It allows reading/writing the config.toml and managing agent binaries.
         "scope": [
-          "$HOME/.bambooclaw/**",
-          "$APPCONFIG/**"
+          "$HOME/*"
         ]
       },
       "http": {
-        "all": false,
         "request": true,
-        // Scope is limited to GitHub domains for downloading releases and checking for updates.
         "scope": [
-          "https://github.com/**",
-          "https://api.github.com/**"
+          "https://github.com/*",
+          "https://api.github.com/*"
         ]
       },
       "process": {
-        "all": false,
         "exit": true,
         "relaunch": true
       },
       "shell": {
-        "all": false,
         "execute": true,
-        "open": true, // Allows opening external URLs, e.g., documentation, Telegram links.
-        // The 'execute' scope explicitly lists which commands the frontend is allowed to run.
-        // This is a critical security measure to prevent arbitrary command execution.
-        // '$RESOURCE' is a variable that points to the app's resource directory,
-        // which is the standard place for bundled sidecar binaries.
-        "scope": [
-          {
-            "name": "run-bambooclaw-core",
-            "cmd": "$RESOURCE/bin/bambooclaw-core",
-            "args": true
-          },
-          {
-            "name": "run-bambooclaw-lite",
-            "cmd": "$RESOURCE/bin/bambooclaw-lite",
-            "args": true
-          },
-          {
-            "name": "winget",
-            "cmd": "winget",
-            "args": true
-          },
-          {
-            "name": "cargo",
-            "cmd": "cargo",
-            "args": true
-          },
-          {
-            "name": "rustup",
-            "cmd": "rustup",
-            "args": true
-          }
-        ]
+        "open": true,
+        "scope": []
       }
     },
     "bundle": {
       "active": true,
       "category": "DeveloperTool",
-      "copyright": "Copyright © 2024 Bamboo Synergy Technologies",
+      "copyright": "",
       "deb": {
         "depends": []
       },
-      "externalBin": [
-        "bin/bambooclaw-core",
-        "bin/bambooclaw-lite"
-      ],
+      "externalBin": [],
       "icon": [
         "icons/32x32.png",
         "icons/128x128.png",
@@ -95,7 +53,7 @@
         "icons/icon.ico"
       ],
       "identifier": "com.bamboosynergy.bambooclaw",
-      "longDescription": "Installer and companion app for the BambooClaw Core and Lite AI edge agents.",
+      "longDescription": "",
       "macOS": {
         "entitlements": null,
         "exceptionDomain": "",
@@ -103,21 +61,13 @@
         "providerShortName": null,
         "signingIdentity": null
       },
-      "shortDescription": "BambooClaw AI Agent Companion",
+      "resources": [],
+      "shortDescription": "",
       "targets": "all",
       "windows": {
         "certificateThumbprint": null,
         "digestAlgorithm": "sha256",
-        "timestampUrl": "",
-        "wix": {
-          "language": "en-US",
-          "license": "LICENSE.md",
-          "banner": "assets/banner.bmp",
-          "dialog": "assets/dialog.bmp",
-          // A unique GUID for the MSI installer. Generate a new one for your actual project.
-          "upgradeCode": "a35d5a86-3532-441f-b0a1-799d506d3383"
-        },
-        "nsis": null
+        "timestampUrl": ""
       }
     },
     "security": {
@@ -133,8 +83,7 @@
         "resizable": true,
         "title": "BambooClaw",
         "width": 1100,
-        "decorations": true,
-        "center": true
+        "decorations": true
       }
     ]
   }
