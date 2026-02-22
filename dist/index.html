@@ -1820,7 +1820,7 @@
             // No tool calls — we have a final text response
             var reply = assistantMsg.content || "(no response)";
             chatHistory.push({ role: "assistant", content: reply });
-            appendLog("dash-log", "[LLM-CALL] Got reply (after " + iteration + " tool iterations): " + reply.substring(0, 80) + "...");
+            appendLog("dash-log", "[LLM-CALL] Got reply (after " + iteration + " tool iterations): " + reply.substring(0, 300) + (reply.length > 300 ? "..." : ""));
             return reply;
         }
 
@@ -1887,7 +1887,7 @@
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ chat_id: chatId, text: reply })
                         });
-                        appendLog("daemon-log", "[TELEGRAM] Replied to " + from + ": " + reply.substring(0, 80));
+                        appendLog("daemon-log", "[TELEGRAM] Replied to " + from + ": " + reply.substring(0, 500) + (reply.length > 500 ? "..." : ""));
                     } catch(e) {
                         appendLog("daemon-log", "[TELEGRAM] LLM error: " + (e.message || e));
                         // Send error message to user
@@ -1941,7 +1941,7 @@
     }
 
     // =========== SKILLS / COMPOSIO ===========
-    var COMPOSIO_API_URL = "https://backend.composio.dev/api/v2";
+    var COMPOSIO_API_URL = "https://backend.composio.dev/api/v3";
     var enabledSkills = {};
     var composioTools = [];
 
@@ -2155,21 +2155,32 @@
         statusEl.style.display = "block";
         statusEl.innerHTML = '<span style="color:var(--text-dim);">⟳ Validating key...</span>';
         try {
-            var resp = await fetch(COMPOSIO_API_URL + "/apps", {
+            var resp = await fetch(COMPOSIO_API_URL + "/tools?toolkit_versions=latest&limit=5", {
                 headers: { "x-api-key": key }
             });
             if (resp.ok) {
                 var data = await resp.json();
-                var count = data.items ? data.items.length : (Array.isArray(data) ? data.length : 0);
-                statusEl.innerHTML = '<span style="color:var(--accent);">✓ Connected to Composio (' + count + ' apps available)</span>';
+                var count = data.totalCount || (data.items ? data.items.length : 0);
+                statusEl.innerHTML = '<span style="color:var(--accent);">✓ Connected to Composio (' + count + ' tools available)</span>';
                 showToast("Composio connected!", "success");
-                appendLog("dash-log", "[COMPOSIO] Connected, " + count + " apps available");
-            } else {
-                statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key (HTTP ' + resp.status + ')</span>';
+                appendLog("dash-log", "[COMPOSIO] Connected, " + count + " tools available");
+            } else if (resp.status === 401 || resp.status === 403) {
+                statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key — check your key at app.composio.dev/settings</span>';
                 showToast("Invalid Composio API key", "error");
+            } else {
+                statusEl.innerHTML = '<span style="color:var(--error);">✗ API error (HTTP ' + resp.status + ')</span>';
+                showToast("Composio API error", "error");
             }
         } catch(e) {
-            statusEl.innerHTML = '<span style="color:var(--error);">✗ Connection failed: ' + escapeHtml(e.message || String(e)) + '</span>';
+            // CORS or network error — likely running in browser preview, will work in Tauri
+            var msg = (e.message || String(e));
+            if (msg === "Failed to fetch" || msg.indexOf("CORS") >= 0 || msg.indexOf("NetworkError") >= 0) {
+                statusEl.innerHTML = '<span style="color:var(--warning);">⚠ Cannot validate from browser (CORS). Key saved — it will work in the desktop app.</span>';
+                showToast("Key saved — validation requires the desktop app", "info");
+                appendLog("dash-log", "[COMPOSIO] Key saved, browser CORS prevents validation");
+            } else {
+                statusEl.innerHTML = '<span style="color:var(--error);">✗ Connection failed: ' + escapeHtml(msg) + '</span>';
+            }
         }
     }
 
