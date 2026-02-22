@@ -606,9 +606,15 @@
     // =========== TAURI HELPERS ===========
     function tauriInvoke(cmd, args) {
         if (!window.__TAURI__) return Promise.reject(new Error("Tauri not available (running in browser)"));
-        // Tauri v2: invoke is under core; v1 fallback
-        var inv = (window.__TAURI__.core && window.__TAURI__.core.invoke) || window.__TAURI__.invoke;
-        if (typeof inv !== "function") return Promise.reject(new Error("Tauri invoke not found (check Tauri version)"));
+        // Tauri v2: window.__TAURI__.core.invoke
+        // Tauri v1: window.__TAURI__.tauri.invoke (withGlobalTauri)
+        var inv = (window.__TAURI__.core && window.__TAURI__.core.invoke)
+               || (window.__TAURI__.tauri && window.__TAURI__.tauri.invoke)
+               || window.__TAURI__.invoke;
+        if (typeof inv !== "function") {
+            var keys = Object.keys(window.__TAURI__).join(", ");
+            return Promise.reject(new Error("Tauri invoke not found. Available keys: " + keys));
+        }
         return inv(cmd, args || {});
     }
     function invokeShort(cmd, args) {
