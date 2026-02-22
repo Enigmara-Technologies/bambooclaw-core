@@ -409,7 +409,7 @@
 <body>
     <div id="app">
         <header>
-            <div class="logo"><img id="header-logo" src="" alt="BambooClaw™ Logo" /><span>BambooClaw™</span></div>
+            <div class="logo"><img id="header-logo" src="https://bamboo-synergy-prosper.lovable.app/bambooclaw-logo.png" alt="BambooClaw™ Logo" onerror="this.style.display='none'" /><span>BambooClaw™</span></div>
             <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent);"><span id="app-version">loading...</span></div>
         </header>
         <main>
@@ -447,7 +447,7 @@
                     <div class="log-container">
                         <div class="log-header">
                             <span>BOOT TRACE LOG</span>
-                            <button class="copy-btn" onclick="copyLog('boot-log')">&#128203;</button>
+                            <button class="copy-btn" onclick="copyLog('unified-log')">&#128203;</button>
                         </div>
                         <div class="log-body" id="boot-log"></div>
                     </div>
@@ -462,6 +462,9 @@
         try {
             var el = document.getElementById("boot-log");
             if (el) el.textContent = "[CANARY] JS engine alive at " + new Date().toISOString() + "\n";
+            // Also init unified log
+            var ul = document.getElementById("unified-log");
+            if (ul && !ul.textContent) ul.textContent = "";
         } catch(e) {}
     })();
     // Global error boundary — MUST be here (outside Script 2) to catch Script 2 parse errors
@@ -487,7 +490,7 @@
                     <div class="log-container">
                         <div class="log-header">
                             <span>SYSTEM INSTALLATION LOG</span>
-                            <button class="copy-btn" onclick="copyLog('install-log')">&#128203;</button>
+                            <button class="copy-btn" onclick="copyLog('unified-log')">&#128203;</button>
                         </div>
                         <div class="log-body" id="install-log"></div>
                     </div>
@@ -510,7 +513,7 @@
                     <div class="log-container">
                         <div class="log-header">
                             <span>DEPLOYMENT LOG</span>
-                            <button class="copy-btn" onclick="copyLog('deploy-log')">&#128203;</button>
+                            <button class="copy-btn" onclick="copyLog('unified-log')">&#128203;</button>
                         </div>
                         <div class="log-body" id="deploy-log"></div>
                     </div>
@@ -669,16 +672,6 @@
                         </div>
                     </div>
 
-                    <div style="margin-top: 1.5rem;">
-                        <h2 style="font-size: 1rem; margin-bottom: 0.5rem; color: var(--text-dim);">Daemon Log</h2>
-                        <div class="log-container">
-                            <div class="log-header">
-                                <span>RUNTIME LOG</span>
-                                <button class="copy-btn" onclick="copyLog('daemon-log')">&#128203;</button>
-                            </div>
-                            <div class="log-body" id="daemon-log">[INFO] Daemon not started.</div>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Tab: Skills -->
@@ -1080,13 +1073,23 @@
 
                 <!-- Tab: Logs -->
                 <div class="glass-card tab-panel hidden" id="tab-logs">
-                    <h1 style="font-size: 1.3rem; margin-bottom: 0.5rem;">📋 Debug Logs</h1>
-                    <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Real-time dashboard and system debug output.</p>
+                    <h1 style="font-size: 1.3rem; margin-bottom: 0.5rem;">📋 Session Log</h1>
+                    <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 0.75rem;">Unified continuous log for this session. All system, agent, and skill events are recorded here with timestamps.</p>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                        <span style="font-size: 0.75rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace;">DASHBOARD DEBUG LOG</span>
-                        <button class="copy-btn" onclick="window.copyLog('dash-log')">Copy</button>
+                        <span style="font-size: 0.75rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace;">SESSION LOG — <span id="session-id-label">...</span></span>
+                        <div style="display:flex;gap:0.5rem;">
+                            <button class="btn btn-sm btn-outline" id="btn-copy-log" onclick="window.copyLog('unified-log')">📋 Copy Log</button>
+                            <button class="btn btn-sm btn-outline" id="btn-open-log-folder">📂 Open Folder</button>
+                        </div>
                     </div>
-                    <div class="log-body" id="dash-log" style="height:350px;background:#050507;border:1px solid var(--border);border-radius:6px;font-size:0.7rem;"></div>
+                    <div class="log-body" id="unified-log" style="height:400px;background:#050507;border:1px solid var(--border);border-radius:6px;font-size:0.72rem;line-height:1.6;"></div>
+                    <div style="margin-top:0.75rem;padding:0.6rem 0.75rem;background:#050507;border:1px solid var(--border);border-radius:6px;">
+                        <label style="font-size:0.7rem;color:var(--text-dim);margin-bottom:0.25rem;">Log Storage Path</label>
+                        <input type="text" id="log-path-display" readonly value="~/.bambooclaw/logs/" style="font-size:0.75rem;font-family:'JetBrains Mono',monospace;background:transparent;border:none;color:var(--accent);padding:0.25rem 0;" />
+                    </div>
+                    <p style="font-size:0.7rem;color:var(--text-dim);margin-top:0.5rem;">💡 To share logs for debugging, copy the log text above or navigate to the log folder and send us the session file.</p>
+                    <div id="dash-log" style="display:none;"></div>
+                    <div id="daemon-log" style="display:none;"></div>
                 </div>
 
             </div>
@@ -1105,6 +1108,23 @@
     var daemonRunning = false;
     var currentConfig = {};
     var PROXY_URL = "https://mjmdhqglpratbyzmgndm.supabase.co/functions/v1/github-release-proxy";
+
+    // =========== SESSION ID ===========
+    var SESSION_ID = (function() {
+        var d = new Date();
+        var pad = function(n) { return n < 10 ? "0" + n : "" + n; };
+        var hex = Math.random().toString(16).substring(2, 8);
+        return "session-" + d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()) + "-" + hex;
+    })();
+    var LOG_FOLDER = "~/.bambooclaw/logs/";
+    var LOG_FILE_PATH = LOG_FOLDER + SESSION_ID + ".log";
+    // Set session ID in UI
+    setTimeout(function() {
+        var lbl = document.getElementById("session-id-label");
+        if (lbl) lbl.textContent = SESSION_ID;
+        var pathEl = document.getElementById("log-path-display");
+        if (pathEl) pathEl.value = LOG_FILE_PATH;
+    }, 0);
 
     // =========== HELP FILTER ===========
     window.filterHelp = function(query) {
@@ -1192,10 +1212,36 @@
     }
     function appendLog(logId, line) {
         try {
+            // Add timestamp
+            var now = new Date();
+            var ts = "[" + ("0"+now.getHours()).slice(-2) + ":" + ("0"+now.getMinutes()).slice(-2) + ":" + ("0"+now.getSeconds()).slice(-2) + "." + ("00"+now.getMilliseconds()).slice(-3) + "]";
+            var taggedLine = ts + " " + line;
+
+            // Always write to the specific panel if it exists (for wizard inline logs)
             var el = document.getElementById(logId);
-            if (el) {
-                el.textContent += line + "\n";
+            if (el && el.style.display !== "none") {
+                el.textContent += taggedLine + "\n";
                 el.scrollTop = el.scrollHeight;
+            }
+
+            // Always write to unified log
+            var unified = document.getElementById("unified-log");
+            if (unified) {
+                // Color agent entries differently
+                unified.textContent += taggedLine + "\n";
+                unified.scrollTop = unified.scrollHeight;
+            }
+
+            // Persist to disk via Tauri
+            if (window.__TAURI__) {
+                try {
+                    tauriInvoke("run_shell_command", {
+                        commandName: detectedOS === "windows" ? "cmd" : "sh",
+                        args: detectedOS === "windows"
+                            ? ["/C", "mkdir \"" + LOG_FOLDER.replace("~/", "%USERPROFILE%\\") + "\" 2>nul & echo " + taggedLine.replace(/"/g, '\\"').replace(/&/g, "^&").replace(/[<>|]/g, "") + " >> \"" + LOG_FILE_PATH.replace("~/", "%USERPROFILE%\\") + "\""]
+                            : ["-c", "mkdir -p " + LOG_FOLDER.replace("~", "$HOME") + " && echo " + JSON.stringify(taggedLine) + " >> " + LOG_FILE_PATH.replace("~", "$HOME")]
+                    }).catch(function(){});
+                } catch(e) {}
             }
         } catch(e) {
             console.error("[appendLog error]", e);
@@ -1629,6 +1675,7 @@
             if (s.identity) lines.push('identity = "' + s.identity + '"');
             if (s.runtime) lines.push('runtime = "' + s.runtime + '"');
             if (s.loglevel) lines.push('log_level = "' + s.loglevel + '"');
+            if (currentConfig.composioApiKey) lines.push('composio_api_key = "' + currentConfig.composioApiKey + '"');
             lines.push("");
         }
 
@@ -1676,8 +1723,12 @@
                     currentConfig.channels[ch][key] = val;
                 }
                 if (section === "agent") {
-                    if (!currentConfig.settings) currentConfig.settings = {};
-                    currentConfig.settings[key] = val;
+                    if (key === "composio_api_key") {
+                        currentConfig.composioApiKey = val;
+                    } else {
+                        if (!currentConfig.settings) currentConfig.settings = {};
+                        currentConfig.settings[key] = val;
+                    }
                 }
             }
         });
@@ -1900,8 +1951,8 @@
                 // Update chat area
                 var chatEl = document.getElementById("agent-chat-messages");
                 if (chatEl) chatEl.innerHTML += '<div class="chat-msg assistant"><span class="role">Agent:</span> Daemon stopped.</div>';
-                appendLog("daemon-log", "[INFO] Daemon stopped.");
-                appendLog("dash-log", "[DAEMON] Daemon stopped OK");
+        appendLog("unified-log", "[AGENT] Daemon stopped.");
+                appendLog("unified-log", "[SYSTEM] Daemon stopped OK");
                 showToast("Agent daemon stopped", "info");
             } catch(e) {
                 // Process may have already exited — treat as stopped
@@ -1920,8 +1971,8 @@
                 // Update chat area to show daemon is online
                 var chatEl = document.getElementById("agent-chat-messages");
                 if (chatEl) chatEl.innerHTML = '<div class="chat-msg assistant"><span class="role">Agent:</span> Daemon is online. How can I help you?</div>';
-                appendLog("daemon-log", "[INFO] Daemon started.");
-                appendLog("dash-log", "[DAEMON] Daemon started OK");
+                appendLog("unified-log", "[AGENT] Daemon started.");
+                appendLog("unified-log", "[SYSTEM] Daemon started OK");
                 showToast("Agent daemon started", "success");
                 // Start Telegram polling if configured
                 startTelegramPolling();
@@ -1978,13 +2029,13 @@
             var typing = document.getElementById("typing-indicator");
             if (typing) typing.remove();
             chatEl.innerHTML += '<div class="chat-msg assistant"><span class="role">Agent:</span> ' + escapeHtml(reply || "(no response)") + '</div>';
-            appendLog("daemon-log", "[CHAT] User: " + msg.substring(0, 50) + " → Reply: " + (reply || "").substring(0, 80));
+            appendLog("unified-log", "[AGENT] Chat: " + msg.substring(0, 50) + " → Reply: " + (reply || "").substring(0, 80));
         } catch(err) {
             var typing = document.getElementById("typing-indicator");
             if (typing) typing.remove();
             chatEl.innerHTML += '<div class="chat-msg assistant"><span class="role">Agent:</span> Error: ' + escapeHtml(err.message || String(err)) + '</div>';
             appendLog("dash-log", "[CHAT] LLM error: " + (err.message || err));
-            appendLog("daemon-log", "[ERROR] Chat LLM call failed: " + (err.message || err));
+            appendLog("unified-log", "[AGENT] Chat LLM error: " + (err.message || err));
         }
         chatEl.scrollTop = chatEl.scrollHeight;
         return false;
@@ -2080,19 +2131,19 @@
 
     // Execute a tool call via Tauri backend
     async function executeTool(toolName, args) {
-        appendLog("daemon-log", "[TOOL] Executing: " + toolName + "(" + JSON.stringify(args).substring(0, 100) + ")");
+        appendLog("unified-log", "[AGENT] [TOOL] Executing: " + toolName + "(" + JSON.stringify(args).substring(0, 100) + ")");
         try {
             if (toolName === "run_shell") {
                 var cmd = args.command || "";
                 var cmdArgs = args.args || [];
                 var result = await invokeShort("run_shell_command", { commandName: cmd, args: cmdArgs });
-                appendLog("daemon-log", "[TOOL] run_shell result: " + (result || "").substring(0, 200));
+                appendLog("unified-log", "[AGENT] [TOOL] run_shell result: " + (result || "").substring(0, 200));
                 return result || "(no output)";
             } else if (toolName === "read_file") {
                 var platform = await invokeShort("get_platform");
                 var catCmd = platform === "windows" ? "type" : "cat";
                 var result = await invokeShort("run_shell_command", { commandName: catCmd, args: [args.path] });
-                appendLog("daemon-log", "[TOOL] read_file result: " + (result || "").substring(0, 200));
+                appendLog("unified-log", "[AGENT] [TOOL] read_file result: " + (result || "").substring(0, 200));
                 return result || "(empty file)";
             } else if (toolName === "write_file") {
                 var platform = await invokeShort("get_platform");
@@ -2103,7 +2154,7 @@
                 } else {
                     var result = await invokeShort("run_shell_command", { commandName: "bash", args: ["-c", "cat > '" + args.path.replace(/'/g, "'\''") + "' << 'BCEOF'\n" + (args.content || "") + "\nBCEOF"] });
                 }
-                appendLog("daemon-log", "[TOOL] write_file done: " + args.path);
+                appendLog("unified-log", "[AGENT] [TOOL] write_file done: " + args.path);
                 return "File written successfully: " + args.path;
             } else if (toolName === "http_request") {
                 var method = (args.method || "GET").toUpperCase();
@@ -2113,14 +2164,14 @@
                 }
                 var resp = await fetch(args.url, fetchOpts);
                 var text = await resp.text();
-                appendLog("daemon-log", "[TOOL] http_request " + method + " " + args.url + " -> HTTP " + resp.status);
+                appendLog("unified-log", "[AGENT] [TOOL] http_request " + method + " " + args.url + " -> HTTP " + resp.status);
                 return "HTTP " + resp.status + "\n" + text.substring(0, 5000);
             } else if (toolName === "list_directory") {
                 var platform = await invokeShort("get_platform");
                 var cmd = platform === "windows" ? "dir" : "ls";
                 var cmdArgs = platform === "windows" ? ["/B", args.path] : ["-la", args.path];
                 var result = await invokeShort("run_shell_command", { commandName: cmd, args: cmdArgs });
-                appendLog("daemon-log", "[TOOL] list_directory result: " + (result || "").substring(0, 200));
+                appendLog("unified-log", "[AGENT] [TOOL] list_directory result: " + (result || "").substring(0, 200));
                 return result || "(empty directory)";
             } else if (["web_browse","web_search","docker_command","ssh_execute","mqtt_publish"].indexOf(toolName) >= 0 || toolName.startsWith("composio_")) {
                 return await executeSkillTool(toolName, args);
@@ -2128,7 +2179,7 @@
                 return "Unknown tool: " + toolName;
             }
         } catch(e) {
-            appendLog("daemon-log", "[TOOL] ERROR: " + (e.message || e));
+            appendLog("unified-log", "[AGENT] [TOOL] ERROR: " + (e.message || e));
             return "Tool error: " + (e.message || String(e));
         }
     }
@@ -2277,7 +2328,7 @@
             return;
         }
         appendLog("dash-log", "[TG-POLL] Starting Telegram polling...");
-        appendLog("daemon-log", "[INFO] Telegram polling started for incoming messages.");
+        appendLog("unified-log", "[AGENT] Telegram polling started for incoming messages.");
         tgPollingInterval = setInterval(function() { pollTelegram(); }, 3000);
         // Poll immediately
         pollTelegram();
@@ -2309,7 +2360,7 @@
                     var chatId = update.message.chat.id;
                     var text = update.message.text;
                     var from = update.message.from && update.message.from.first_name || "User";
-                    appendLog("daemon-log", "[TELEGRAM] Message from " + from + ": " + text);
+                    appendLog("unified-log", "[AGENT] [TELEGRAM] Message from " + from + ": " + text);
                     appendLog("dash-log", "[TG-POLL] Received: " + text.substring(0, 50));
 
                     // Get LLM reply
@@ -2321,9 +2372,9 @@
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ chat_id: chatId, text: reply })
                         });
-                        appendLog("daemon-log", "[TELEGRAM] Replied to " + from + ": " + reply.substring(0, 500) + (reply.length > 500 ? "..." : ""));
+                        appendLog("unified-log", "[AGENT] [TELEGRAM] Replied to " + from + ": " + reply.substring(0, 500) + (reply.length > 500 ? "..." : ""));
                     } catch(e) {
-                        appendLog("daemon-log", "[TELEGRAM] LLM error: " + (e.message || e));
+                        appendLog("unified-log", "[AGENT] [TELEGRAM] LLM error: " + (e.message || e));
                         // Send error message to user
                         await fetch("https://api.telegram.org/bot" + token + "/sendMessage", {
                             method: "POST",
@@ -2468,6 +2519,32 @@
         renderSkillGrid("web", "skills-web");
     }
 
+    // Skill descriptions for toggle feedback
+    var skillToolDescriptions = {
+        gmail: "read, send, search, and manage emails",
+        google_calendar: "create, view, and manage calendar events",
+        notion: "create and edit pages, databases, and blocks",
+        google_sheets: "read and write spreadsheet data",
+        google_drive: "search, upload, and manage files",
+        todoist: "create and manage tasks and projects",
+        github: "manage repos, issues, PRs, and actions",
+        docker: "manage containers, images, and volumes via shell",
+        ssh_remote: "execute commands on remote servers via SSH",
+        postgresql: "query and manage databases via shell",
+        jira: "manage issues, sprints, and projects",
+        slack_dev: "send messages and manage channels",
+        home_assistant: "control lights, switches, sensors, and scenes",
+        mqtt_bridge: "publish/subscribe to MQTT topics",
+        serial_port: "read/write to serial devices",
+        b500_telemetry: "monitor BambooCore B500 facility sensors",
+        web_browser: "navigate and scrape websites",
+        web_search: "search Google, DuckDuckGo, or Bing",
+        youtube: "search videos and get transcripts",
+        twitter: "post, search, and read tweets",
+        firecrawl: "AI-powered web scraping and data extraction",
+        perplexity: "AI-powered research and answers"
+    };
+
     function toggleSkill(skillId) {
         enabledSkills[skillId] = !enabledSkills[skillId];
         currentConfig.enabledSkills = enabledSkills;
@@ -2478,12 +2555,13 @@
         var allSkills = [].concat(skillCatalog.productivity, skillCatalog.developer, skillCatalog.smarthome, skillCatalog.web);
         var skill = allSkills.find(function(s) { return s.id === skillId; });
         var name = skill ? skill.name : skillId;
+        var toolDesc = skillToolDescriptions[skillId] || skill.desc || "";
         if (enabledSkills[skillId]) {
-            appendLog("dash-log", "[SKILLS] Enabled: " + name);
-            showToast("Skill enabled: " + name, "success");
+            appendLog("unified-log", "[SKILLS] Enabled: " + name + " — Agent can now " + toolDesc);
+            showToast(name + " enabled — Agent can now " + toolDesc, "success");
         } else {
-            appendLog("dash-log", "[SKILLS] Disabled: " + name);
-            showToast("Skill disabled: " + name, "info");
+            appendLog("unified-log", "[SKILLS] Disabled: " + name);
+            showToast(name + " disabled", "info");
         }
     }
 
@@ -2560,7 +2638,7 @@
 
     // Execute skill-specific tools
     async function executeSkillTool(toolName, args) {
-        appendLog("daemon-log", "[SKILL-TOOL] " + toolName + "(" + JSON.stringify(args).substring(0, 100) + ")");
+        appendLog("unified-log", "[AGENT] [SKILL] " + toolName + "(" + JSON.stringify(args).substring(0, 100) + ")");
         try {
             if (toolName === "web_browse") {
                 // Use built-in http_request to fetch page
@@ -2582,7 +2660,7 @@
                 var composioKey = currentConfig.composioApiKey;
                 if (!composioKey) return "Composio API key not configured. Go to Skills tab and enter your key.";
                 var appName = toolName.replace("composio_", "");
-                appendLog("daemon-log", "[COMPOSIO] Executing action for " + appName + ": " + args.action);
+                appendLog("unified-log", "[AGENT] [COMPOSIO] Executing action for " + appName + ": " + args.action);
                 var resp = await fetch(COMPOSIO_API_URL + "/actions/execute", {
                     method: "POST",
                     headers: { "Content-Type": "application/json", "x-api-key": composioKey },
@@ -2650,9 +2728,15 @@
             }
         }
         if (!validated) {
-            statusEl.innerHTML = '<span style="color:var(--warning);">⚠ Cannot validate from browser (CORS). Key saved — it will work in the desktop app.</span>';
-            showToast("Key saved — validation requires the desktop app", "info");
-            appendLog("dash-log", "[COMPOSIO] CORS blocked validation in browser preview. Key is saved and will work in the desktop app.");
+            if (window.__TAURI__) {
+                statusEl.innerHTML = '<span style="color:var(--warning);">⚠ Connection failed — check your internet connection and API key.</span>';
+                showToast("Connection failed — check your internet", "error");
+                appendLog("unified-log", "[COMPOSIO] All endpoints failed in desktop app. Check internet.");
+            } else {
+                statusEl.innerHTML = '<span style="color:var(--warning);">⚠ Cannot validate from browser (CORS). Key saved — it will work in the desktop app.</span>';
+                showToast("Key saved — validation requires the desktop app", "info");
+                appendLog("unified-log", "[COMPOSIO] CORS blocked validation in browser preview. Key is saved.");
+            }
         }
     }
 
@@ -2675,14 +2759,77 @@
     document.getElementById("skill-search").addEventListener("input", function() { renderAllSkills(); });
     document.getElementById("btn-save-composio").addEventListener("click", function() { saveComposioKey(); });
     document.getElementById("btn-browse-all-skills").addEventListener("click", function() {
-        if (window.__TAURI__) {
-            try {
-                if (window.__TAURI__.opener) window.__TAURI__.opener.openUrl("https://app.composio.dev/apps");
-                else if (window.__TAURI__.shell) window.__TAURI__.shell.open("https://app.composio.dev/apps");
-            } catch(e) { window.open("https://app.composio.dev/apps", "_blank"); }
-        } else {
-            window.open("https://app.composio.dev/apps", "_blank");
-        }
+        // Try to load Composio app catalog in-app
+        var key = currentConfig.composioApiKey || "";
+        var browseBtn = this;
+        browseBtn.disabled = true;
+        browseBtn.textContent = "Loading...";
+        appendLog("unified-log", "[COMPOSIO] Fetching app catalog...");
+
+        var endpoints = [
+            COMPOSIO_API_URL + "/apps?limit=100",
+            "https://backend.composio.dev/api/v2/apps?limit=100",
+            "https://backend.composio.dev/api/v1/apps?limit=100"
+        ];
+        var fetched = false;
+        (async function() {
+            for (var i = 0; i < endpoints.length; i++) {
+                try {
+                    var headers = { "Content-Type": "application/json" };
+                    if (key) headers["x-api-key"] = key;
+                    var resp = await fetch(endpoints[i], { headers: headers });
+                    if (resp.ok) {
+                        var data = await resp.json();
+                        var apps = data.items || (Array.isArray(data) ? data : []);
+                        appendLog("unified-log", "[COMPOSIO] Loaded " + apps.length + " apps from catalog");
+                        // Display in-app browser panel
+                        var container = document.getElementById("skill-categories");
+                        var html = '<div style="margin-bottom:1.5rem;"><h2 style="font-size:1rem;color:var(--accent);margin-bottom:0.75rem;">🌍 All Composio Apps (' + apps.length + ')</h2>';
+                        html += '<input type="text" id="browse-skill-search" placeholder="Filter apps..." style="width:100%;margin-bottom:0.75rem;" />';
+                        html += '<div id="browse-skill-grid" class="skill-grid" style="max-height:400px;overflow-y:auto;">';
+                        apps.forEach(function(app) {
+                            html += '<div class="skill-card" style="cursor:default;">';
+                            html += '<div class="skill-icon">🔌</div>';
+                            html += '<div class="skill-name">' + escapeHtml(app.name || app.key || "Unknown") + '</div>';
+                            html += '<div class="skill-desc">' + escapeHtml((app.description || "").substring(0, 80)) + '</div>';
+                            html += '<div style="margin-top:0.4rem;font-size:0.65rem;color:var(--accent);">● Composio</div>';
+                            html += '</div>';
+                        });
+                        html += '</div></div>';
+                        container.innerHTML = html;
+                        // Search filter
+                        var searchEl = document.getElementById("browse-skill-search");
+                        if (searchEl) {
+                            searchEl.addEventListener("input", function() {
+                                var q = this.value.toLowerCase();
+                                var cards = document.querySelectorAll("#browse-skill-grid .skill-card");
+                                for (var c = 0; c < cards.length; c++) {
+                                    cards[c].style.display = cards[c].textContent.toLowerCase().indexOf(q) >= 0 ? "" : "none";
+                                }
+                            });
+                        }
+                        showToast("Loaded " + apps.length + " Composio apps", "success");
+                        fetched = true;
+                        break;
+                    }
+                } catch(e) {
+                    appendLog("unified-log", "[COMPOSIO] Browse endpoint " + endpoints[i] + " failed: " + (e.message || e));
+                }
+            }
+            if (!fetched) {
+                appendLog("unified-log", "[COMPOSIO] Could not load catalog, opening external browser");
+                if (window.__TAURI__) {
+                    try {
+                        if (window.__TAURI__.opener) window.__TAURI__.opener.openUrl("https://app.composio.dev/apps");
+                        else if (window.__TAURI__.shell) window.__TAURI__.shell.open("https://app.composio.dev/apps");
+                    } catch(e) { window.open("https://app.composio.dev/apps", "_blank"); }
+                } else {
+                    window.open("https://app.composio.dev/apps", "_blank");
+                }
+            }
+            browseBtn.disabled = false;
+            browseBtn.textContent = "Browse All 10,000+ Skills";
+        })();
     });
 
     // Render skills on load
@@ -2861,6 +3008,21 @@
     window.saveSettings = saveSettings;
     window.resetSettings = resetSettings;
     window.escapeHtml = escapeHtml;
+
+    // Open log folder button
+    document.getElementById("btn-open-log-folder").addEventListener("click", function() {
+        var folderPath = LOG_FOLDER;
+        if (window.__TAURI__) {
+            try {
+                var resolved = folderPath.replace("~", detectedOS === "windows" ? "%USERPROFILE%" : "$HOME");
+                if (window.__TAURI__.opener) window.__TAURI__.opener.openUrl(resolved);
+                else if (window.__TAURI__.shell) window.__TAURI__.shell.open(resolved);
+                else showToast("Navigate to: " + LOG_FILE_PATH, "info");
+            } catch(e) { showToast("Log path: " + LOG_FILE_PATH, "info"); }
+        } else {
+            showToast("Log path: " + LOG_FILE_PATH + " (available in desktop app)", "info");
+        }
+    });
 
     // =========== BUTTON addEventListener BINDINGS (all buttons, no onclick) ===========
     document.getElementById("btn-apply-llm").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-apply-llm clicked"); applyLLMConfig(); });
