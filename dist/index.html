@@ -277,6 +277,128 @@
         }
         @media (max-width: 600px) {
             .settings-grid { grid-template-columns: 1fr; }
+            .tabs { flex-wrap: wrap; }
+        }
+
+        /* Help Section */
+        .help-search {
+            width: 100%;
+            background: #050507;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+            border-radius: 6px;
+            outline: none;
+            font-family: inherit;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+        .help-search:focus { border-color: var(--accent); }
+        .help-search-wrap {
+            position: relative;
+        }
+        .help-search-wrap::before {
+            content: '🔍';
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.9rem;
+            pointer-events: none;
+        }
+        .help-section {
+            margin-bottom: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .help-section summary {
+            padding: 1rem 1.25rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            background: #050507;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            user-select: none;
+            transition: 0.2s;
+        }
+        .help-section summary:hover { background: rgba(16, 185, 129, 0.05); }
+        .help-section summary::-webkit-details-marker { display: none; }
+        .help-section summary::after {
+            content: '▸';
+            margin-left: auto;
+            transition: transform 0.2s;
+            color: var(--text-dim);
+        }
+        .help-section[open] summary::after { transform: rotate(90deg); }
+        .help-section[open] summary { border-bottom: 1px solid var(--border); background: rgba(16, 185, 129, 0.03); }
+        .help-body {
+            padding: 1.25rem;
+            font-size: 0.85rem;
+            line-height: 1.7;
+            color: var(--text-dim);
+        }
+        .help-body p { margin-bottom: 0.75rem; }
+        .help-body ol, .help-body ul { margin: 0.5rem 0 1rem 1.5rem; }
+        .help-body li { margin-bottom: 0.4rem; }
+        .help-body strong { color: var(--text); }
+        .help-body code {
+            background: rgba(16, 185, 129, 0.1);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent);
+        }
+        .help-tip, .help-warn {
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            margin: 0.75rem 0;
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+        .help-tip {
+            background: rgba(16, 185, 129, 0.08);
+            border-left: 3px solid var(--accent);
+        }
+        .help-warn {
+            background: rgba(245, 158, 11, 0.08);
+            border-left: 3px solid var(--warning);
+        }
+        .help-step {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            align-items: flex-start;
+        }
+        .help-step-num {
+            min-width: 24px;
+            height: 24px;
+            background: var(--accent);
+            color: #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+        .help-sub {
+            margin: 0.75rem 0;
+            padding: 0.75rem 1rem;
+            background: #050507;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+        .help-sub h4 {
+            font-size: 0.85rem;
+            color: var(--text);
+            margin-bottom: 0.5rem;
         }
     </style>
 </head>
@@ -418,6 +540,7 @@
                     <div class="tab" data-tab="tab-agent">Agent Control</div>
                     <div class="tab" data-tab="tab-skills">Skills</div>
                     <div class="tab" data-tab="tab-settings">Settings</div>
+                    <div class="tab" data-tab="tab-help">Help</div>
                 </div>
 
                 <!-- Tab: LLM Settings -->
@@ -664,6 +787,286 @@
                     </div>
                 </div>
 
+                <!-- Tab: Help -->
+                <div class="glass-card tab-panel hidden" id="tab-help">
+                    <h1 style="font-size: 1.3rem; margin-bottom: 0.25rem;">📖 BambooClaw Help Center</h1>
+                    <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1.25rem;">Everything you need to know, explained in plain English. Click any section to expand it.</p>
+
+                    <div class="help-search-wrap">
+                        <input type="text" class="help-search" id="help-search" placeholder="Search help topics..." oninput="window.filterHelp(this.value)" />
+                    </div>
+
+                    <!-- 1. Welcome -->
+                    <details class="help-section" open>
+                        <summary>👋 What is BambooClaw?</summary>
+                        <div class="help-body">
+                            <p><strong>BambooClaw is your personal AI assistant that lives on your computer.</strong> Think of it like ChatGPT, but it runs privately on your machine, talks to you through apps you already use (like Telegram or Discord), and can actually do things on your computer — browse the web, write files, run code, and more.</p>
+                            <p>This Companion App is the control panel for your assistant. From here you can:</p>
+                            <ul>
+                                <li>Choose which AI brain powers your assistant (ChatGPT, Claude, Gemini, etc.)</li>
+                                <li>Connect messaging apps so you can chat with your assistant from your phone</li>
+                                <li>Start and stop the assistant</li>
+                                <li>Add new skills (like reading emails or searching the web)</li>
+                                <li>Fine-tune how autonomous your assistant is</li>
+                            </ul>
+                            <div class="help-tip">💡 <strong>Tip:</strong> BambooClaw runs as a background service on your computer. You don't need to keep this app open — once your assistant is running, it stays running until you stop it.</div>
+                        </div>
+                    </details>
+
+                    <!-- 2. Getting Started -->
+                    <details class="help-section">
+                        <summary>🚀 Getting Started (First-Time Setup)</summary>
+                        <div class="help-body">
+                            <p>When you first open BambooClaw, the installer wizard walks you through everything:</p>
+                            <div class="help-step"><div class="help-step-num">1</div><div><strong>Environment Audit</strong> — The app checks if your system has the required tools installed (Rust, Git, and Build Tools). Green ✓ means it's ready. If something is missing, it will offer to install it for you automatically.</div></div>
+                            <div class="help-step"><div class="help-step-num">2</div><div><strong>Initialize Environment</strong> — Installs any missing tools. This may take a few minutes depending on your internet speed. You can watch the progress in the log window.</div></div>
+                            <div class="help-step"><div class="help-step-num">3</div><div><strong>Deploy Agent</strong> — Downloads and compiles the BambooClaw agent binary. This is the actual AI assistant engine. It takes 3–8 minutes depending on your PC speed.</div></div>
+                            <div class="help-step"><div class="help-step-num">4</div><div><strong>Enter Dashboard</strong> — Once done, you land here — the control panel where you configure and manage everything.</div></div>
+                            <div class="help-warn">⚠️ <strong>Important:</strong> The first installation requires an internet connection and about 2 GB of free disk space. Subsequent updates are much faster.</div>
+                            <div class="help-tip">💡 <strong>Tip:</strong> If a step fails, check the Boot Trace Log at the bottom of the screen for error details. The most common issue is a firewall blocking the download.</div>
+                        </div>
+                    </details>
+
+                    <!-- 3. LLM Settings -->
+                    <details class="help-section">
+                        <summary>🧠 LLM Settings (Your AI Brain)</summary>
+                        <div class="help-body">
+                            <p>LLM stands for "Large Language Model" — it's the AI that makes your assistant smart. You need to connect at least one AI provider before your assistant can respond to messages.</p>
+
+                            <div class="help-sub">
+                                <h4>Choosing a Provider</h4>
+                                <p>BambooClaw supports many AI providers. Here's a quick comparison:</p>
+                                <ul>
+                                    <li><strong>OpenRouter</strong> (Recommended) — One API key gives you access to hundreds of models from every provider. Best value and flexibility.</li>
+                                    <li><strong>OpenAI</strong> — For GPT-4, GPT-5, and other OpenAI models directly.</li>
+                                    <li><strong>Anthropic</strong> — For Claude models. Excellent for careful, nuanced responses.</li>
+                                    <li><strong>Google Gemini</strong> — Google's AI models with large context windows.</li>
+                                    <li><strong>Groq</strong> — Ultra-fast inference. Great for quick tasks.</li>
+                                    <li><strong>Ollama</strong> — Run models entirely on your own computer, no internet needed. Free but requires a powerful GPU.</li>
+                                    <li><strong>DeepSeek</strong> — High-quality models at very low cost.</li>
+                                    <li><strong>Mistral</strong> — European AI provider with fast, capable models.</li>
+                                </ul>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>How to Set Up</h4>
+                                <div class="help-step"><div class="help-step-num">1</div><div>Pick your provider from the <strong>AI Provider</strong> dropdown.</div></div>
+                                <div class="help-step"><div class="help-step-num">2</div><div>Paste your <strong>API Key</strong>. You get this from the provider's website (e.g., <code>openrouter.ai/keys</code>). It usually starts with <code>sk-</code>.</div></div>
+                                <div class="help-step"><div class="help-step-num">3</div><div>Select a <strong>Model</strong>. If you chose OpenRouter, click "Fetch Models" to see all available options with pricing.</div></div>
+                                <div class="help-step"><div class="help-step-num">4</div><div>Click <strong>"Apply Configuration"</strong> to save.</div></div>
+                                <div class="help-step"><div class="help-step-num">5</div><div>Click <strong>"Test Connection"</strong> to verify everything works.</div></div>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>System Prompt (Optional)</h4>
+                                <p>The system prompt tells the AI how to behave. For example: "You are a helpful coding assistant. Be concise." Leave it blank to use the default BambooClaw persona.</p>
+                            </div>
+
+                            <div class="help-tip">💡 <strong>Tip:</strong> If you're new, start with <strong>OpenRouter</strong>. Sign up at openrouter.ai, add $5 credit, copy your key, and you'll have access to hundreds of models instantly.</div>
+                        </div>
+                    </details>
+
+                    <!-- 4. Channels -->
+                    <details class="help-section">
+                        <summary>📡 Channels (Where You Talk to Your Agent)</summary>
+                        <div class="help-body">
+                            <p>Channels let you chat with your BambooClaw assistant from messaging apps on your phone or desktop. You can connect multiple channels at the same time.</p>
+
+                            <div class="help-sub">
+                                <h4>🤖 Telegram Setup</h4>
+                                <p>Telegram is the easiest channel to set up. Here's how:</p>
+                                <div class="help-step"><div class="help-step-num">1</div><div>Open Telegram and search for <strong>@BotFather</strong> (the official Telegram bot for creating bots).</div></div>
+                                <div class="help-step"><div class="help-step-num">2</div><div>Send <code>/newbot</code> to BotFather. It will ask you for a name and username for your bot.</div></div>
+                                <div class="help-step"><div class="help-step-num">3</div><div>BotFather will give you a <strong>Bot Token</strong> — a long string of numbers and letters. Copy it.</div></div>
+                                <div class="help-step"><div class="help-step-num">4</div><div>Back in BambooClaw, go to <strong>Channels → Telegram → Setup</strong>.</div></div>
+                                <div class="help-step"><div class="help-step-num">5</div><div>Paste your Bot Token and click <strong>Save</strong>.</div></div>
+                                <div class="help-step"><div class="help-step-num">6</div><div>Add your Telegram user ID to the <strong>Allowed Users</strong> list. This prevents strangers from using your bot.</div></div>
+                                <div class="help-tip">💡 <strong>Tip:</strong> To find your Telegram user ID, search for <strong>@userinfobot</strong> on Telegram and send it any message. It will reply with your numeric ID.</div>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>💬 Discord Setup</h4>
+                                <div class="help-step"><div class="help-step-num">1</div><div>Go to <strong>discord.com/developers/applications</strong> and click "New Application".</div></div>
+                                <div class="help-step"><div class="help-step-num">2</div><div>Give it a name (e.g., "BambooClaw"), then go to the <strong>Bot</strong> section.</div></div>
+                                <div class="help-step"><div class="help-step-num">3</div><div>Click "Reset Token" and copy the new <strong>Bot Token</strong>.</div></div>
+                                <div class="help-step"><div class="help-step-num">4</div><div>Enable these <strong>Privileged Gateway Intents</strong>: Message Content Intent, Server Members Intent.</div></div>
+                                <div class="help-step"><div class="help-step-num">5</div><div>Go to <strong>OAuth2 → URL Generator</strong>. Check "bot" scope, then "Send Messages" and "Read Message History" permissions. Copy the invite URL and add the bot to your server.</div></div>
+                                <div class="help-step"><div class="help-step-num">6</div><div>Back in BambooClaw, go to <strong>Channels → Discord → Setup</strong> and paste your Bot Token.</div></div>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>📱 WhatsApp & 💼 Slack</h4>
+                                <p>WhatsApp and Slack integrations are available but require additional setup with business APIs. Click the <strong>Setup</strong> button for each to see the step-by-step instructions specific to that platform.</p>
+                            </div>
+
+                            <div class="help-warn">⚠️ <strong>Important:</strong> Your BambooClaw daemon must be running for channels to work. Messages received while the daemon is stopped will be missed.</div>
+                        </div>
+                    </details>
+
+                    <!-- 5. Agent Control -->
+                    <details class="help-section">
+                        <summary>🎮 Agent Control (Running Your Assistant)</summary>
+                        <div class="help-body">
+                            <p>The Agent Control tab is where you start, stop, and chat with your BambooClaw assistant.</p>
+
+                            <div class="help-sub">
+                                <h4>Starting & Stopping</h4>
+                                <p>Click <strong>"Start Daemon"</strong> to launch your assistant in the background. The status indicator will change from 🔴 Stopped to 🟢 Running.</p>
+                                <p>Click <strong>"Stop Daemon"</strong> to shut it down. Any connected channels (Telegram, Discord) will stop receiving responses until you start it again.</p>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>In-App Chat</h4>
+                                <p>The built-in chat lets you talk to your assistant directly, without needing Telegram or Discord. Type your message and press Send. The response comes from the same AI brain you configured in LLM Settings.</p>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>Runtime Log</h4>
+                                <p>The log panel shows real-time activity: incoming messages, AI responses, tool executions, and errors. This is your best friend for understanding what your assistant is doing.</p>
+                                <ul>
+                                    <li><strong>Green text</strong> — Successful actions</li>
+                                    <li><strong>Yellow text</strong> — Warnings (non-critical)</li>
+                                    <li><strong>Red text</strong> — Errors (something went wrong)</li>
+                                </ul>
+                            </div>
+
+                            <div class="help-tip">💡 <strong>Tip:</strong> You can close the Companion App and the daemon will keep running in the background. Re-open the app anytime to check the status.</div>
+                        </div>
+                    </details>
+
+                    <!-- 6. Skills -->
+                    <details class="help-section">
+                        <summary>🧩 Skills (Extending What Your Agent Can Do)</summary>
+                        <div class="help-body">
+                            <p>Skills give your assistant superpowers beyond just chatting. With skills enabled, your assistant can interact with real apps and services.</p>
+
+                            <div class="help-sub">
+                                <h4>What is Composio?</h4>
+                                <p><strong>Composio</strong> is the platform that provides skills to BambooClaw. Think of it as an app store for your AI assistant. Each skill connects your assistant to a real service (Gmail, GitHub, Google Search, etc.).</p>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>Setting Up Skills</h4>
+                                <div class="help-step"><div class="help-step-num">1</div><div>Go to <strong>composio.dev</strong> and create a free account.</div></div>
+                                <div class="help-step"><div class="help-step-num">2</div><div>Navigate to your <strong>Settings → API Keys</strong> and copy your key.</div></div>
+                                <div class="help-step"><div class="help-step-num">3</div><div>In BambooClaw, go to the <strong>Skills</strong> tab and paste your Composio API Key.</div></div>
+                                <div class="help-step"><div class="help-step-num">4</div><div>Toggle on any skills you want to enable. Each skill card shows what it does.</div></div>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>Skill Categories</h4>
+                                <ul>
+                                    <li>🔍 <strong>Web Search</strong> — Search Google, DuckDuckGo, or Brave from chat</li>
+                                    <li>📧 <strong>Email</strong> — Read, draft, and send emails via Gmail</li>
+                                    <li>📁 <strong>File Management</strong> — Read, create, and edit files on your computer</li>
+                                    <li>💻 <strong>Code Execution</strong> — Run Python, JavaScript, or shell commands</li>
+                                    <li>🌐 <strong>Web Browsing</strong> — Visit websites and extract information</li>
+                                    <li>📊 <strong>GitHub</strong> — Create issues, read repos, submit PRs</li>
+                                    <li>📝 <strong>Note-taking</strong> — Create and organize notes</li>
+                                </ul>
+                            </div>
+
+                            <div class="help-warn">⚠️ <strong>Important:</strong> Skills that modify files or run code can make real changes to your system. Start with the <strong>Collaborative</strong> autonomy level (in Settings) so your assistant asks for permission before doing anything potentially risky.</div>
+                        </div>
+                    </details>
+
+                    <!-- 7. Settings -->
+                    <details class="help-section">
+                        <summary>⚙️ Settings (Fine-Tuning Behavior)</summary>
+                        <div class="help-body">
+                            <p>The Settings tab lets you control how your assistant behaves. Defaults are already configured for you — only change these if you know what you need.</p>
+
+                            <div class="help-sub">
+                                <h4>Autonomy Levels</h4>
+                                <ul>
+                                    <li><strong>Observation Only</strong> — The assistant can only read and respond. It cannot run commands or modify files. Safest option.</li>
+                                    <li><strong>Collaborative (Default)</strong> — The assistant can suggest actions and execute them after you approve. Best balance of safety and usefulness.</li>
+                                    <li><strong>Full Autonomy</strong> — The assistant can take action without asking. Powerful but use with caution — it can run shell commands, write files, and more.</li>
+                                </ul>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>Other Settings</h4>
+                                <ul>
+                                    <li><strong>Gateway Port</strong> — The local port the daemon listens on (default: 7331). Change only if you have a conflict.</li>
+                                    <li><strong>Tunnel Provider</strong> — If you want to access your agent from outside your network. Most users should leave this as "None".</li>
+                                    <li><strong>Identity Format</strong> — Controls the assistant's persona and name.</li>
+                                    <li><strong>Runtime Adapter</strong> — How code gets executed. "Native" is fastest and recommended.</li>
+                                    <li><strong>Log Level</strong> — How much detail shows in the logs. "Info" is fine for normal use; switch to "Debug" when troubleshooting.</li>
+                                    <li><strong>Max Tool Iterations</strong> — How many steps the AI can chain in one response. Higher values allow more complex tasks but take longer.</li>
+                                </ul>
+                            </div>
+
+                            <div class="help-tip">💡 <strong>Tip:</strong> If you're just getting started, leave all settings at their defaults. The pre-configured values work well for most users.</div>
+                        </div>
+                    </details>
+
+                    <!-- 8. Troubleshooting -->
+                    <details class="help-section">
+                        <summary>🔧 Troubleshooting / FAQ</summary>
+                        <div class="help-body">
+                            <div class="help-sub">
+                                <h4>"Daemon won't start"</h4>
+                                <ul>
+                                    <li>Check the Dashboard Debug Log at the bottom of the screen for error messages.</li>
+                                    <li>Make sure the installation completed successfully (all 4 wizard steps were green).</li>
+                                    <li>Try restarting the Companion App.</li>
+                                    <li>Ensure port 7331 (or your custom port) is not in use by another application.</li>
+                                </ul>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>"Telegram not responding"</h4>
+                                <ul>
+                                    <li>Verify the daemon is running (check Agent Control tab).</li>
+                                    <li>Make sure you saved a valid Bot Token in Channels → Telegram.</li>
+                                    <li>Check that your Telegram user ID is in the Allowed Users list.</li>
+                                    <li>Try clicking "Test" in the Telegram setup to validate the token.</li>
+                                </ul>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>"Composio key not validating"</h4>
+                                <ul>
+                                    <li>Make sure you copied the full key from composio.dev (Settings → API Keys).</li>
+                                    <li>BambooClaw tries multiple API endpoints automatically. If you're in the desktop app and it still fails, check your internet connection.</li>
+                                    <li>If you're viewing this in a web browser preview, CORS restrictions may block the validation. The key will still work when running in the actual desktop app.</li>
+                                </ul>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>"Model gives errors"</h4>
+                                <ul>
+                                    <li>Double-check your API key is correct and has credits/balance.</li>
+                                    <li>Some models require a paid plan. Try a different, cheaper model first.</li>
+                                    <li>Click "Test Connection" in the LLM Settings tab to see the exact error.</li>
+                                </ul>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>"Everything looks broken in the browser preview"</h4>
+                                <p>If you're viewing BambooClaw inside a web browser (e.g., the Lovable preview), some features won't work because they require the actual desktop app (Tauri). Specifically:</p>
+                                <ul>
+                                    <li>Starting/stopping the daemon</li>
+                                    <li>System checks (OS detection, Rust, Git)</li>
+                                    <li>Composio API validation (may show CORS errors)</li>
+                                </ul>
+                                <p>These all work correctly in the real desktop app. The browser preview is useful for checking the UI layout and reading help content like this.</p>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>"How do I update BambooClaw?"</h4>
+                                <p>When a new version is available, the Companion App will show an update notification on the top-right. Click it to download and install the update. Your settings and channel configurations are preserved across updates.</p>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>"Where is my data stored?"</h4>
+                                <p>All BambooClaw data is stored locally on your computer in the <code>~/.bambooclaw/</code> folder. This includes your configuration, API keys, and chat history. Nothing is sent to external servers except your messages to the AI provider you chose.</p>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+
                 <!-- Debug Log Panel (always visible in dashboard) -->
                 <div style="margin-top: 2rem;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -688,6 +1091,20 @@
     var daemonRunning = false;
     var currentConfig = {};
     var PROXY_URL = "https://mjmdhqglpratbyzmgndm.supabase.co/functions/v1/github-release-proxy";
+
+    // =========== HELP FILTER ===========
+    window.filterHelp = function(query) {
+        var sections = document.querySelectorAll('#tab-help .help-section');
+        var q = (query || '').toLowerCase().trim();
+        for (var i = 0; i < sections.length; i++) {
+            var text = sections[i].textContent.toLowerCase();
+            if (!q || text.indexOf(q) !== -1) {
+                sections[i].style.display = '';
+            } else {
+                sections[i].style.display = 'none';
+            }
+        }
+    };
 
     // =========== TOAST ===========
     function showToast(message, type) {
@@ -2150,36 +2567,55 @@
         currentConfig.composioApiKey = key;
         saveAllConfig();
 
-        // Validate by fetching apps list
+        // Validate by fetching tools list
         var statusEl = document.getElementById("composio-status");
         statusEl.style.display = "block";
         statusEl.innerHTML = '<span style="color:var(--text-dim);">⟳ Validating key...</span>';
-        try {
-            var resp = await fetch(COMPOSIO_API_URL + "/tools?toolkit_versions=latest&limit=5", {
-                headers: { "x-api-key": key }
-            });
-            if (resp.ok) {
-                var data = await resp.json();
-                var count = data.totalCount || (data.items ? data.items.length : 0);
-                statusEl.innerHTML = '<span style="color:var(--accent);">✓ Connected to Composio (' + count + ' tools available)</span>';
-                showToast("Composio connected!", "success");
-                appendLog("dash-log", "[COMPOSIO] Connected, " + count + " tools available");
-            } else if (resp.status === 401 || resp.status === 403) {
-                statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key — check your key at app.composio.dev/settings</span>';
-                showToast("Invalid Composio API key", "error");
-            } else {
-                statusEl.innerHTML = '<span style="color:var(--error);">✗ API error (HTTP ' + resp.status + ')</span>';
-                showToast("Composio API error", "error");
+        appendLog("dash-log", "[COMPOSIO] Validating key at " + COMPOSIO_API_URL + "...");
+
+        // Try multiple endpoints in case one fails
+        var endpoints = [
+            COMPOSIO_API_URL + "/apps?limit=5",
+            "https://backend.composio.dev/api/v2/apps?limit=5",
+            "https://backend.composio.dev/api/v1/apps?limit=5"
+        ];
+        var validated = false;
+        for (var ei = 0; ei < endpoints.length; ei++) {
+            try {
+                appendLog("dash-log", "[COMPOSIO] Trying: " + endpoints[ei]);
+                var resp = await fetch(endpoints[ei], {
+                    method: "GET",
+                    headers: { "x-api-key": key }
+                });
+                appendLog("dash-log", "[COMPOSIO] Response: HTTP " + resp.status);
+                if (resp.ok) {
+                    var data = await resp.json();
+                    var count = data.totalCount || (data.items ? data.items.length : (Array.isArray(data) ? data.length : 0));
+                    statusEl.innerHTML = '<span style="color:var(--accent);">✓ Connected to Composio (' + count + ' apps available)</span>';
+                    showToast("Composio connected!", "success");
+                    appendLog("dash-log", "[COMPOSIO] Connected via " + endpoints[ei] + ", " + count + " apps available");
+                    validated = true;
+                    break;
+                } else if (resp.status === 401 || resp.status === 403) {
+                    statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key — check your key at app.composio.dev/settings</span>';
+                    showToast("Invalid Composio API key", "error");
+                    validated = true;
+                    break;
+                }
+                // Other status — try next endpoint
+            } catch(e) {
+                var msg = (e.message || String(e));
+                appendLog("dash-log", "[COMPOSIO] Endpoint " + endpoints[ei] + " error: " + msg);
+                // Continue to next endpoint
             }
-        } catch(e) {
-            // CORS or network error — likely running in browser preview, will work in Tauri
-            var msg = (e.message || String(e));
-            if (msg === "Failed to fetch" || msg.indexOf("CORS") >= 0 || msg.indexOf("NetworkError") >= 0) {
+        }
+        if (!validated) {
+            if (window.__TAURI__) {
+                statusEl.innerHTML = '<span style="color:var(--error);">✗ Could not reach Composio API. Check your internet connection.</span>';
+                showToast("Cannot reach Composio API", "error");
+            } else {
                 statusEl.innerHTML = '<span style="color:var(--warning);">⚠ Cannot validate from browser (CORS). Key saved — it will work in the desktop app.</span>';
                 showToast("Key saved — validation requires the desktop app", "info");
-                appendLog("dash-log", "[COMPOSIO] Key saved, browser CORS prevents validation");
-            } else {
-                statusEl.innerHTML = '<span style="color:var(--error);">✗ Connection failed: ' + escapeHtml(msg) + '</span>';
             }
         }
     }
