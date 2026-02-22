@@ -1052,27 +1052,7 @@
         }
         showToast("Testing connection...", "info");
 
-        // Check if bambooclaw CLI is installed before trying Tauri invoke
-        var cliAvailable = false;
-        try {
-            await invokeShort("check_prerequisite", { name: "bambooclaw" });
-            cliAvailable = true;
-        } catch(e) {
-            appendLog("dash-log", "[TEST] bambooclaw CLI not installed, skipping Tauri test");
-        }
-
-        if (cliAvailable) {
-            try {
-                var result = await invokeShort("run_bambooclaw", { args: ["agent", "-m", "ping"] });
-                showToast("Connection successful: " + (result || "OK"), "success");
-                appendLog("dash-log", "[TEST] Tauri test OK: " + (result || "OK"));
-                return;
-            } catch(e) {
-                appendLog("dash-log", "[TEST] Tauri run_bambooclaw failed: " + (e.message || e));
-            }
-        }
-
-        // Direct API test (browser mode / CLI not installed)
+        // Direct API validation — no CLI needed
         try {
             if (provider === "openrouter") {
                 appendLog("dash-log", "[TEST] Calling openrouter.ai/api/v1/models...");
@@ -1343,37 +1323,46 @@
         appendLog("dash-log", "[CH] testChannel(" + channel + ") called");
         showToast("Testing " + channel + " connection...", "info");
 
-        // Check if bambooclaw CLI is installed before invoking
+        // Direct API validation per channel — no CLI needed
         try {
-            await invokeShort("check_prerequisite", { name: "bambooclaw" });
+            if (channel === "telegram") {
+                var token = currentConfig.channels && currentConfig.channels.telegram && currentConfig.channels.telegram.bot_token;
+                if (!token) { showToast("No Telegram bot token configured", "error"); return; }
+                var resp = await fetch("https://api.telegram.org/bot" + token + "/getMe");
+                var data = await resp.json();
+                if (data.ok) {
+                    showToast("Telegram bot @" + data.result.username + " is valid!", "success");
+                    appendLog("dash-log", "[CH] Telegram OK: @" + data.result.username);
+                } else {
+                    showToast("Invalid Telegram token: " + (data.description || "unknown error"), "error");
+                    appendLog("dash-log", "[CH] Telegram FAIL: " + JSON.stringify(data));
+                }
+            } else if (channel === "discord") {
+                var dToken = currentConfig.channels && currentConfig.channels.discord && currentConfig.channels.discord.bot_token;
+                if (!dToken) { showToast("No Discord bot token configured", "error"); return; }
+                var dresp = await fetch("https://discord.com/api/v10/users/@me", {
+                    headers: { "Authorization": "Bot " + dToken }
+                });
+                if (dresp.ok) {
+                    var ddata = await dresp.json();
+                    showToast("Discord bot " + ddata.username + " is valid!", "success");
+                    appendLog("dash-log", "[CH] Discord OK: " + ddata.username);
+                } else {
+                    showToast("Invalid Discord token (HTTP " + dresp.status + ")", "error");
+                }
+            } else {
+                showToast("Configuration saved. Full " + channel + " test available when agent is running.", "info");
+                appendLog("dash-log", "[CH] No direct API test for: " + channel);
+            }
         } catch(e) {
-            appendLog("dash-log", "[CH] bambooclaw CLI not installed");
-            showToast("BambooClaw CLI not installed. Install it first via the Installer tab, then test the channel.", "error");
-            return;
-        }
-
-        try {
-            var result = await invokeShort("run_bambooclaw", { args: ["channel", "test", channel] });
-            showToast(channel + " test: " + (result || "OK"), "success");
-        } catch(e) {
-            showToast(channel + " test failed: " + (e.message || e), "error");
+            showToast(channel + " test error: " + (e.message || e), "error");
+            appendLog("dash-log", "[CH] testChannel ERROR: " + (e.message || e));
         }
     }
 
     // =========== AGENT CONTROL ===========
     async function toggleDaemon() {
         appendLog("dash-log", "[DAEMON] toggleDaemon() called, daemonRunning=" + daemonRunning);
-
-        // Check if bambooclaw CLI is installed before daemon operations
-        if (!daemonRunning) {
-            try {
-                await invokeShort("check_prerequisite", { name: "bambooclaw" });
-            } catch(e) {
-                appendLog("dash-log", "[DAEMON] bambooclaw CLI not installed");
-                showToast("BambooClaw CLI not installed. Install it first via the Installer tab.", "error");
-                return;
-            }
-        }
 
         var btn = document.getElementById("btn-daemon-toggle");
         if (daemonRunning) {
