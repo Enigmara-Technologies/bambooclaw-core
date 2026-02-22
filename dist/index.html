@@ -383,7 +383,7 @@
                             <label>Storage Path</label>
                             <input type="text" id="install-path-display" readonly value="~/.bambooclaw/bambooclaw" />
                         </div>
-                        <button class="btn" onclick="window.enterDashboard()">Enter Companion Dashboard</button>
+                        <button class="btn" id="btn-enter-dashboard">Enter Companion Dashboard</button>
                     </div>
                 </div>
             </div>
@@ -900,12 +900,22 @@
 
     document.getElementById("btn-step2-next").addEventListener("click", function() { wizardGo(3); });
 
-    window.enterDashboard = function enterDashboard() {
-        localStorage.setItem("bambooclaw-installed", "true");
-        document.getElementById("wizard-view").classList.add("hidden");
-        document.getElementById("dashboard-view").classList.remove("hidden");
-        loadConfig();
+    window.enterDashboard = function() {
+        try {
+            appendLog("boot-log", "[DASH] enterDashboard() called");
+            localStorage.setItem("bambooclaw-installed", "true");
+            document.getElementById("wizard-view").style.display = "none";
+            document.getElementById("dashboard-view").style.display = "block";
+            document.getElementById("dashboard-view").classList.remove("hidden");
+            loadConfig();
+        } catch(e) {
+            appendLog("boot-log", "[ERROR] enterDashboard failed: " + (e.message || e));
+        }
     };
+
+    document.getElementById("btn-enter-dashboard").addEventListener("click", function() {
+        window.enterDashboard();
+    });
 
     // =========== TAB SWITCHING ===========
     document.querySelectorAll(".tab").forEach(function(tab) {
