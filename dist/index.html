@@ -438,8 +438,8 @@
                         <label>System Prompt (optional)</label>
                         <textarea id="llm-system-prompt" rows="3" placeholder="Custom instructions for the agent..."></textarea>
                     </div>
-                    <button class="btn" id="btn-apply-llm" onclick="window.applyLLMConfig()">Apply Configuration</button>
-                    <button class="btn btn-outline" style="margin-left: 0.5rem;" id="btn-test-llm" onclick="window.testLLMConfig()">Test Connection</button>
+                    <button class="btn" id="btn-apply-llm">Apply Configuration</button>
+                    <button class="btn btn-outline" style="margin-left: 0.5rem;" id="btn-test-llm">Test Connection</button>
                 </div>
 
                 <!-- Tab: Channels -->
@@ -452,7 +452,7 @@
                             <div class="channel-name">🤖 Telegram Bot</div>
                             <div class="channel-status" id="tg-status">Not configured</div>
                         </div>
-                        <button class="btn btn-sm btn-outline" onclick="window.setupTelegram()">Setup</button>
+                        <button class="btn btn-sm btn-outline" id="btn-setup-tg">Setup</button>
                     </div>
 
                     <div class="channel-row">
@@ -460,7 +460,7 @@
                             <div class="channel-name">💬 Discord App</div>
                             <div class="channel-status" id="dc-status">Not configured</div>
                         </div>
-                        <button class="btn btn-sm btn-outline" onclick="window.setupDiscord()">Setup</button>
+                        <button class="btn btn-sm btn-outline" id="btn-setup-dc">Setup</button>
                     </div>
 
                     <div class="channel-row">
@@ -468,7 +468,7 @@
                             <div class="channel-name">📱 WhatsApp</div>
                             <div class="channel-status" id="wa-status">Not configured</div>
                         </div>
-                        <button class="btn btn-sm btn-outline" onclick="window.setupWhatsApp()">Setup</button>
+                        <button class="btn btn-sm btn-outline" id="btn-setup-wa">Setup</button>
                     </div>
 
                     <div class="channel-row">
@@ -476,14 +476,14 @@
                             <div class="channel-name">🔗 Slack</div>
                             <div class="channel-status" id="sl-status">Not configured</div>
                         </div>
-                        <button class="btn btn-sm btn-outline" onclick="window.setupSlack()">Setup</button>
+                        <button class="btn btn-sm btn-outline" id="btn-setup-sl">Setup</button>
                     </div>
 
                     <!-- Channel setup modal area -->
                     <div id="channel-setup-area" class="hidden" style="margin-top: 1.5rem; padding: 1.5rem; border: 1px solid var(--border); border-radius: 8px; background: #050507;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                             <h2 style="font-size: 1.1rem;" id="channel-setup-title">Setup</h2>
-                            <button class="copy-btn" onclick="window.closeChannelSetup()" style="font-size: 1.2rem;">✕</button>
+                            <button class="copy-btn" id="btn-close-channel" style="font-size: 1.2rem;">✕</button>
                         </div>
                         <div id="channel-setup-body"></div>
                     </div>
@@ -499,7 +499,7 @@
                                 <span id="daemon-status-text">Stopped</span>
                             </span>
                         </div>
-                        <button class="btn" id="btn-daemon-toggle" onclick="window.toggleDaemon()">Start Agent Daemon</button>
+                        <button class="btn" id="btn-daemon-toggle">Start Agent Daemon</button>
                     </div>
 
                     <h2 style="font-size: 1rem; margin-bottom: 0.5rem; color: var(--text-dim);">Agent Chat</h2>
@@ -508,8 +508,8 @@
                             <div class="chat-msg assistant"><span class="role">Agent:</span> Daemon is offline. Start the daemon to begin chatting.</div>
                         </div>
                         <div class="chat-input-row">
-                            <input type="text" id="agent-chat-input" placeholder="Send a message to the agent..." onkeydown="if(event.key==='Enter')window.sendAgentMessage()" />
-                            <button class="btn" style="border-radius: 0;" onclick="window.sendAgentMessage()">Send</button>
+                            <input type="text" id="agent-chat-input" placeholder="Send a message to the agent..." />
+                            <button class="btn" style="border-radius: 0;" id="btn-send-chat">Send</button>
                         </div>
                     </div>
 
@@ -580,8 +580,8 @@
                         </div>
                     </div>
                     <div style="margin-top: 1rem;">
-                        <button class="btn" onclick="window.saveSettings()">Save Settings</button>
-                        <button class="btn btn-outline" style="margin-left: 0.5rem;" onclick="window.resetSettings()">Reset Defaults</button>
+                        <button class="btn" id="btn-save-settings">Save Settings</button>
+                        <button class="btn btn-outline" style="margin-left: 0.5rem;" id="btn-reset-settings">Reset Defaults</button>
                     </div>
                 </div>
 
@@ -1236,6 +1236,7 @@
     }
 
     function saveTelegramToken() {
+        appendLog("dash-log", "[CH] saveTelegramToken() called");
         var token = document.getElementById("tg-token").value.trim();
         if (!token) { showToast("Please enter a bot token", "error"); return; }
         if (!currentConfig.channels) currentConfig.channels = {};
@@ -1261,6 +1262,7 @@
     }
 
     function saveDiscordToken() {
+        appendLog("dash-log", "[CH] saveDiscordToken() called");
         var token = document.getElementById("dc-token").value.trim();
         if (!token) { showToast("Please enter a bot token", "error"); return; }
         if (!currentConfig.channels) currentConfig.channels = {};
@@ -1287,6 +1289,7 @@
     }
 
     function saveWhatsApp() {
+        appendLog("dash-log", "[CH] saveWhatsApp() called");
         var phoneId = document.getElementById("wa-phone-id").value.trim();
         var token = document.getElementById("wa-token").value.trim();
         var verify = document.getElementById("wa-verify").value.trim();
@@ -1314,6 +1317,7 @@
     }
 
     function saveSlack() {
+        appendLog("dash-log", "[CH] saveSlack() called");
         var botToken = document.getElementById("sl-bot-token").value.trim();
         var appToken = document.getElementById("sl-app-token").value.trim();
         if (!botToken) { showToast("Bot token is required", "error"); return; }
@@ -1326,6 +1330,7 @@
     }
 
     async function testChannel(channel) {
+        appendLog("dash-log", "[CH] testChannel(" + channel + ") called");
         showToast("Testing " + channel + " connection...", "info");
         try {
             var result = await invokeShort("run_bambooclaw", { args: ["channel", "test", channel] });
@@ -1337,25 +1342,32 @@
 
     // =========== AGENT CONTROL ===========
     async function toggleDaemon() {
+        appendLog("dash-log", "[DAEMON] toggleDaemon() called, daemonRunning=" + daemonRunning);
         var btn = document.getElementById("btn-daemon-toggle");
         if (daemonRunning) {
             try {
+                appendLog("dash-log", "[DAEMON] Invoking stop_daemon...");
                 await invokeShort("stop_daemon");
                 daemonRunning = false;
                 updateDaemonUI();
                 appendLog("daemon-log", "[INFO] Daemon stopped.");
+                appendLog("dash-log", "[DAEMON] Daemon stopped OK");
                 showToast("Agent daemon stopped", "info");
             } catch(e) {
+                appendLog("dash-log", "[DAEMON] stop_daemon ERROR: " + (e.message || e));
                 showToast("Failed to stop daemon: " + (e.message || e), "error");
             }
         } else {
             try {
+                appendLog("dash-log", "[DAEMON] Invoking start_daemon...");
                 await invokeShort("start_daemon");
                 daemonRunning = true;
                 updateDaemonUI();
                 appendLog("daemon-log", "[INFO] Daemon started.");
+                appendLog("dash-log", "[DAEMON] Daemon started OK");
                 showToast("Agent daemon started", "success");
             } catch(e) {
+                appendLog("dash-log", "[DAEMON] start_daemon ERROR: " + (e.message || e));
                 showToast("Failed to start daemon: " + (e.message || e), "error");
             }
         }
@@ -1379,9 +1391,10 @@
     }
 
     async function sendAgentMessage() {
+        appendLog("dash-log", "[CHAT] sendAgentMessage() called");
         var input = document.getElementById("agent-chat-input");
         var msg = input.value.trim();
-        if (!msg) return;
+        if (!msg) { appendLog("dash-log", "[CHAT] Empty message, ignoring"); return; }
         input.value = "";
 
         var chatEl = document.getElementById("agent-chat-messages");
@@ -1409,6 +1422,7 @@
 
     // =========== SETTINGS ===========
     async function saveSettings() {
+        appendLog("dash-log", "[SETTINGS] saveSettings() called");
         currentConfig.settings = {
             autonomy: document.getElementById("set-autonomy").value,
             port: document.getElementById("set-port").value,
@@ -1422,6 +1436,7 @@
     }
 
     function resetSettings() {
+        appendLog("dash-log", "[SETTINGS] resetSettings() called");
         document.getElementById("set-autonomy").value = "collaborative";
         document.getElementById("set-port").value = "7331";
         document.getElementById("set-tunnel").value = "none";
@@ -1600,9 +1615,19 @@
     window.resetSettings = resetSettings;
     window.escapeHtml = escapeHtml;
 
-    // Apply + Test LLM buttons (use addEventListener for reliability)
-    document.getElementById("btn-apply-llm") && document.getElementById("btn-apply-llm").addEventListener("click", function() { applyLLMConfig(); });
-    document.getElementById("btn-test-llm") && document.getElementById("btn-test-llm").addEventListener("click", function() { testLLMConfig(); });
+    // =========== BUTTON addEventListener BINDINGS (all buttons, no onclick) ===========
+    document.getElementById("btn-apply-llm").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-apply-llm clicked"); applyLLMConfig(); });
+    document.getElementById("btn-test-llm").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-test-llm clicked"); testLLMConfig(); });
+    document.getElementById("btn-setup-tg").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-setup-tg clicked"); setupTelegram(); });
+    document.getElementById("btn-setup-dc").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-setup-dc clicked"); setupDiscord(); });
+    document.getElementById("btn-setup-wa").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-setup-wa clicked"); setupWhatsApp(); });
+    document.getElementById("btn-setup-sl").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-setup-sl clicked"); setupSlack(); });
+    document.getElementById("btn-close-channel").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-close-channel clicked"); closeChannelSetup(); });
+    document.getElementById("btn-daemon-toggle").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-daemon-toggle clicked"); toggleDaemon(); });
+    document.getElementById("btn-send-chat").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-send-chat clicked"); sendAgentMessage(); });
+    document.getElementById("agent-chat-input").addEventListener("keydown", function(e) { if (e.key === "Enter") { appendLog("dash-log", "[BTN] chat Enter key"); sendAgentMessage(); } });
+    document.getElementById("btn-save-settings").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-save-settings clicked"); saveSettings(); });
+    document.getElementById("btn-reset-settings").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-reset-settings clicked"); resetSettings(); });
 
     // =========== VERSION FETCH ===========
     async function fetchVersion() {
