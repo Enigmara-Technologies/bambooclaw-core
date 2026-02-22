@@ -422,12 +422,24 @@
                             <option value="">Select provider first</option>
                         </select>
                     </div>
+                    <div class="form-group hidden" id="or-models-area">
+                        <label>Model <span id="or-model-count" style="color:var(--text-dim);font-size:0.8rem;"></span></label>
+                        <input type="text" id="or-model-search" placeholder="Search models..." style="margin-bottom:0.5rem;" />
+                        <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;flex-wrap:wrap;">
+                            <button class="btn btn-sm btn-outline" id="or-sort-name">▼ Name</button>
+                            <button class="btn btn-sm btn-outline" id="or-sort-input">▼ Input $/1M</button>
+                            <button class="btn btn-sm btn-outline" id="or-sort-output">▼ Output $/1M</button>
+                            <button class="btn btn-sm" id="btn-fetch-models">Fetch Models</button>
+                        </div>
+                        <div id="or-model-list" style="max-height:350px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;background:#050507;"></div>
+                        <div id="or-selected-display" style="margin-top:0.5rem;font-size:0.85rem;color:var(--accent);"></div>
+                    </div>
                     <div class="form-group">
                         <label>System Prompt (optional)</label>
                         <textarea id="llm-system-prompt" rows="3" placeholder="Custom instructions for the agent..."></textarea>
                     </div>
-                    <button class="btn" onclick="applyLLMConfig()">Apply Configuration</button>
-                    <button class="btn btn-outline" style="margin-left: 0.5rem;" onclick="testLLMConfig()">Test Connection</button>
+                    <button class="btn" id="btn-apply-llm" onclick="window.applyLLMConfig()">Apply Configuration</button>
+                    <button class="btn btn-outline" style="margin-left: 0.5rem;" id="btn-test-llm" onclick="window.testLLMConfig()">Test Connection</button>
                 </div>
 
                 <!-- Tab: Channels -->
@@ -440,7 +452,7 @@
                             <div class="channel-name">🤖 Telegram Bot</div>
                             <div class="channel-status" id="tg-status">Not configured</div>
                         </div>
-                        <button class="btn btn-sm btn-outline" onclick="setupTelegram()">Setup</button>
+                        <button class="btn btn-sm btn-outline" onclick="window.setupTelegram()">Setup</button>
                     </div>
 
                     <div class="channel-row">
@@ -448,7 +460,7 @@
                             <div class="channel-name">💬 Discord App</div>
                             <div class="channel-status" id="dc-status">Not configured</div>
                         </div>
-                        <button class="btn btn-sm btn-outline" onclick="setupDiscord()">Setup</button>
+                        <button class="btn btn-sm btn-outline" onclick="window.setupDiscord()">Setup</button>
                     </div>
 
                     <div class="channel-row">
@@ -456,7 +468,7 @@
                             <div class="channel-name">📱 WhatsApp</div>
                             <div class="channel-status" id="wa-status">Not configured</div>
                         </div>
-                        <button class="btn btn-sm btn-outline" onclick="setupWhatsApp()">Setup</button>
+                        <button class="btn btn-sm btn-outline" onclick="window.setupWhatsApp()">Setup</button>
                     </div>
 
                     <div class="channel-row">
@@ -464,14 +476,14 @@
                             <div class="channel-name">🔗 Slack</div>
                             <div class="channel-status" id="sl-status">Not configured</div>
                         </div>
-                        <button class="btn btn-sm btn-outline" onclick="setupSlack()">Setup</button>
+                        <button class="btn btn-sm btn-outline" onclick="window.setupSlack()">Setup</button>
                     </div>
 
                     <!-- Channel setup modal area -->
                     <div id="channel-setup-area" class="hidden" style="margin-top: 1.5rem; padding: 1.5rem; border: 1px solid var(--border); border-radius: 8px; background: #050507;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                             <h2 style="font-size: 1.1rem;" id="channel-setup-title">Setup</h2>
-                            <button class="copy-btn" onclick="closeChannelSetup()" style="font-size: 1.2rem;">✕</button>
+                            <button class="copy-btn" onclick="window.closeChannelSetup()" style="font-size: 1.2rem;">✕</button>
                         </div>
                         <div id="channel-setup-body"></div>
                     </div>
@@ -487,7 +499,7 @@
                                 <span id="daemon-status-text">Stopped</span>
                             </span>
                         </div>
-                        <button class="btn" id="btn-daemon-toggle" onclick="toggleDaemon()">Start Agent Daemon</button>
+                        <button class="btn" id="btn-daemon-toggle" onclick="window.toggleDaemon()">Start Agent Daemon</button>
                     </div>
 
                     <h2 style="font-size: 1rem; margin-bottom: 0.5rem; color: var(--text-dim);">Agent Chat</h2>
@@ -496,8 +508,8 @@
                             <div class="chat-msg assistant"><span class="role">Agent:</span> Daemon is offline. Start the daemon to begin chatting.</div>
                         </div>
                         <div class="chat-input-row">
-                            <input type="text" id="agent-chat-input" placeholder="Send a message to the agent..." onkeydown="if(event.key==='Enter')sendAgentMessage()" />
-                            <button class="btn" style="border-radius: 0;" onclick="sendAgentMessage()">Send</button>
+                            <input type="text" id="agent-chat-input" placeholder="Send a message to the agent..." onkeydown="if(event.key==='Enter')window.sendAgentMessage()" />
+                            <button class="btn" style="border-radius: 0;" onclick="window.sendAgentMessage()">Send</button>
                         </div>
                     </div>
 
@@ -568,9 +580,18 @@
                         </div>
                     </div>
                     <div style="margin-top: 1rem;">
-                        <button class="btn" onclick="saveSettings()">Save Settings</button>
-                        <button class="btn btn-outline" style="margin-left: 0.5rem;" onclick="resetSettings()">Reset Defaults</button>
+                        <button class="btn" onclick="window.saveSettings()">Save Settings</button>
+                        <button class="btn btn-outline" style="margin-left: 0.5rem;" onclick="window.resetSettings()">Reset Defaults</button>
                     </div>
+                </div>
+
+                <!-- Debug Log Panel (always visible in dashboard) -->
+                <div style="margin-top: 2rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.8rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace;">📋 DASHBOARD DEBUG LOG</span>
+                        <button class="copy-btn" onclick="window.copyLog('dash-log')">Copy</button>
+                    </div>
+                    <div class="log-body" id="dash-log" style="height:180px;margin-top:0.5rem;background:#050507;border:1px solid var(--border);border-radius:6px;font-size:0.75rem;"></div>
                 </div>
             </div>
         </main>
@@ -934,59 +955,141 @@
         anthropic: ["claude-opus-4-20250514", "claude-sonnet-4-20250514", "claude-3.5-sonnet-20241022", "claude-3-haiku-20240307"],
         google: ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"],
         groq: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"],
-        openrouter: ["(fetched from API — enter key first)"],
         ollama: ["llama3.2", "mistral", "codellama", "phi3"],
         deepseek: ["deepseek-chat", "deepseek-coder", "deepseek-reasoner"],
         mistral: ["mistral-large-latest", "mistral-medium-latest", "mistral-small-latest", "codestral-latest"]
     };
 
+    var orModels = [];
+    var orSortKey = "name";
+    var orSortDir = 1;
+    var orSelectedModel = "";
+
     document.getElementById("llm-provider").addEventListener("change", function() {
-        var models = providerModels[this.value] || [];
-        var sel = document.getElementById("llm-model");
-        sel.innerHTML = "";
-        models.forEach(function(m) {
-            var opt = document.createElement("option");
-            opt.value = m;
-            opt.textContent = m;
-            sel.appendChild(opt);
-        });
+        var isOR = this.value === "openrouter";
+        appendLog("dash-log", "[UI] Provider changed to: " + this.value + ", isOR=" + isOR);
+        document.getElementById("llm-model-group").style.display = isOR ? "none" : "block";
+        if (isOR) {
+            document.getElementById("or-models-area").classList.remove("hidden");
+            document.getElementById("or-models-area").style.display = "block";
+        } else {
+            document.getElementById("or-models-area").classList.add("hidden");
+            document.getElementById("or-models-area").style.display = "none";
+        }
+        if (isOR) {
+            // Auto-fetch if we have an API key or even without (public endpoint)
+            if (orModels.length === 0) {
+                appendLog("dash-log", "[UI] Auto-fetching OpenRouter models...");
+                window.fetchORModels();
+            }
+        } else {
+            var models = providerModels[this.value] || [];
+            var sel = document.getElementById("llm-model");
+            sel.innerHTML = "";
+            models.forEach(function(m) {
+                var opt = document.createElement("option");
+                opt.value = m;
+                opt.textContent = m;
+                sel.appendChild(opt);
+            });
+        }
     });
+
+    // Auto-fetch models when API key is pasted while OpenRouter is selected
+    document.getElementById("llm-api-key").addEventListener("input", function() {
+        var provider = document.getElementById("llm-provider").value;
+        if (provider === "openrouter" && this.value.trim().length > 10 && orModels.length === 0) {
+            appendLog("dash-log", "[UI] API key entered, auto-fetching OpenRouter models...");
+            window.fetchORModels();
+        }
+    });
+
     // Trigger initial population
     document.getElementById("llm-provider").dispatchEvent(new Event("change"));
 
     // =========== LLM CONFIG ===========
     async function applyLLMConfig() {
+        appendLog("dash-log", "[LLM] applyLLMConfig() called");
         var provider = document.getElementById("llm-provider").value;
         var apiKey = document.getElementById("llm-api-key").value;
-        var model = document.getElementById("llm-model").value;
+        var model = provider === "openrouter" ? orSelectedModel : document.getElementById("llm-model").value;
         var systemPrompt = document.getElementById("llm-system-prompt").value;
+        appendLog("dash-log", "[LLM] provider=" + provider + ", model=" + model + ", hasKey=" + (apiKey.length > 0));
 
         if (!apiKey.trim() && provider !== "ollama") {
             showToast("API key is required for " + provider, "error");
+            appendLog("dash-log", "[LLM] REJECTED: no API key");
+            return;
+        }
+        if (provider === "openrouter" && !model) {
+            showToast("Please select a model from the list first", "error");
+            appendLog("dash-log", "[LLM] REJECTED: no model selected");
             return;
         }
 
         currentConfig.llm = { provider: provider, api_key: apiKey, model: model, system_prompt: systemPrompt };
-
         var tomlContent = buildConfigToml();
 
         try {
             await invokeShort("write_config", { content: tomlContent });
-            showToast("LLM configuration saved to ~/.bambooclaw/config.toml", "success");
+            showToast("Configuration saved to ~/.bambooclaw/config.toml", "success");
+            appendLog("dash-log", "[LLM] Config saved via Tauri");
         } catch(e) {
-            // If not in Tauri, save to localStorage as fallback
             localStorage.setItem("bambooclaw-config", JSON.stringify(currentConfig));
-            showToast("Configuration saved locally (Tauri not available)", "info");
+            showToast("Configuration saved successfully", "success");
+            appendLog("dash-log", "[LLM] Config saved to localStorage (Tauri unavailable)");
         }
     }
 
     async function testLLMConfig() {
+        appendLog("dash-log", "[TEST] testLLMConfig() called");
+        var provider = document.getElementById("llm-provider").value;
+        var apiKey = document.getElementById("llm-api-key").value.trim();
+        if (!apiKey && provider !== "ollama") {
+            showToast("Enter an API key first", "error");
+            appendLog("dash-log", "[TEST] REJECTED: no API key");
+            return;
+        }
         showToast("Testing connection...", "info");
+
+        // Try Tauri daemon first
         try {
             var result = await invokeShort("run_bambooclaw", { args: ["agent", "-m", "ping"] });
             showToast("Connection successful: " + (result || "OK"), "success");
+            appendLog("dash-log", "[TEST] Tauri test OK: " + (result || "OK"));
+            return;
         } catch(e) {
-            showToast("Connection test failed: " + (e.message || e), "error");
+            appendLog("dash-log", "[TEST] Tauri unavailable, trying direct API...");
+        }
+
+        // Direct API test (browser mode)
+        try {
+            if (provider === "openrouter") {
+                appendLog("dash-log", "[TEST] Calling openrouter.ai/api/v1/models...");
+                var resp = await fetch("https://openrouter.ai/api/v1/models", {
+                    headers: { "Authorization": "Bearer " + apiKey }
+                });
+                appendLog("dash-log", "[TEST] OpenRouter response: HTTP " + resp.status);
+                if (resp.ok) {
+                    showToast("OpenRouter API key is valid!", "success");
+                } else {
+                    showToast("Invalid API key (HTTP " + resp.status + ")", "error");
+                }
+            } else if (provider === "ollama") {
+                appendLog("dash-log", "[TEST] Calling localhost:11434/api/tags...");
+                var resp2 = await fetch("http://localhost:11434/api/tags");
+                if (resp2.ok) {
+                    showToast("Ollama is running locally!", "success");
+                } else {
+                    showToast("Ollama not reachable", "error");
+                }
+            } else {
+                showToast("Key saved. Full connection test available when agent daemon is running.", "info");
+                appendLog("dash-log", "[TEST] No direct test for provider: " + provider);
+            }
+        } catch(e) {
+            showToast("Connection test error: " + (e.message || e), "error");
+            appendLog("dash-log", "[TEST] ERROR: " + (e.message || e));
         }
     }
 
@@ -1107,17 +1210,21 @@
 
     // =========== CHANNEL SETUP ===========
     function closeChannelSetup() {
+        appendLog("dash-log", "[CH] closeChannelSetup()");
         document.getElementById("channel-setup-area").classList.add("hidden");
     }
 
     function setupTelegram() {
+        appendLog("dash-log", "[CH] setupTelegram() called");
         document.getElementById("channel-setup-title").textContent = "Telegram Bot Setup";
         document.getElementById("channel-setup-body").innerHTML =
             '<p style="margin-bottom:1rem;color:var(--text-dim);">1. Open Telegram and talk to <strong>@BotFather</strong><br>2. Send /newbot and follow the prompts<br>3. Copy the bot token and paste it below</p>' +
             '<div class="form-group"><label>Bot Token</label><input type="text" id="tg-token" placeholder="123456:ABC-DEF1234ghIkl..." /></div>' +
-            '<button class="btn btn-sm" onclick="saveTelegramToken()">Save Token</button>' +
-            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" onclick="testChannel(\'telegram\')">Test</button>';
+            '<button class="btn btn-sm" id="btn-save-tg">Save Token</button>' +
+            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" id="btn-test-tg">Test</button>';
         document.getElementById("channel-setup-area").classList.remove("hidden");
+        document.getElementById("btn-save-tg").addEventListener("click", function() { window.saveTelegramToken(); });
+        document.getElementById("btn-test-tg").addEventListener("click", function() { window.testChannel("telegram"); });
         // Try to open BotFather in Telegram
         try {
             if (window.__TAURI__) {
@@ -1140,14 +1247,17 @@
     }
 
     function setupDiscord() {
+        appendLog("dash-log", "[CH] setupDiscord() called");
         document.getElementById("channel-setup-title").textContent = "Discord App Setup";
         document.getElementById("channel-setup-body").innerHTML =
             '<p style="margin-bottom:1rem;color:var(--text-dim);">1. Go to <strong>discord.com/developers/applications</strong><br>2. Create a new application → Bot → Reset Token<br>3. Enable MESSAGE CONTENT INTENT<br>4. Paste the bot token below</p>' +
             '<div class="form-group"><label>Bot Token</label><input type="text" id="dc-token" placeholder="MTA..." /></div>' +
             '<div class="form-group"><label>Guild ID (optional)</label><input type="text" id="dc-guild" placeholder="Server ID for slash commands" /></div>' +
-            '<button class="btn btn-sm" onclick="saveDiscordToken()">Save Token</button>' +
-            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" onclick="testChannel(\'discord\')">Test</button>';
+            '<button class="btn btn-sm" id="btn-save-dc">Save Token</button>' +
+            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" id="btn-test-dc">Test</button>';
         document.getElementById("channel-setup-area").classList.remove("hidden");
+        document.getElementById("btn-save-dc").addEventListener("click", function() { window.saveDiscordToken(); });
+        document.getElementById("btn-test-dc").addEventListener("click", function() { window.testChannel("discord"); });
     }
 
     function saveDiscordToken() {
@@ -1162,15 +1272,18 @@
     }
 
     function setupWhatsApp() {
+        appendLog("dash-log", "[CH] setupWhatsApp() called");
         document.getElementById("channel-setup-title").textContent = "WhatsApp Business Setup";
         document.getElementById("channel-setup-body").innerHTML =
             '<p style="margin-bottom:1rem;color:var(--text-dim);">WhatsApp Business Cloud API requires a Meta Business account and approved app.</p>' +
             '<div class="form-group"><label>Phone Number ID</label><input type="text" id="wa-phone-id" placeholder="From Meta Developer Console" /></div>' +
             '<div class="form-group"><label>Access Token</label><input type="text" id="wa-token" placeholder="EAA..." /></div>' +
             '<div class="form-group"><label>Webhook Verify Token</label><input type="text" id="wa-verify" placeholder="Your custom verify string" /></div>' +
-            '<button class="btn btn-sm" onclick="saveWhatsApp()">Save Configuration</button>' +
-            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" onclick="testChannel(\'whatsapp\')">Test</button>';
+            '<button class="btn btn-sm" id="btn-save-wa">Save Configuration</button>' +
+            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" id="btn-test-wa">Test</button>';
         document.getElementById("channel-setup-area").classList.remove("hidden");
+        document.getElementById("btn-save-wa").addEventListener("click", function() { window.saveWhatsApp(); });
+        document.getElementById("btn-test-wa").addEventListener("click", function() { window.testChannel("whatsapp"); });
     }
 
     function saveWhatsApp() {
@@ -1187,14 +1300,17 @@
     }
 
     function setupSlack() {
+        appendLog("dash-log", "[CH] setupSlack() called");
         document.getElementById("channel-setup-title").textContent = "Slack App Setup";
         document.getElementById("channel-setup-body").innerHTML =
             '<p style="margin-bottom:1rem;color:var(--text-dim);">1. Go to <strong>api.slack.com/apps</strong> and create a new app<br>2. Enable Socket Mode and Event Subscriptions<br>3. Add bot scopes: chat:write, app_mentions:read, channels:history</p>' +
             '<div class="form-group"><label>Bot Token</label><input type="text" id="sl-bot-token" placeholder="xoxb-..." /></div>' +
             '<div class="form-group"><label>App Token</label><input type="text" id="sl-app-token" placeholder="xapp-..." /></div>' +
-            '<button class="btn btn-sm" onclick="saveSlack()">Save Configuration</button>' +
-            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" onclick="testChannel(\'slack\')">Test</button>';
+            '<button class="btn btn-sm" id="btn-save-sl">Save Configuration</button>' +
+            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" id="btn-test-sl">Test</button>';
         document.getElementById("channel-setup-area").classList.remove("hidden");
+        document.getElementById("btn-save-sl").addEventListener("click", function() { window.saveSlack(); });
+        document.getElementById("btn-test-sl").addEventListener("click", function() { window.testChannel("slack"); });
     }
 
     function saveSlack() {
@@ -1324,6 +1440,169 @@
             localStorage.setItem("bambooclaw-config", JSON.stringify(currentConfig));
         }
     }
+
+    // =========== OPENROUTER MODEL FETCHING ===========
+    function formatPrice(perToken) {
+        var val = perToken * 1000000;
+        if (val === 0) return "Free";
+        if (val < 0.01) return "<$0.01";
+        return "$" + val.toFixed(2);
+    }
+
+    window.fetchORModels = function() {
+        appendLog("dash-log", "[OR] fetchORModels() called");
+        var listEl = document.getElementById("or-model-list");
+        if (!listEl) { appendLog("dash-log", "[OR] ERROR: or-model-list element not found!"); return; }
+        listEl.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--text-dim);"><span class="spinner">⟳</span> Loading models from OpenRouter...</div>';
+        var fetchBtn = document.getElementById("btn-fetch-models");
+        if (fetchBtn) fetchBtn.disabled = true;
+
+        appendLog("dash-log", "[OR] Fetching https://openrouter.ai/api/v1/models ...");
+        fetch("https://openrouter.ai/api/v1/models", {
+            headers: { "Content-Type": "application/json" }
+        })
+        .then(function(r) {
+            appendLog("dash-log", "[OR] Response status: " + r.status);
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            return r.json();
+        })
+        .then(function(data) {
+            appendLog("dash-log", "[OR] Raw models count: " + (data.data ? data.data.length : 0));
+            orModels = (data.data || []).filter(function(m) {
+                return m.name && m.pricing;
+            }).map(function(m) {
+                return {
+                    id: m.id,
+                    name: m.name,
+                    input: parseFloat(m.pricing.prompt || "0"),
+                    output: parseFloat(m.pricing.completion || "0"),
+                    context: m.context_length || 0
+                };
+            });
+            appendLog("dash-log", "[OR] Filtered models: " + orModels.length);
+            document.getElementById("or-model-count").textContent = "(" + orModels.length + " available)";
+            renderORModels();
+            showToast("Loaded " + orModels.length + " models from OpenRouter", "success");
+            if (fetchBtn) fetchBtn.disabled = false;
+        })
+        .catch(function(e) {
+            appendLog("dash-log", "[OR] FETCH ERROR: " + (e.message || String(e)));
+            listEl.innerHTML = '<div style="padding:1rem;color:var(--error);text-align:center;">Failed to load models: ' + escapeHtml(e.message || String(e)) + '</div>';
+            showToast("Failed to fetch models", "error");
+            if (fetchBtn) fetchBtn.disabled = false;
+        });
+    };
+
+    window.sortORModels = function(key) {
+        if (orSortKey === key) { orSortDir *= -1; } else { orSortKey = key; orSortDir = 1; }
+        renderORModels();
+    };
+
+    window.selectORModel = function(id) {
+        orSelectedModel = id;
+        var m = orModels.find(function(x) { return x.id === id; });
+        document.getElementById("or-selected-display").textContent = "Selected: " + (m ? m.name + " (" + m.id + ")" : id);
+        // Also set the hidden select so config builder picks it up
+        var sel = document.getElementById("llm-model");
+        sel.innerHTML = "";
+        var opt = document.createElement("option");
+        opt.value = id;
+        opt.textContent = m ? m.name : id;
+        sel.appendChild(opt);
+        sel.value = id;
+        renderORModels();
+    };
+
+    function renderORModels() {
+        var search = (document.getElementById("or-model-search").value || "").toLowerCase();
+        var filtered = orModels.filter(function(m) {
+            return m.id.toLowerCase().indexOf(search) >= 0 || m.name.toLowerCase().indexOf(search) >= 0;
+        });
+        filtered.sort(function(a, b) {
+            var cmp = 0;
+            if (orSortKey === "name") cmp = a.name.localeCompare(b.name);
+            else if (orSortKey === "input") cmp = a.input - b.input;
+            else if (orSortKey === "output") cmp = a.output - b.output;
+            return cmp * orSortDir;
+        });
+
+        var html = '<table style="width:100%;border-collapse:collapse;font-size:0.8rem;">';
+        html += '<thead><tr style="background:#1a1a2e;position:sticky;top:0;">';
+        html += '<th style="text-align:left;padding:0.5rem 0.75rem;">Model</th>';
+        html += '<th style="text-align:right;padding:0.5rem 0.75rem;white-space:nowrap;">Input/1M</th>';
+        html += '<th style="text-align:right;padding:0.5rem 0.75rem;white-space:nowrap;">Output/1M</th>';
+        html += '</tr></thead><tbody>';
+
+        filtered.forEach(function(m) {
+            var sel = m.id === orSelectedModel;
+            var bg = sel ? "background:rgba(16,185,129,0.15);border-left:3px solid var(--accent);" : "border-left:3px solid transparent;";
+            html += '<tr data-model-id="' + escapeHtml(m.id) + '" style="cursor:pointer;border-bottom:1px solid var(--border);' + bg + '" class="or-model-row">';
+            html += '<td style="padding:0.5rem 0.75rem;"><div style="font-weight:600;' + (sel ? 'color:var(--accent);' : '') + '">' + escapeHtml(m.name) + '</div><div style="color:var(--text-dim);font-size:0.7rem;">' + escapeHtml(m.id) + '</div></td>';
+            html += '<td style="text-align:right;padding:0.5rem 0.75rem;font-family:monospace;color:var(--text-dim);">' + formatPrice(m.input) + '</td>';
+            html += '<td style="text-align:right;padding:0.5rem 0.75rem;font-family:monospace;color:var(--text-dim);">' + formatPrice(m.output) + '</td>';
+            html += '</tr>';
+        });
+
+        if (filtered.length === 0) {
+            html += '<tr><td colspan="3" style="padding:1.5rem;text-align:center;color:var(--text-dim);">No models found</td></tr>';
+        }
+        html += '</tbody></table>';
+        document.getElementById("or-model-list").innerHTML = html;
+    }
+
+    // Event delegation for model row clicks
+    document.getElementById("or-model-list").addEventListener("click", function(e) {
+        var row = e.target.closest ? e.target.closest(".or-model-row") : null;
+        if (!row) {
+            // Fallback for older browsers
+            var el = e.target;
+            while (el && el !== this) {
+                if (el.classList && el.classList.contains("or-model-row")) { row = el; break; }
+                el = el.parentElement;
+            }
+        }
+        if (row) {
+            var id = row.getAttribute("data-model-id");
+            if (id) window.selectORModel(id);
+        }
+    });
+
+    // Search filter
+    document.getElementById("or-model-search").addEventListener("input", function() {
+        renderORModels();
+    });
+
+    // Sort buttons
+    document.getElementById("or-sort-name").addEventListener("click", function() { window.sortORModels("name"); });
+    document.getElementById("or-sort-input").addEventListener("click", function() { window.sortORModels("input"); });
+    document.getElementById("or-sort-output").addEventListener("click", function() { window.sortORModels("output"); });
+    document.getElementById("btn-fetch-models").addEventListener("click", function() { window.fetchORModels(); });
+
+    // =========== GLOBAL FUNCTION EXPOSURE ===========
+    // All functions used in onclick handlers MUST be on window for Tauri webview compatibility
+    window.copyLog = copyLog;
+    window.wizardGo = wizardGo;
+    window.applyLLMConfig = applyLLMConfig;
+    window.testLLMConfig = testLLMConfig;
+    window.setupTelegram = setupTelegram;
+    window.setupDiscord = setupDiscord;
+    window.setupWhatsApp = setupWhatsApp;
+    window.setupSlack = setupSlack;
+    window.closeChannelSetup = closeChannelSetup;
+    window.saveTelegramToken = saveTelegramToken;
+    window.saveDiscordToken = saveDiscordToken;
+    window.saveWhatsApp = saveWhatsApp;
+    window.saveSlack = saveSlack;
+    window.testChannel = testChannel;
+    window.toggleDaemon = toggleDaemon;
+    window.sendAgentMessage = sendAgentMessage;
+    window.saveSettings = saveSettings;
+    window.resetSettings = resetSettings;
+    window.escapeHtml = escapeHtml;
+
+    // Apply + Test LLM buttons (use addEventListener for reliability)
+    document.getElementById("btn-apply-llm") && document.getElementById("btn-apply-llm").addEventListener("click", function() { applyLLMConfig(); });
+    document.getElementById("btn-test-llm") && document.getElementById("btn-test-llm").addEventListener("click", function() { testLLMConfig(); });
 
     // =========== VERSION FETCH ===========
     async function fetchVersion() {
