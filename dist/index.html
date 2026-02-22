@@ -383,7 +383,7 @@
                             <label>Storage Path</label>
                             <input type="text" id="install-path-display" readonly value="~/.bambooclaw/bambooclaw" />
                         </div>
-                        <button class="btn" onclick="enterDashboard()">Enter Companion Dashboard</button>
+                        <button class="btn" onclick="window.enterDashboard()">Enter Companion Dashboard</button>
                     </div>
                 </div>
             </div>
@@ -886,8 +886,8 @@
         appendLog(log, "[INFO] Building from source (this may take several minutes)...");
         try {
             var cargoCmd = detectedOS === "windows"
-                ? { commandName: "cmd", args: ["/C", "%USERPROFILE%\\.cargo\\bin\\cargo install --git https://github.com/Enigmara-Technologies/bambooclaw-core --force --locked"] }
-                : { commandName: "sh", args: ["-c", "$HOME/.cargo/bin/cargo install --git https://github.com/Enigmara-Technologies/bambooclaw-core --force --locked"] };
+                ? { commandName: "cmd", args: ["/C", "%USERPROFILE%\\.cargo\\bin\\cargo install --git https://github.com/Enigmara-Technologies/bambooclaw-core --package BambooClawCore --force --locked"] }
+                : { commandName: "sh", args: ["-c", "$HOME/.cargo/bin/cargo install --git https://github.com/Enigmara-Technologies/bambooclaw-core --package BambooClawCore --force --locked"] };
             var result = await invokeLong("run_shell_command", cargoCmd);
             appendLog(log, result);
             appendLog(log, "[DONE] BambooClaw built and installed.");
@@ -1342,7 +1342,7 @@
             fetchVersion();
             if (installedFlag === "true") {
                 appendLog("boot-log", "[BOOT] boot(): entering dashboard (already installed)");
-                enterDashboard();
+                window.enterDashboard();
             } else {
                 appendLog("boot-log", "[BOOT] boot(): calling runSystemChecks()");
                 runSystemChecks();
