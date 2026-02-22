@@ -262,7 +262,7 @@
     <div id="app">
         <header>
             <div class="logo">BAMBOOCLAW COMPANION</div>
-            <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent);">v1.0.0-stable</div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent);"><span id="app-version">loading...</span></div>
         </header>
         <main>
             <!-- ========== WIZARD ========== -->
@@ -307,6 +307,16 @@
                         <button class="btn" id="btn-step0-next" disabled>Initialize Environment →</button>
                     </div>
                 </div>
+
+    <!-- SCRIPT 1: CANARY — proves JS engine is alive. Totally standalone. -->
+    <script>
+    (function() {
+        try {
+            var el = document.getElementById("boot-log");
+            if (el) el.textContent = "[CANARY] JS engine alive at " + new Date().toISOString() + "\n";
+        } catch(e) {}
+    })();
+    </script>
 
                 <!-- Step 2: Install Prerequisites -->
                 <div class="glass-card wizard-step hidden" id="step-1">
@@ -555,15 +565,32 @@
     <!-- Toast container -->
     <div class="toast-container" id="toast-container"></div>
 
+    <!-- SCRIPT 2: MAIN — wrapped with global error boundary -->
     <script>
+    // =========== GLOBAL ERROR BOUNDARY ===========
+    window.onerror = function(msg, src, line, col, err) {
+        try {
+            var el = document.getElementById("boot-log");
+            if (el) el.textContent += "[FATAL] " + msg + " at line " + line + ":" + col + "\n";
+        } catch(e) {}
+        return false;
+    };
+    window.addEventListener("unhandledrejection", function(event) {
+        try {
+            var el = document.getElementById("boot-log");
+            if (el) el.textContent += "[FATAL] Unhandled promise rejection: " + (event.reason ? (event.reason.message || event.reason) : "unknown") + "\n";
+        } catch(e) {}
+    });
+
     // =========== GLOBALS ===========
-    let detectedOS = "unknown";
-    let daemonRunning = false;
-    let currentConfig = {};
-    const PROXY_URL = "https://mjmdhqglpratbyzmgndm.supabase.co/functions/v1/github-release-proxy";
+    var detectedOS = "unknown";
+    var daemonRunning = false;
+    var currentConfig = {};
+    var PROXY_URL = "https://mjmdhqglpratbyzmgndm.supabase.co/functions/v1/github-release-proxy";
 
     // =========== TOAST ===========
-    function showToast(message, type = "info") {
+    function showToast(message, type) {
+        type = type || "info";
         const container = document.getElementById("toast-container");
         const toast = document.createElement("div");
         toast.className = "toast " + type;
@@ -593,16 +620,36 @@
 
     // =========== COPY LOG ===========
     function copyLog(logId) {
-        var el = document.getElementById(logId);
-        if (el) {
-            navigator.clipboard.writeText(el.textContent).then(function() {
-                showToast("Log copied to clipboard", "success");
-            });
+        try {
+            var el = document.getElementById(logId);
+            if (el) {
+                navigator.clipboard.writeText(el.textContent).then(function() {
+                    showToast("Log copied to clipboard", "success");
+                }).catch(function() {
+                    // Fallback for environments without clipboard API
+                    var ta = document.createElement("textarea");
+                    ta.value = el.textContent;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(ta);
+                    showToast("Log copied to clipboard", "success");
+                });
+            }
+        } catch(e) {
+            console.error("[copyLog error]", e);
         }
     }
     function appendLog(logId, line) {
-        var el = document.getElementById(logId);
-        if (el) { el.textContent += line + "\n"; el.scrollTop = el.scrollHeight; }
+        try {
+            var el = document.getElementById(logId);
+            if (el) {
+                el.textContent += line + "\n";
+                el.scrollTop = el.scrollHeight;
+            }
+        } catch(e) {
+            console.error("[appendLog error]", e);
+        }
     }
 
     // =========== WIZARD ===========
@@ -1245,38 +1292,63 @@
         }
     }
 
+    // =========== VERSION FETCH ===========
+    async function fetchVersion() {
+        try {
+            appendLog("boot-log", "[BOOT] fetchVersion: fetching from release proxy...");
+            var resp = await fetch(PROXY_URL + "?action=latest");
+            if (!resp.ok) throw new Error("HTTP " + resp.status);
+            var data = await resp.json();
+            var ver = data.tag_name || "v-unknown";
+            var el = document.getElementById("app-version");
+            if (el) el.textContent = ver;
+            appendLog("boot-log", "[BOOT] fetchVersion: resolved -> " + ver);
+        } catch(e) {
+            var el = document.getElementById("app-version");
+            if (el) el.textContent = "v-offline";
+            appendLog("boot-log", "[BOOT] fetchVersion: ERROR -> " + (e.message || e));
+        }
+    }
+
     // =========== STARTUP ===========
-    // Wait for Tauri's __TAURI__ IPC bridge to be injected before running system checks.
-    // In Tauri v1, the bridge may not exist yet when inline scripts execute, even at </body>.
-    // We poll briefly (up to 3 s) then proceed regardless so the UI never hangs.
     function boot() {
-        var installedFlag = localStorage.getItem("bambooclaw-installed");
-        appendLog("boot-log", "[BOOT] boot(): localStorage bambooclaw-installed = " + JSON.stringify(installedFlag));
-        if (installedFlag === "true") {
-            appendLog("boot-log", "[BOOT] boot(): entering dashboard (already installed)");
-            enterDashboard();
-        } else {
-            appendLog("boot-log", "[BOOT] boot(): calling runSystemChecks()");
-            runSystemChecks();
+        try {
+            var installedFlag = localStorage.getItem("bambooclaw-installed");
+            appendLog("boot-log", "[BOOT] boot(): localStorage bambooclaw-installed = " + JSON.stringify(installedFlag));
+            // Fire version fetch (non-blocking)
+            fetchVersion();
+            if (installedFlag === "true") {
+                appendLog("boot-log", "[BOOT] boot(): entering dashboard (already installed)");
+                enterDashboard();
+            } else {
+                appendLog("boot-log", "[BOOT] boot(): calling runSystemChecks()");
+                runSystemChecks();
+            }
+        } catch(e) {
+            appendLog("boot-log", "[FATAL] boot() crashed: " + (e.message || e));
         }
     }
 
     (function waitForTauri() {
-        appendLog("boot-log", "[BOOT] waitForTauri: polling started...");
-        var startTime = Date.now();
-        var waited = 0;
-        var interval = setInterval(function() {
-            waited += 50;
-            if (window.__TAURI__) {
-                clearInterval(interval);
-                appendLog("boot-log", "[BOOT] waitForTauri: __TAURI__ found after " + (Date.now() - startTime) + "ms");
-                boot();
-            } else if (waited >= 3000) {
-                clearInterval(interval);
-                appendLog("boot-log", "[BOOT] waitForTauri: timeout after " + (Date.now() - startTime) + "ms, proceeding WITHOUT __TAURI__");
-                boot();
-            }
-        }, 50);
+        try {
+            appendLog("boot-log", "[BOOT] waitForTauri: polling started at " + new Date().toISOString());
+            var startTime = Date.now();
+            var waited = 0;
+            var interval = setInterval(function() {
+                waited += 50;
+                if (window.__TAURI__) {
+                    clearInterval(interval);
+                    appendLog("boot-log", "[BOOT] waitForTauri: __TAURI__ found after " + (Date.now() - startTime) + "ms");
+                    boot();
+                } else if (waited >= 3000) {
+                    clearInterval(interval);
+                    appendLog("boot-log", "[BOOT] waitForTauri: timeout after " + (Date.now() - startTime) + "ms, proceeding WITHOUT __TAURI__");
+                    boot();
+                }
+            }, 50);
+        } catch(e) {
+            appendLog("boot-log", "[FATAL] waitForTauri crashed: " + (e.message || e));
+        }
     })();
     </script>
 </body>
