@@ -137,8 +137,30 @@
         .tab { padding: 1rem 2rem; cursor: pointer; color: var(--text-dim); border-bottom: 2px solid transparent; transition: 0.2s; user-select: none; }
         .tab:hover { color: var(--text); }
         .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .tab { padding: 0.75rem 1.25rem; cursor: pointer; color: var(--text-dim); border-bottom: 2px solid transparent; transition: 0.2s; user-select: none; font-size: 0.9rem; }
 
-        /* Forms */
+        /* Skill Grid */
+        .skill-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; }
+        .skill-card {
+            background: #050507; border: 1px solid var(--border); border-radius: 8px; padding: 1rem;
+            cursor: pointer; transition: 0.2s; position: relative;
+        }
+        .skill-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+        .skill-card.enabled { border-color: var(--accent); background: rgba(16, 185, 129, 0.05); }
+        .skill-card .skill-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .skill-card .skill-name { font-weight: 600; font-size: 0.85rem; margin-bottom: 0.25rem; }
+        .skill-card .skill-desc { font-size: 0.7rem; color: var(--text-dim); line-height: 1.3; }
+        .skill-card .skill-toggle {
+            position: absolute; top: 0.75rem; right: 0.75rem; width: 36px; height: 20px;
+            background: var(--border); border-radius: 10px; transition: 0.2s; border: none; cursor: pointer;
+        }
+        .skill-card .skill-toggle::after {
+            content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
+            background: var(--text-dim); border-radius: 50%; transition: 0.2s;
+        }
+        .skill-card.enabled .skill-toggle { background: var(--accent); }
+        .skill-card.enabled .skill-toggle::after { left: 18px; background: white; }
+
         .form-group { margin-bottom: 1.5rem; }
         label { display: block; margin-bottom: 0.5rem; color: var(--text-dim); font-size: 0.9rem; }
         input, select, textarea {
@@ -394,6 +416,7 @@
                     <div class="tab active" data-tab="tab-llm">LLM Settings</div>
                     <div class="tab" data-tab="tab-channels">Channels</div>
                     <div class="tab" data-tab="tab-agent">Agent Control</div>
+                    <div class="tab" data-tab="tab-skills">Skills</div>
                     <div class="tab" data-tab="tab-settings">Settings</div>
                 </div>
 
@@ -525,6 +548,54 @@
                     </div>
                 </div>
 
+                <!-- Tab: Skills -->
+                <div class="glass-card tab-panel hidden" id="tab-skills">
+                    <h1 style="font-size: 1.3rem; margin-bottom: 0.5rem;">🧩 Skill Marketplace</h1>
+                    <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Extend your agent with 10,000+ integrations via Composio. Enable skills to give your agent new abilities.</p>
+
+                    <div style="margin-bottom: 1.5rem; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; background: #050507;">
+                        <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+                            <div class="form-group" style="flex:1; margin-bottom: 0;">
+                                <label>Composio API Key</label>
+                                <input type="password" id="composio-api-key" placeholder="Your Composio API key..." />
+                            </div>
+                            <button class="btn btn-sm" id="btn-save-composio" style="height: 38px;">Connect</button>
+                        </div>
+                        <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0.5rem;">
+                            Get a free API key at <span style="color: var(--accent); cursor: pointer;" onclick="window.open && window.open('https://app.composio.dev/settings', '_blank')">app.composio.dev/settings</span>
+                        </p>
+                        <div id="composio-status" style="font-size: 0.8rem; margin-top: 0.5rem; display: none;"></div>
+                    </div>
+
+                    <div style="margin-bottom: 1rem;">
+                        <input type="text" id="skill-search" placeholder="Search skills..." style="width: 100%;" />
+                    </div>
+
+                    <!-- Skill Categories -->
+                    <div id="skill-categories">
+                        <div style="margin-bottom: 1.5rem;">
+                            <h2 style="font-size: 1rem; color: var(--accent); margin-bottom: 0.75rem;">📧 Productivity</h2>
+                            <div class="skill-grid" id="skills-productivity"></div>
+                        </div>
+                        <div style="margin-bottom: 1.5rem;">
+                            <h2 style="font-size: 1rem; color: var(--accent); margin-bottom: 0.75rem;">⚙️ Developer</h2>
+                            <div class="skill-grid" id="skills-developer"></div>
+                        </div>
+                        <div style="margin-bottom: 1.5rem;">
+                            <h2 style="font-size: 1rem; color: var(--accent); margin-bottom: 0.75rem;">🏠 Smart Home & IoT</h2>
+                            <div class="skill-grid" id="skills-smarthome"></div>
+                        </div>
+                        <div style="margin-bottom: 1.5rem;">
+                            <h2 style="font-size: 1rem; color: var(--accent); margin-bottom: 0.75rem;">🌐 Web & Research</h2>
+                            <div class="skill-grid" id="skills-web"></div>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 1rem;">
+                        <button class="btn btn-outline" id="btn-browse-all-skills">Browse All 10,000+ Skills</button>
+                    </div>
+                </div>
+
                 <!-- Tab: Settings -->
                 <div class="glass-card tab-panel hidden" id="tab-settings">
                     <h1 style="font-size: 1.3rem; margin-bottom: 0.5rem;">Agent Settings</h1>
@@ -578,6 +649,13 @@
                                 <option value="warn">Warn</option>
                                 <option value="error">Error Only</option>
                             </select>
+                        </div>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>Max Tool Iterations <span id="tool-iter-value" style="color:var(--accent);font-family:'JetBrains Mono',monospace;">10</span></label>
+                            <input type="range" id="set-tool-iterations" min="1" max="50" value="10" style="width:100%;accent-color:var(--accent);" />
+                            <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.4rem;">
+                                How many tool calls the agent can chain per message. Higher = more complex tasks, but slower responses.
+                            </p>
                         </div>
                     </div>
                     <div style="margin-top: 1rem;">
@@ -1478,8 +1556,148 @@
         return false;
     }
 
-    // =========== DIRECT LLM CALL ===========
+    // =========== DIRECT LLM CALL WITH TOOL CALLING ===========
     var chatHistory = [];
+    var MAX_TOOL_ITERATIONS = 10;
+
+    // ZeroClaw-compatible tools the LLM can call
+    var agentTools = [
+        {
+            type: "function",
+            function: {
+                name: "run_shell",
+                description: "Execute a shell command on the user's computer. Returns stdout+stderr. Use this for ANY system task: listing files, opening apps, checking system info, installing software, running scripts, etc.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        command: { type: "string", description: "The command to run (e.g. 'ls', 'dir', 'cat', 'python', 'pip', etc.)" },
+                        args: { type: "array", items: { type: "string" }, description: "Command arguments as separate strings" }
+                    },
+                    required: ["command"],
+                    additionalProperties: false
+                }
+            }
+        },
+        {
+            type: "function",
+            function: {
+                name: "read_file",
+                description: "Read the contents of a file on the user's computer.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        path: { type: "string", description: "Absolute or relative file path to read" }
+                    },
+                    required: ["path"],
+                    additionalProperties: false
+                }
+            }
+        },
+        {
+            type: "function",
+            function: {
+                name: "write_file",
+                description: "Write content to a file on the user's computer. Creates the file if it doesn't exist.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        path: { type: "string", description: "Absolute or relative file path to write" },
+                        content: { type: "string", description: "Content to write to the file" }
+                    },
+                    required: ["path", "content"],
+                    additionalProperties: false
+                }
+            }
+        },
+        {
+            type: "function",
+            function: {
+                name: "http_request",
+                description: "Make an HTTP request to any URL. Useful for fetching web pages, APIs, downloading data, etc.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        url: { type: "string", description: "The URL to request" },
+                        method: { type: "string", description: "HTTP method (GET, POST, PUT, DELETE). Default: GET" },
+                        headers: { type: "object", description: "Optional HTTP headers as key-value pairs" },
+                        body: { type: "string", description: "Optional request body for POST/PUT" }
+                    },
+                    required: ["url"],
+                    additionalProperties: false
+                }
+            }
+        },
+        {
+            type: "function",
+            function: {
+                name: "list_directory",
+                description: "List files and folders in a directory on the user's computer.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        path: { type: "string", description: "Directory path to list. Default: current directory" }
+                    },
+                    required: ["path"],
+                    additionalProperties: false
+                }
+            }
+        }
+    ];
+
+    // Execute a tool call via Tauri backend
+    async function executeTool(toolName, args) {
+        appendLog("daemon-log", "[TOOL] Executing: " + toolName + "(" + JSON.stringify(args).substring(0, 100) + ")");
+        try {
+            if (toolName === "run_shell") {
+                var cmd = args.command || "";
+                var cmdArgs = args.args || [];
+                var result = await invokeShort("run_shell_command", { commandName: cmd, args: cmdArgs });
+                appendLog("daemon-log", "[TOOL] run_shell result: " + (result || "").substring(0, 200));
+                return result || "(no output)";
+            } else if (toolName === "read_file") {
+                var platform = await invokeShort("get_platform");
+                var catCmd = platform === "windows" ? "type" : "cat";
+                var result = await invokeShort("run_shell_command", { commandName: catCmd, args: [args.path] });
+                appendLog("daemon-log", "[TOOL] read_file result: " + (result || "").substring(0, 200));
+                return result || "(empty file)";
+            } else if (toolName === "write_file") {
+                var platform = await invokeShort("get_platform");
+                if (platform === "windows") {
+                    // Use PowerShell to write file
+                    var psCmd = "Set-Content -Path '" + args.path.replace(/'/g, "''") + "' -Value '" + (args.content || "").replace(/'/g, "''") + "'";
+                    var result = await invokeShort("run_shell_command", { commandName: "powershell", args: ["-Command", psCmd] });
+                } else {
+                    var result = await invokeShort("run_shell_command", { commandName: "bash", args: ["-c", "cat > '" + args.path.replace(/'/g, "'\''") + "' << 'BCEOF'\n" + (args.content || "") + "\nBCEOF"] });
+                }
+                appendLog("daemon-log", "[TOOL] write_file done: " + args.path);
+                return "File written successfully: " + args.path;
+            } else if (toolName === "http_request") {
+                var method = (args.method || "GET").toUpperCase();
+                var fetchOpts = { method: method, headers: args.headers || {} };
+                if (args.body && (method === "POST" || method === "PUT" || method === "PATCH")) {
+                    fetchOpts.body = args.body;
+                }
+                var resp = await fetch(args.url, fetchOpts);
+                var text = await resp.text();
+                appendLog("daemon-log", "[TOOL] http_request " + method + " " + args.url + " -> HTTP " + resp.status);
+                return "HTTP " + resp.status + "\n" + text.substring(0, 5000);
+            } else if (toolName === "list_directory") {
+                var platform = await invokeShort("get_platform");
+                var cmd = platform === "windows" ? "dir" : "ls";
+                var cmdArgs = platform === "windows" ? ["/B", args.path] : ["-la", args.path];
+                var result = await invokeShort("run_shell_command", { commandName: cmd, args: cmdArgs });
+                appendLog("daemon-log", "[TOOL] list_directory result: " + (result || "").substring(0, 200));
+                return result || "(empty directory)";
+            } else if (["web_browse","web_search","docker_command","ssh_execute","mqtt_publish"].indexOf(toolName) >= 0 || toolName.startsWith("composio_")) {
+                return await executeSkillTool(toolName, args);
+            } else {
+                return "Unknown tool: " + toolName;
+            }
+        } catch(e) {
+            appendLog("daemon-log", "[TOOL] ERROR: " + (e.message || e));
+            return "Tool error: " + (e.message || String(e));
+        }
+    }
 
     async function callLLM(userMessage) {
         appendLog("dash-log", "[LLM-CALL] callLLM() msg=" + userMessage.substring(0, 50));
@@ -1487,15 +1705,21 @@
         if (!cfg || !cfg.api_key) throw new Error("No LLM configured. Go to LLM Settings and apply a configuration.");
 
         chatHistory.push({ role: "user", content: userMessage });
-        // Keep last 20 messages
-        if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
+        // Keep last 30 messages for tool-calling context
+        if (chatHistory.length > 30) chatHistory = chatHistory.slice(-30);
 
         var provider = cfg.provider;
         var model = cfg.model;
         var apiKey = cfg.api_key;
-        var systemPrompt = cfg.system_prompt || "You are BambooClaw, an AI agent. Be helpful and concise.";
 
-        var apiUrl, headers, body;
+        // Detect platform for system prompt
+        var platform = "unknown";
+        try { platform = await invokeShort("get_platform"); } catch(e) {}
+
+        var systemPrompt = "You are BambooClaw, a fully autonomous AI agent running on the user's " + platform + " computer. You have FULL CONTROL over this computer through tools. You can run any shell command, read/write files, make HTTP requests, and list directories. When the user asks you to do something on their computer, USE YOUR TOOLS to actually do it. Don't say you can't — you CAN. Execute commands, browse the filesystem, install software, open applications, search the web, etc. Be proactive and action-oriented. Always try to fulfill the user's request by using your tools. For multi-step tasks, chain tool calls as needed. Report results clearly.";
+
+        var apiUrl, headers;
+        var supportsTools = true;
 
         if (provider === "openrouter") {
             apiUrl = "https://openrouter.ai/api/v1/chat/completions";
@@ -1503,12 +1727,6 @@
         } else if (provider === "openai") {
             apiUrl = "https://api.openai.com/v1/chat/completions";
             headers = { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" };
-        } else if (provider === "anthropic") {
-            apiUrl = "https://api.anthropic.com/v1/messages";
-            headers = { "x-api-key": apiKey, "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" };
-        } else if (provider === "google") {
-            apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey;
-            headers = { "Content-Type": "application/json" };
         } else if (provider === "groq") {
             apiUrl = "https://api.groq.com/openai/v1/chat/completions";
             headers = { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" };
@@ -1518,48 +1736,98 @@
         } else if (provider === "mistral") {
             apiUrl = "https://api.mistral.ai/v1/chat/completions";
             headers = { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" };
+        } else if (provider === "anthropic") {
+            apiUrl = "https://api.anthropic.com/v1/messages";
+            headers = { "x-api-key": apiKey, "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" };
+            supportsTools = false; // Different tool format, fallback to plain
+        } else if (provider === "google") {
+            apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey;
+            headers = { "Content-Type": "application/json" };
+            supportsTools = false;
         } else if (provider === "ollama") {
             apiUrl = "http://localhost:11434/api/chat";
             headers = { "Content-Type": "application/json" };
+            supportsTools = false;
         } else {
             throw new Error("Unsupported provider: " + provider);
         }
 
         var messages = [{ role: "system", content: systemPrompt }].concat(chatHistory);
 
-        // Anthropic uses a different format
-        if (provider === "anthropic") {
-            body = JSON.stringify({ model: model, max_tokens: 1024, system: systemPrompt, messages: chatHistory });
-        } else if (provider === "google") {
-            body = JSON.stringify({ contents: [{ parts: [{ text: userMessage }] }] });
-        } else if (provider === "ollama") {
-            body = JSON.stringify({ model: model, messages: messages, stream: false });
-        } else {
-            body = JSON.stringify({ model: model, messages: messages });
+        // For providers that don't support OpenAI-style tool calling, fall back to plain chat
+        if (!supportsTools) {
+            appendLog("dash-log", "[LLM-CALL] Provider " + provider + " - no tool support, plain chat");
+            var body;
+            if (provider === "anthropic") {
+                body = JSON.stringify({ model: model, max_tokens: 2048, system: systemPrompt, messages: chatHistory });
+            } else if (provider === "google") {
+                body = JSON.stringify({ contents: [{ parts: [{ text: userMessage }] }] });
+            } else if (provider === "ollama") {
+                body = JSON.stringify({ model: model, messages: messages, stream: false });
+            }
+            var resp = await fetch(apiUrl, { method: "POST", headers: headers, body: body });
+            if (!resp.ok) throw new Error("LLM API error (HTTP " + resp.status + ")");
+            var data = await resp.json();
+            var reply = "";
+            if (provider === "anthropic") reply = data.content && data.content[0] && data.content[0].text || "(empty)";
+            else if (provider === "google") reply = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text || "(empty)";
+            else if (provider === "ollama") reply = data.message && data.message.content || "(empty)";
+            chatHistory.push({ role: "assistant", content: reply });
+            appendLog("dash-log", "[LLM-CALL] Got reply: " + reply.substring(0, 80) + "...");
+            return reply;
         }
 
-        appendLog("dash-log", "[LLM-CALL] Calling " + provider + " / " + model);
-        var resp = await fetch(apiUrl, { method: "POST", headers: headers, body: body });
-        if (!resp.ok) {
-            var errText = await resp.text();
-            appendLog("dash-log", "[LLM-CALL] ERROR HTTP " + resp.status + ": " + errText.substring(0, 200));
-            throw new Error("LLM API error (HTTP " + resp.status + ")");
-        }
-        var data = await resp.json();
+        // ========= AGENTIC TOOL-CALLING LOOP =========
+        appendLog("dash-log", "[LLM-CALL] Calling " + provider + " / " + model + " (with tools)");
 
-        var reply = "";
-        if (provider === "anthropic") {
-            reply = data.content && data.content[0] && data.content[0].text || "(empty)";
-        } else if (provider === "google") {
-            reply = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text || "(empty)";
-        } else if (provider === "ollama") {
-            reply = data.message && data.message.content || "(empty)";
-        } else {
-            reply = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content || "(empty)";
+        for (var iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
+            var reqBody = { model: model, messages: messages, tools: agentTools, tool_choice: "auto" };
+            var resp = await fetch(apiUrl, { method: "POST", headers: headers, body: JSON.stringify(reqBody) });
+            if (!resp.ok) {
+                var errText = await resp.text();
+                appendLog("dash-log", "[LLM-CALL] ERROR HTTP " + resp.status + ": " + errText.substring(0, 200));
+                throw new Error("LLM API error (HTTP " + resp.status + ")");
+            }
+            var data = await resp.json();
+            var choice = data.choices && data.choices[0];
+            if (!choice) throw new Error("No response from LLM");
+
+            var assistantMsg = choice.message;
+            messages.push(assistantMsg);
+
+            // Check if the model wants to call tools
+            if (assistantMsg.tool_calls && assistantMsg.tool_calls.length > 0) {
+                appendLog("dash-log", "[LLM-CALL] Tool calls requested: " + assistantMsg.tool_calls.length);
+                for (var t = 0; t < assistantMsg.tool_calls.length; t++) {
+                    var tc = assistantMsg.tool_calls[t];
+                    var toolName = tc.function.name;
+                    var toolArgs = {};
+                    try { toolArgs = JSON.parse(tc.function.arguments); } catch(e) {}
+                    appendLog("dash-log", "[TOOL] " + toolName + "(" + JSON.stringify(toolArgs).substring(0, 80) + ")");
+
+                    var toolResult = await executeTool(toolName, toolArgs);
+
+                    messages.push({
+                        role: "tool",
+                        tool_call_id: tc.id,
+                        content: toolResult
+                    });
+                }
+                // Continue the loop to let the LLM process tool results
+                continue;
+            }
+
+            // No tool calls — we have a final text response
+            var reply = assistantMsg.content || "(no response)";
+            chatHistory.push({ role: "assistant", content: reply });
+            appendLog("dash-log", "[LLM-CALL] Got reply (after " + iteration + " tool iterations): " + reply.substring(0, 80) + "...");
+            return reply;
         }
 
+        // Exceeded max iterations
+        var lastMsg = messages[messages.length - 1];
+        var reply = (lastMsg && lastMsg.content) || "(max tool iterations reached)";
         chatHistory.push({ role: "assistant", content: reply });
-        appendLog("dash-log", "[LLM-CALL] Got reply: " + reply.substring(0, 80) + "...");
         return reply;
     }
 
@@ -1643,6 +1911,8 @@
     // =========== SETTINGS ===========
     async function saveSettings() {
         appendLog("dash-log", "[SETTINGS] saveSettings() called");
+        var iterVal = parseInt(document.getElementById("set-tool-iterations").value) || 10;
+        MAX_TOOL_ITERATIONS = iterVal;
         currentConfig.settings = {
             autonomy: document.getElementById("set-autonomy").value,
             port: document.getElementById("set-port").value,
@@ -1650,6 +1920,7 @@
             identity: document.getElementById("set-identity").value,
             runtime: document.getElementById("set-runtime").value,
             loglevel: document.getElementById("set-loglevel").value,
+            maxToolIterations: iterVal,
         };
         saveAllConfig();
         showToast("Settings saved", "success");
@@ -1663,10 +1934,277 @@
         document.getElementById("set-identity").value = "bamboo";
         document.getElementById("set-runtime").value = "native";
         document.getElementById("set-loglevel").value = "info";
+        document.getElementById("set-tool-iterations").value = "10";
+        document.getElementById("tool-iter-value").textContent = "10";
+        MAX_TOOL_ITERATIONS = 10;
         showToast("Settings reset to defaults", "info");
     }
 
-    // =========== SAVE ALL ===========
+    // =========== SKILLS / COMPOSIO ===========
+    var COMPOSIO_API_URL = "https://backend.composio.dev/api/v2";
+    var enabledSkills = {};
+    var composioTools = [];
+
+    // Curated skill catalog
+    var skillCatalog = {
+        productivity: [
+            { id: "gmail", icon: "📧", name: "Gmail", desc: "Send, read, and manage emails", composioApp: "gmail" },
+            { id: "google_calendar", icon: "📅", name: "Google Calendar", desc: "Create, view, and manage calendar events", composioApp: "googlecalendar" },
+            { id: "notion", icon: "📝", name: "Notion", desc: "Create and edit pages, databases, blocks", composioApp: "notion" },
+            { id: "google_sheets", icon: "📊", name: "Google Sheets", desc: "Read and write spreadsheet data", composioApp: "googlesheets" },
+            { id: "google_drive", icon: "📁", name: "Google Drive", desc: "Search, upload, and manage files", composioApp: "googledrive" },
+            { id: "todoist", icon: "✅", name: "Todoist", desc: "Create and manage tasks and projects", composioApp: "todoist" },
+        ],
+        developer: [
+            { id: "github", icon: "🐙", name: "GitHub", desc: "Manage repos, issues, PRs, and actions", composioApp: "github" },
+            { id: "docker", icon: "🐳", name: "Docker", desc: "Manage containers, images, and volumes", composioApp: null },
+            { id: "ssh_remote", icon: "🔑", name: "SSH Remote", desc: "Execute commands on remote servers", composioApp: null },
+            { id: "postgresql", icon: "🐘", name: "PostgreSQL", desc: "Query and manage databases", composioApp: null },
+            { id: "jira", icon: "📋", name: "Jira", desc: "Manage issues, sprints, and projects", composioApp: "jira" },
+            { id: "slack_dev", icon: "💬", name: "Slack", desc: "Send messages, manage channels", composioApp: "slack" },
+        ],
+        smarthome: [
+            { id: "home_assistant", icon: "🏠", name: "Home Assistant", desc: "Control lights, switches, sensors, and scenes", composioApp: null },
+            { id: "mqtt_bridge", icon: "📡", name: "MQTT Bridge", desc: "Publish/subscribe to MQTT topics", composioApp: null },
+            { id: "serial_port", icon: "🔌", name: "Serial Port", desc: "Read/write to serial devices (Arduino, ESP32)", composioApp: null },
+            { id: "b500_telemetry", icon: "🎋", name: "B500 Telemetry", desc: "Monitor BambooCore B500 facility sensors", composioApp: null },
+        ],
+        web: [
+            { id: "web_browser", icon: "🌐", name: "Web Browser", desc: "Navigate, scrape, and interact with websites", composioApp: null },
+            { id: "web_search", icon: "🔍", name: "Web Search", desc: "Search Google, DuckDuckGo, or Bing", composioApp: null },
+            { id: "youtube", icon: "📺", name: "YouTube", desc: "Search videos, get transcripts", composioApp: "youtube" },
+            { id: "twitter", icon: "🐦", name: "X (Twitter)", desc: "Post, search, and read tweets", composioApp: "twitter" },
+            { id: "firecrawl", icon: "🔥", name: "Firecrawl", desc: "AI-powered web scraping and data extraction", composioApp: "firecrawl" },
+            { id: "perplexity", icon: "🧠", name: "Perplexity AI", desc: "AI-powered research and answers", composioApp: null },
+        ]
+    };
+
+    function renderSkillGrid(category, containerId) {
+        var el = document.getElementById(containerId);
+        if (!el) return;
+        var skills = skillCatalog[category] || [];
+        var search = (document.getElementById("skill-search").value || "").toLowerCase();
+        var html = "";
+        skills.forEach(function(s) {
+            if (search && s.name.toLowerCase().indexOf(search) < 0 && s.desc.toLowerCase().indexOf(search) < 0) return;
+            var isEnabled = enabledSkills[s.id] || false;
+            html += '<div class="skill-card ' + (isEnabled ? 'enabled' : '') + '" data-skill-id="' + s.id + '">';
+            html += '<button class="skill-toggle" title="' + (isEnabled ? 'Disable' : 'Enable') + '"></button>';
+            html += '<div class="skill-icon">' + s.icon + '</div>';
+            html += '<div class="skill-name">' + escapeHtml(s.name) + '</div>';
+            html += '<div class="skill-desc">' + escapeHtml(s.desc) + '</div>';
+            if (s.composioApp) {
+                html += '<div style="margin-top:0.4rem;font-size:0.65rem;color:var(--accent);">● Composio</div>';
+            } else {
+                html += '<div style="margin-top:0.4rem;font-size:0.65rem;color:var(--text-dim);">● Built-in</div>';
+            }
+            html += '</div>';
+        });
+        if (!html) html = '<div style="color:var(--text-dim);font-size:0.85rem;padding:0.5rem;">No matching skills</div>';
+        el.innerHTML = html;
+    }
+
+    function renderAllSkills() {
+        renderSkillGrid("productivity", "skills-productivity");
+        renderSkillGrid("developer", "skills-developer");
+        renderSkillGrid("smarthome", "skills-smarthome");
+        renderSkillGrid("web", "skills-web");
+    }
+
+    function toggleSkill(skillId) {
+        enabledSkills[skillId] = !enabledSkills[skillId];
+        currentConfig.enabledSkills = enabledSkills;
+        saveAllConfig();
+        renderAllSkills();
+        rebuildComposioTools();
+
+        var allSkills = [].concat(skillCatalog.productivity, skillCatalog.developer, skillCatalog.smarthome, skillCatalog.web);
+        var skill = allSkills.find(function(s) { return s.id === skillId; });
+        var name = skill ? skill.name : skillId;
+        if (enabledSkills[skillId]) {
+            appendLog("dash-log", "[SKILLS] Enabled: " + name);
+            showToast("Skill enabled: " + name, "success");
+        } else {
+            appendLog("dash-log", "[SKILLS] Disabled: " + name);
+            showToast("Skill disabled: " + name, "info");
+        }
+    }
+
+    // Build additional tool definitions for enabled skills
+    function rebuildComposioTools() {
+        composioTools = [];
+        var allSkills = [].concat(skillCatalog.productivity, skillCatalog.developer, skillCatalog.smarthome, skillCatalog.web);
+        allSkills.forEach(function(s) {
+            if (!enabledSkills[s.id]) return;
+
+            if (s.id === "web_browser") {
+                composioTools.push({
+                    type: "function",
+                    function: {
+                        name: "web_browse",
+                        description: "Open a URL in a headless browser and return the page content as text.",
+                        parameters: { type: "object", properties: { url: { type: "string", description: "URL to open" } }, required: ["url"], additionalProperties: false }
+                    }
+                });
+            } else if (s.id === "web_search") {
+                composioTools.push({
+                    type: "function",
+                    function: {
+                        name: "web_search",
+                        description: "Search the web using a search engine and return results.",
+                        parameters: { type: "object", properties: { query: { type: "string", description: "Search query" }, engine: { type: "string", description: "Search engine: google, duckduckgo, bing. Default: google" } }, required: ["query"], additionalProperties: false }
+                    }
+                });
+            } else if (s.id === "docker") {
+                composioTools.push({
+                    type: "function",
+                    function: {
+                        name: "docker_command",
+                        description: "Execute a Docker command (ps, images, run, stop, rm, build, logs, exec, etc.)",
+                        parameters: { type: "object", properties: { args: { type: "array", items: { type: "string" }, description: "Docker command arguments" } }, required: ["args"], additionalProperties: false }
+                    }
+                });
+            } else if (s.id === "ssh_remote") {
+                composioTools.push({
+                    type: "function",
+                    function: {
+                        name: "ssh_execute",
+                        description: "Execute a command on a remote server via SSH.",
+                        parameters: { type: "object", properties: { host: { type: "string" }, user: { type: "string" }, command: { type: "string" }, port: { type: "number", description: "SSH port, default 22" } }, required: ["host", "user", "command"], additionalProperties: false }
+                    }
+                });
+            } else if (s.id === "mqtt_bridge") {
+                composioTools.push({
+                    type: "function",
+                    function: {
+                        name: "mqtt_publish",
+                        description: "Publish a message to an MQTT topic.",
+                        parameters: { type: "object", properties: { broker: { type: "string" }, topic: { type: "string" }, message: { type: "string" } }, required: ["broker", "topic", "message"], additionalProperties: false }
+                    }
+                });
+            } else if (s.composioApp) {
+                // Generic Composio-backed skill — use Composio API for actions
+                composioTools.push({
+                    type: "function",
+                    function: {
+                        name: "composio_" + s.id,
+                        description: "Use " + s.name + " via Composio. Describe the action you want to perform in natural language.",
+                        parameters: { type: "object", properties: { action: { type: "string", description: "What to do with " + s.name + " (e.g., 'send email to x', 'list repos', 'create issue', etc.)" } }, required: ["action"], additionalProperties: false }
+                    }
+                });
+            }
+        });
+
+        // Inject into agentTools — remove old composio tools, add new ones
+        agentTools = agentTools.filter(function(t) { return !t.function.name.startsWith("composio_") && !["web_browse","web_search","docker_command","ssh_execute","mqtt_publish"].includes(t.function.name); });
+        agentTools = agentTools.concat(composioTools);
+        appendLog("dash-log", "[SKILLS] Active tools: " + agentTools.length + " (built-in + " + composioTools.length + " skills)");
+    }
+
+    // Execute skill-specific tools
+    async function executeSkillTool(toolName, args) {
+        appendLog("daemon-log", "[SKILL-TOOL] " + toolName + "(" + JSON.stringify(args).substring(0, 100) + ")");
+        try {
+            if (toolName === "web_browse") {
+                // Use built-in http_request to fetch page
+                return await executeTool("http_request", { url: args.url, method: "GET" });
+            } else if (toolName === "web_search") {
+                var engine = args.engine || "google";
+                var q = encodeURIComponent(args.query);
+                var url = engine === "duckduckgo" ? "https://html.duckduckgo.com/html/?q=" + q : "https://www.google.com/search?q=" + q;
+                return await executeTool("http_request", { url: url, method: "GET" });
+            } else if (toolName === "docker_command") {
+                return await executeTool("run_shell", { command: "docker", args: args.args || [] });
+            } else if (toolName === "ssh_execute") {
+                var sshArgs = ["-o", "StrictHostKeyChecking=no", "-p", String(args.port || 22), args.user + "@" + args.host, args.command];
+                return await executeTool("run_shell", { command: "ssh", args: sshArgs });
+            } else if (toolName === "mqtt_publish") {
+                return await executeTool("run_shell", { command: "mosquitto_pub", args: ["-h", args.broker, "-t", args.topic, "-m", args.message] });
+            } else if (toolName.startsWith("composio_")) {
+                // Call Composio API
+                var composioKey = currentConfig.composioApiKey;
+                if (!composioKey) return "Composio API key not configured. Go to Skills tab and enter your key.";
+                var appName = toolName.replace("composio_", "");
+                appendLog("daemon-log", "[COMPOSIO] Executing action for " + appName + ": " + args.action);
+                var resp = await fetch(COMPOSIO_API_URL + "/actions/execute", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "x-api-key": composioKey },
+                    body: JSON.stringify({ app: appName, action_description: args.action, text: args.action })
+                });
+                if (!resp.ok) {
+                    var err = await resp.text();
+                    return "Composio error (HTTP " + resp.status + "): " + err.substring(0, 500);
+                }
+                var data = await resp.json();
+                return JSON.stringify(data, null, 2).substring(0, 5000);
+            }
+            return "Unknown skill tool: " + toolName;
+        } catch(e) {
+            return "Skill tool error: " + (e.message || String(e));
+        }
+    }
+
+    async function saveComposioKey() {
+        var key = document.getElementById("composio-api-key").value.trim();
+        if (!key) { showToast("Please enter a Composio API key", "error"); return; }
+        currentConfig.composioApiKey = key;
+        saveAllConfig();
+
+        // Validate by fetching apps list
+        var statusEl = document.getElementById("composio-status");
+        statusEl.style.display = "block";
+        statusEl.innerHTML = '<span style="color:var(--text-dim);">⟳ Validating key...</span>';
+        try {
+            var resp = await fetch(COMPOSIO_API_URL + "/apps", {
+                headers: { "x-api-key": key }
+            });
+            if (resp.ok) {
+                var data = await resp.json();
+                var count = data.items ? data.items.length : (Array.isArray(data) ? data.length : 0);
+                statusEl.innerHTML = '<span style="color:var(--accent);">✓ Connected to Composio (' + count + ' apps available)</span>';
+                showToast("Composio connected!", "success");
+                appendLog("dash-log", "[COMPOSIO] Connected, " + count + " apps available");
+            } else {
+                statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key (HTTP ' + resp.status + ')</span>';
+                showToast("Invalid Composio API key", "error");
+            }
+        } catch(e) {
+            statusEl.innerHTML = '<span style="color:var(--error);">✗ Connection failed: ' + escapeHtml(e.message || String(e)) + '</span>';
+        }
+    }
+
+    // Click delegation for skill cards
+    document.getElementById("skill-categories").addEventListener("click", function(e) {
+        var card = e.target.closest ? e.target.closest(".skill-card") : null;
+        if (!card) {
+            var el = e.target;
+            while (el && el !== this) {
+                if (el.classList && el.classList.contains("skill-card")) { card = el; break; }
+                el = el.parentElement;
+            }
+        }
+        if (card) {
+            var skillId = card.getAttribute("data-skill-id");
+            if (skillId) toggleSkill(skillId);
+        }
+    });
+
+    document.getElementById("skill-search").addEventListener("input", function() { renderAllSkills(); });
+    document.getElementById("btn-save-composio").addEventListener("click", function() { saveComposioKey(); });
+    document.getElementById("btn-browse-all-skills").addEventListener("click", function() {
+        if (window.__TAURI__) {
+            try {
+                if (window.__TAURI__.opener) window.__TAURI__.opener.openUrl("https://app.composio.dev/apps");
+                else if (window.__TAURI__.shell) window.__TAURI__.shell.open("https://app.composio.dev/apps");
+            } catch(e) { window.open("https://app.composio.dev/apps", "_blank"); }
+        } else {
+            window.open("https://app.composio.dev/apps", "_blank");
+        }
+    });
+
+    // Render skills on load
+    renderAllSkills();
+
     async function saveAllConfig() {
         var toml = buildConfigToml();
         try {
@@ -1848,6 +2386,9 @@
     document.getElementById("agent-chat-input").addEventListener("keydown", function(e) { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); appendLog("dash-log", "[BTN] chat Enter key"); sendAgentMessage(e); return false; } });
     document.getElementById("btn-save-settings").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-save-settings clicked"); saveSettings(); });
     document.getElementById("btn-reset-settings").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-reset-settings clicked"); resetSettings(); });
+    document.getElementById("set-tool-iterations").addEventListener("input", function() {
+        document.getElementById("tool-iter-value").textContent = this.value;
+    });
 
     // =========== VERSION FETCH ===========
     async function fetchVersion() {
@@ -1885,10 +2426,31 @@
                         tunnel: "none",
                         identity: "bamboo",
                         runtime: "native",
-                        loglevel: "info"
+                        loglevel: "info",
+                        maxToolIterations: 10
                     };
                     saveAllConfig();
                     appendLog("dash-log", "[BOOT] Auto-saved default settings");
+                }
+                // Restore tool iterations from saved config
+                if (currentConfig.settings && currentConfig.settings.maxToolIterations) {
+                    MAX_TOOL_ITERATIONS = currentConfig.settings.maxToolIterations;
+                    var slider = document.getElementById("set-tool-iterations");
+                    var label = document.getElementById("tool-iter-value");
+                    if (slider) slider.value = MAX_TOOL_ITERATIONS;
+                    if (label) label.textContent = MAX_TOOL_ITERATIONS;
+                }
+                // Restore enabled skills from saved config
+                if (currentConfig.enabledSkills) {
+                    enabledSkills = currentConfig.enabledSkills;
+                    renderAllSkills();
+                    rebuildComposioTools();
+                    appendLog("dash-log", "[BOOT] Restored " + Object.keys(enabledSkills).filter(function(k) { return enabledSkills[k]; }).length + " enabled skills");
+                }
+                // Restore Composio API key
+                if (currentConfig.composioApiKey) {
+                    var ckEl = document.getElementById("composio-api-key");
+                    if (ckEl) ckEl.value = currentConfig.composioApiKey;
                 }
                 // Auto-start daemon if LLM is configured and daemon not running
                 setTimeout(function() {
