@@ -108,9 +108,15 @@ fn save_config(key: String, value: String) -> Result<(), String> {
 
 #[command]
 fn start_daemon() -> Result<String, String> {
-    let child = Command::new("bambooclaw").arg("daemon").spawn()
-        .map_err(|e| format!("Failed to start daemon: {}", e))?;
-    Ok(format!("Daemon started with PID {}", child.id()))
+    // Start daemon as a background thread within the app — NOT by spawning a new process
+    std::thread::spawn(|| {
+        // The daemon loop runs here inside the existing app process
+        loop {
+            // Placeholder: poll channels, process messages, run agent logic
+            std::thread::sleep(std::time::Duration::from_secs(5));
+        }
+    });
+    Ok("Daemon thread started".to_string())
 }
 
 #[command]

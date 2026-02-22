@@ -1206,10 +1206,11 @@
 
     function setupTelegram() {
         appendLog("dash-log", "[CH] setupTelegram() called");
+        var savedToken = (currentConfig.channels && currentConfig.channels.telegram && currentConfig.channels.telegram.token) || "";
         document.getElementById("channel-setup-title").textContent = "Telegram Bot Setup";
         document.getElementById("channel-setup-body").innerHTML =
             '<p style="margin-bottom:1rem;color:var(--text-dim);">1. Open Telegram and talk to <strong>@BotFather</strong><br>2. Send /newbot and follow the prompts<br>3. Copy the bot token and paste it below</p>' +
-            '<div class="form-group"><label>Bot Token</label><input type="text" id="tg-token" placeholder="123456:ABC-DEF1234ghIkl..." /></div>' +
+            '<div class="form-group"><label>Bot Token</label><input type="text" id="tg-token" placeholder="123456:ABC-DEF1234ghIkl..." value="' + savedToken.replace(/"/g, '&quot;') + '" /></div>' +
             '<button class="btn btn-sm" id="btn-save-tg">Save Token</button>' +
             '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" id="btn-test-tg">Test</button>';
         document.getElementById("channel-setup-area").classList.remove("hidden");
@@ -1239,11 +1240,13 @@
 
     function setupDiscord() {
         appendLog("dash-log", "[CH] setupDiscord() called");
+        var savedToken = (currentConfig.channels && currentConfig.channels.discord && currentConfig.channels.discord.token) || "";
+        var savedGuild = (currentConfig.channels && currentConfig.channels.discord && currentConfig.channels.discord.guild_id) || "";
         document.getElementById("channel-setup-title").textContent = "Discord App Setup";
         document.getElementById("channel-setup-body").innerHTML =
             '<p style="margin-bottom:1rem;color:var(--text-dim);">1. Go to <strong>discord.com/developers/applications</strong><br>2. Create a new application → Bot → Reset Token<br>3. Enable MESSAGE CONTENT INTENT<br>4. Paste the bot token below</p>' +
-            '<div class="form-group"><label>Bot Token</label><input type="text" id="dc-token" placeholder="MTA..." /></div>' +
-            '<div class="form-group"><label>Guild ID (optional)</label><input type="text" id="dc-guild" placeholder="Server ID for slash commands" /></div>' +
+            '<div class="form-group"><label>Bot Token</label><input type="text" id="dc-token" placeholder="MTA..." value="' + savedToken.replace(/"/g, '&quot;') + '" /></div>' +
+            '<div class="form-group"><label>Guild ID (optional)</label><input type="text" id="dc-guild" placeholder="Server ID for slash commands" value="' + savedGuild.replace(/"/g, '&quot;') + '" /></div>' +
             '<button class="btn btn-sm" id="btn-save-dc">Save Token</button>' +
             '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" id="btn-test-dc">Test</button>';
         document.getElementById("channel-setup-area").classList.remove("hidden");
@@ -1326,8 +1329,13 @@
         // Direct API validation per channel — no CLI needed
         try {
             if (channel === "telegram") {
-                var token = currentConfig.channels && currentConfig.channels.telegram && currentConfig.channels.telegram.bot_token;
-                if (!token) { showToast("No Telegram bot token configured", "error"); return; }
+                var token = currentConfig.channels && currentConfig.channels.telegram && currentConfig.channels.telegram.token;
+                if (!token) {
+                    // Also try reading directly from the input field if setup panel is open
+                    var tgInput = document.getElementById("tg-token");
+                    if (tgInput) token = tgInput.value.trim();
+                }
+                if (!token) { showToast("No Telegram bot token configured. Save a token first.", "error"); return; }
                 var resp = await fetch("https://api.telegram.org/bot" + token + "/getMe");
                 var data = await resp.json();
                 if (data.ok) {
@@ -1338,7 +1346,11 @@
                     appendLog("dash-log", "[CH] Telegram FAIL: " + JSON.stringify(data));
                 }
             } else if (channel === "discord") {
-                var dToken = currentConfig.channels && currentConfig.channels.discord && currentConfig.channels.discord.bot_token;
+                var dToken = currentConfig.channels && currentConfig.channels.discord && currentConfig.channels.discord.token;
+                if (!dToken) {
+                    var dcInput = document.getElementById("dc-token");
+                    if (dcInput) dToken = dcInput.value.trim();
+                }
                 if (!dToken) { showToast("No Discord bot token configured", "error"); return; }
                 var dresp = await fetch("https://discord.com/api/v10/users/@me", {
                     headers: { "Authorization": "Bot " + dToken }
