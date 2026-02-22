@@ -119,7 +119,7 @@ fn stop_daemon() -> Result<String, String> {
     sys.refresh_all();
     let mut found = false;
     for (_pid, process) in sys.processes() {
-        if process.name().to_string_lossy().contains("bambooclaw") {
+        if process.name().to_string().contains("bambooclaw") {
             process.kill();
             found = true;
         }
@@ -131,7 +131,7 @@ fn stop_daemon() -> Result<String, String> {
 async fn download_binary(url: String, dest: String) -> Result<String, String> {
     let response = reqwest::get(&url).await
         .map_err(|e| format!("Download failed: {}", e))?;
-    let total_size = response.content_length().unwrap_or(0);
+    let _total_size = response.content_length().unwrap_or(0);
     let mut stream = response.bytes_stream();
     let mut file = std::fs::File::create(&dest)
         .map_err(|e| format!("Failed to create file: {}", e))?;
