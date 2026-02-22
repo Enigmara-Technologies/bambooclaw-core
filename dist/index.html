@@ -308,7 +308,7 @@
                     </div>
                 </div>
 
-    <!-- SCRIPT 1: CANARY — proves JS engine is alive. Totally standalone. -->
+    <!-- SCRIPT 1: CANARY + ERROR BOUNDARY — catches Script 2 parse errors -->
     <script>
     (function() {
         try {
@@ -316,6 +316,20 @@
             if (el) el.textContent = "[CANARY] JS engine alive at " + new Date().toISOString() + "\n";
         } catch(e) {}
     })();
+    // Global error boundary — MUST be here (outside Script 2) to catch Script 2 parse errors
+    window.onerror = function(msg, src, line, col, err) {
+        try {
+            var el = document.getElementById("boot-log");
+            if (el) el.textContent += "[FATAL] " + msg + " at line " + line + ":" + col + "\n";
+        } catch(e) {}
+        return false;
+    };
+    window.addEventListener("unhandledrejection", function(event) {
+        try {
+            var el = document.getElementById("boot-log");
+            if (el) el.textContent += "[FATAL] Unhandled rejection: " + (event.reason ? (event.reason.message || event.reason) : "unknown") + "\n";
+        } catch(e) {}
+    });
     </script>
 
                 <!-- Step 2: Install Prerequisites -->
@@ -567,20 +581,7 @@
 
     <!-- SCRIPT 2: MAIN — wrapped with global error boundary -->
     <script>
-    // =========== GLOBAL ERROR BOUNDARY ===========
-    window.onerror = function(msg, src, line, col, err) {
-        try {
-            var el = document.getElementById("boot-log");
-            if (el) el.textContent += "[FATAL] " + msg + " at line " + line + ":" + col + "\n";
-        } catch(e) {}
-        return false;
-    };
-    window.addEventListener("unhandledrejection", function(event) {
-        try {
-            var el = document.getElementById("boot-log");
-            if (el) el.textContent += "[FATAL] Unhandled promise rejection: " + (event.reason ? (event.reason.message || event.reason) : "unknown") + "\n";
-        } catch(e) {}
-    });
+    // Error boundary is in Script 1 (canary) to catch parse errors in this script block.
 
     // =========== GLOBALS ===========
     var detectedOS = "unknown";
@@ -591,14 +592,14 @@
     // =========== TOAST ===========
     function showToast(message, type) {
         type = type || "info";
-        const container = document.getElementById("toast-container");
-        const toast = document.createElement("div");
-        toast.className = "toast " + type;
-        toast.textContent = message;
-        container.appendChild(toast);
-        setTimeout(() => {
-            toast.style.animation = "slideOut 0.3s ease forwards";
-            setTimeout(() => toast.remove(), 300);
+        var container = document.getElementById("toast-container");
+        var t = document.createElement("div");
+        t.className = "toast " + type;
+        t.textContent = message;
+        container.appendChild(t);
+        setTimeout(function() {
+            t.style.animation = "slideOut 0.3s ease forwards";
+            setTimeout(function() { t.remove(); }, 300);
         }, 3000);
     }
 
@@ -1348,6 +1349,23 @@
             }, 50);
         } catch(e) {
             appendLog("boot-log", "[FATAL] waitForTauri crashed: " + (e.message || e));
+        }
+    })();
+    </script>
+
+    <!-- SCRIPT 3: VERIFICATION — confirms Script 2 parsed successfully -->
+    <script>
+    (function() {
+        try {
+            var el = document.getElementById("boot-log");
+            if (typeof boot === "undefined") {
+                if (el) el.textContent += "[FATAL] Script 2 failed to parse. The boot() function does not exist. Check console for syntax errors.\n";
+            } else {
+                if (el) el.textContent += "[VERIFY] Script 2 parsed OK. boot() is defined.\n";
+            }
+        } catch(e) {
+            var el2 = document.getElementById("boot-log");
+            if (el2) el2.textContent += "[VERIFY] Error during verification: " + e.message + "\n";
         }
     })();
     </script>
