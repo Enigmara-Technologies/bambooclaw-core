@@ -509,7 +509,7 @@
                         </div>
                         <div class="chat-input-row">
                             <input type="text" id="agent-chat-input" placeholder="Send a message to the agent..." />
-                            <button class="btn" style="border-radius: 0;" id="btn-send-chat">Send</button>
+                            <button type="button" class="btn" style="border-radius: 0;" id="btn-send-chat">Send</button>
                         </div>
                     </div>
 
@@ -527,7 +527,8 @@
 
                 <!-- Tab: Settings -->
                 <div class="glass-card tab-panel hidden" id="tab-settings">
-                    <h1 style="font-size: 1.3rem; margin-bottom: 1.5rem;">Agent Settings</h1>
+                    <h1 style="font-size: 1.3rem; margin-bottom: 0.5rem;">Agent Settings</h1>
+                    <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1.5rem;">These settings are pre-configured with optimal defaults. No changes are needed unless you have specific requirements.</p>
                     <div class="settings-grid">
                         <div class="form-group">
                             <label>Autonomy Level</label>
@@ -1380,15 +1381,20 @@
         if (daemonRunning) {
             try {
                 appendLog("dash-log", "[DAEMON] Invoking stop_daemon...");
+                stopTelegramPolling();
                 await invokeShort("stop_daemon");
                 daemonRunning = false;
                 updateDaemonUI();
+                // Update chat area
+                var chatEl = document.getElementById("agent-chat-messages");
+                if (chatEl) chatEl.innerHTML += '<div class="chat-msg assistant"><span class="role">Agent:</span> Daemon stopped.</div>';
                 appendLog("daemon-log", "[INFO] Daemon stopped.");
                 appendLog("dash-log", "[DAEMON] Daemon stopped OK");
                 showToast("Agent daemon stopped", "info");
             } catch(e) {
                 // Process may have already exited — treat as stopped
                 appendLog("dash-log", "[DAEMON] stop_daemon ERROR: " + (e.message || e));
+                stopTelegramPolling();
                 daemonRunning = false;
                 updateDaemonUI();
                 showToast("Daemon process not found (may have already stopped)", "info");
@@ -1399,9 +1405,14 @@
                 await invokeShort("start_daemon");
                 daemonRunning = true;
                 updateDaemonUI();
+                // Update chat area to show daemon is online
+                var chatEl = document.getElementById("agent-chat-messages");
+                if (chatEl) chatEl.innerHTML = '<div class="chat-msg assistant"><span class="role">Agent:</span> Daemon is online. How can I help you?</div>';
                 appendLog("daemon-log", "[INFO] Daemon started.");
                 appendLog("dash-log", "[DAEMON] Daemon started OK");
                 showToast("Agent daemon started", "success");
+                // Start Telegram polling if configured
+                startTelegramPolling();
             } catch(e) {
                 appendLog("dash-log", "[DAEMON] start_daemon ERROR: " + (e.message || e));
                 showToast("Failed to start daemon: " + (e.message || e), "error");
@@ -1426,7 +1437,8 @@
         }
     }
 
-    async function sendAgentMessage() {
+    async function sendAgentMessage(e) {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
         appendLog("dash-log", "[CHAT] sendAgentMessage() called");
         var input = document.getElementById("agent-chat-input");
         var msg = input.value.trim();
@@ -1443,13 +1455,185 @@
             return;
         }
 
+        // Show typing indicator
+        chatEl.innerHTML += '<div class="chat-msg assistant" id="typing-indicator"><span class="role">Agent:</span> <span class="spinner">⟳</span> Thinking...</div>';
+        chatEl.scrollTop = chatEl.scrollHeight;
+
+        // Call LLM directly — NO Tauri invoke, NO process spawn
         try {
-            var result = await invokeLong("run_bambooclaw", { args: ["agent", "-m", msg] }, 30000);
-            chatEl.innerHTML += '<div class="chat-msg assistant"><span class="role">Agent:</span> ' + escapeHtml(result || "(no response)") + '</div>';
-        } catch(e) {
-            chatEl.innerHTML += '<div class="chat-msg assistant"><span class="role">Agent:</span> Error: ' + escapeHtml(e.message || String(e)) + '</div>';
+            appendLog("dash-log", "[CHAT] Calling callLLM...");
+            var reply = await callLLM(msg);
+            var typing = document.getElementById("typing-indicator");
+            if (typing) typing.remove();
+            chatEl.innerHTML += '<div class="chat-msg assistant"><span class="role">Agent:</span> ' + escapeHtml(reply || "(no response)") + '</div>';
+            appendLog("daemon-log", "[CHAT] User: " + msg.substring(0, 50) + " → Reply: " + (reply || "").substring(0, 80));
+        } catch(err) {
+            var typing = document.getElementById("typing-indicator");
+            if (typing) typing.remove();
+            chatEl.innerHTML += '<div class="chat-msg assistant"><span class="role">Agent:</span> Error: ' + escapeHtml(err.message || String(err)) + '</div>';
+            appendLog("dash-log", "[CHAT] LLM error: " + (err.message || err));
+            appendLog("daemon-log", "[ERROR] Chat LLM call failed: " + (err.message || err));
         }
         chatEl.scrollTop = chatEl.scrollHeight;
+        return false;
+    }
+
+    // =========== DIRECT LLM CALL ===========
+    var chatHistory = [];
+
+    async function callLLM(userMessage) {
+        appendLog("dash-log", "[LLM-CALL] callLLM() msg=" + userMessage.substring(0, 50));
+        var cfg = currentConfig.llm;
+        if (!cfg || !cfg.api_key) throw new Error("No LLM configured. Go to LLM Settings and apply a configuration.");
+
+        chatHistory.push({ role: "user", content: userMessage });
+        // Keep last 20 messages
+        if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
+
+        var provider = cfg.provider;
+        var model = cfg.model;
+        var apiKey = cfg.api_key;
+        var systemPrompt = cfg.system_prompt || "You are BambooClaw, an AI agent. Be helpful and concise.";
+
+        var apiUrl, headers, body;
+
+        if (provider === "openrouter") {
+            apiUrl = "https://openrouter.ai/api/v1/chat/completions";
+            headers = { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json", "HTTP-Referer": "https://bambooclaw.com" };
+        } else if (provider === "openai") {
+            apiUrl = "https://api.openai.com/v1/chat/completions";
+            headers = { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" };
+        } else if (provider === "anthropic") {
+            apiUrl = "https://api.anthropic.com/v1/messages";
+            headers = { "x-api-key": apiKey, "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" };
+        } else if (provider === "google") {
+            apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey;
+            headers = { "Content-Type": "application/json" };
+        } else if (provider === "groq") {
+            apiUrl = "https://api.groq.com/openai/v1/chat/completions";
+            headers = { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" };
+        } else if (provider === "deepseek") {
+            apiUrl = "https://api.deepseek.com/v1/chat/completions";
+            headers = { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" };
+        } else if (provider === "mistral") {
+            apiUrl = "https://api.mistral.ai/v1/chat/completions";
+            headers = { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" };
+        } else if (provider === "ollama") {
+            apiUrl = "http://localhost:11434/api/chat";
+            headers = { "Content-Type": "application/json" };
+        } else {
+            throw new Error("Unsupported provider: " + provider);
+        }
+
+        var messages = [{ role: "system", content: systemPrompt }].concat(chatHistory);
+
+        // Anthropic uses a different format
+        if (provider === "anthropic") {
+            body = JSON.stringify({ model: model, max_tokens: 1024, system: systemPrompt, messages: chatHistory });
+        } else if (provider === "google") {
+            body = JSON.stringify({ contents: [{ parts: [{ text: userMessage }] }] });
+        } else if (provider === "ollama") {
+            body = JSON.stringify({ model: model, messages: messages, stream: false });
+        } else {
+            body = JSON.stringify({ model: model, messages: messages });
+        }
+
+        appendLog("dash-log", "[LLM-CALL] Calling " + provider + " / " + model);
+        var resp = await fetch(apiUrl, { method: "POST", headers: headers, body: body });
+        if (!resp.ok) {
+            var errText = await resp.text();
+            appendLog("dash-log", "[LLM-CALL] ERROR HTTP " + resp.status + ": " + errText.substring(0, 200));
+            throw new Error("LLM API error (HTTP " + resp.status + ")");
+        }
+        var data = await resp.json();
+
+        var reply = "";
+        if (provider === "anthropic") {
+            reply = data.content && data.content[0] && data.content[0].text || "(empty)";
+        } else if (provider === "google") {
+            reply = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text || "(empty)";
+        } else if (provider === "ollama") {
+            reply = data.message && data.message.content || "(empty)";
+        } else {
+            reply = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content || "(empty)";
+        }
+
+        chatHistory.push({ role: "assistant", content: reply });
+        appendLog("dash-log", "[LLM-CALL] Got reply: " + reply.substring(0, 80) + "...");
+        return reply;
+    }
+
+    // =========== TELEGRAM POLLING ===========
+    var tgPollingInterval = null;
+    var tgLastUpdateId = 0;
+
+    function startTelegramPolling() {
+        if (tgPollingInterval) return; // already polling
+        var token = currentConfig.channels && currentConfig.channels.telegram && currentConfig.channels.telegram.token;
+        if (!token) {
+            appendLog("dash-log", "[TG-POLL] No Telegram token configured, skipping polling");
+            return;
+        }
+        appendLog("dash-log", "[TG-POLL] Starting Telegram polling...");
+        appendLog("daemon-log", "[INFO] Telegram polling started for incoming messages.");
+        tgPollingInterval = setInterval(function() { pollTelegram(); }, 3000);
+        // Poll immediately
+        pollTelegram();
+    }
+
+    function stopTelegramPolling() {
+        if (tgPollingInterval) {
+            clearInterval(tgPollingInterval);
+            tgPollingInterval = null;
+            appendLog("dash-log", "[TG-POLL] Telegram polling stopped");
+        }
+    }
+
+    async function pollTelegram() {
+        var token = currentConfig.channels && currentConfig.channels.telegram && currentConfig.channels.telegram.token;
+        if (!token || !daemonRunning) return;
+
+        try {
+            var url = "https://api.telegram.org/bot" + token + "/getUpdates?offset=" + (tgLastUpdateId + 1) + "&timeout=1&allowed_updates=[%22message%22]";
+            var resp = await fetch(url);
+            if (!resp.ok) return;
+            var data = await resp.json();
+            if (!data.ok || !data.result || data.result.length === 0) return;
+
+            for (var i = 0; i < data.result.length; i++) {
+                var update = data.result[i];
+                tgLastUpdateId = update.update_id;
+                if (update.message && update.message.text) {
+                    var chatId = update.message.chat.id;
+                    var text = update.message.text;
+                    var from = update.message.from && update.message.from.first_name || "User";
+                    appendLog("daemon-log", "[TELEGRAM] Message from " + from + ": " + text);
+                    appendLog("dash-log", "[TG-POLL] Received: " + text.substring(0, 50));
+
+                    // Get LLM reply
+                    try {
+                        var reply = await callLLM(text);
+                        // Send reply back to Telegram
+                        await fetch("https://api.telegram.org/bot" + token + "/sendMessage", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ chat_id: chatId, text: reply })
+                        });
+                        appendLog("daemon-log", "[TELEGRAM] Replied to " + from + ": " + reply.substring(0, 80));
+                    } catch(e) {
+                        appendLog("daemon-log", "[TELEGRAM] LLM error: " + (e.message || e));
+                        // Send error message to user
+                        await fetch("https://api.telegram.org/bot" + token + "/sendMessage", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ chat_id: chatId, text: "Sorry, I encountered an error: " + (e.message || "unknown") })
+                        });
+                    }
+                }
+            }
+        } catch(e) {
+            appendLog("dash-log", "[TG-POLL] Error: " + (e.message || e));
+        }
     }
 
     function escapeHtml(str) {
@@ -1660,8 +1844,8 @@
     document.getElementById("btn-setup-sl").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-setup-sl clicked"); setupSlack(); });
     document.getElementById("btn-close-channel").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-close-channel clicked"); closeChannelSetup(); });
     document.getElementById("btn-daemon-toggle").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-daemon-toggle clicked"); toggleDaemon(); });
-    document.getElementById("btn-send-chat").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-send-chat clicked"); sendAgentMessage(); });
-    document.getElementById("agent-chat-input").addEventListener("keydown", function(e) { if (e.key === "Enter") { appendLog("dash-log", "[BTN] chat Enter key"); sendAgentMessage(); } });
+    document.getElementById("btn-send-chat").addEventListener("click", function(e) { e.preventDefault(); e.stopPropagation(); appendLog("dash-log", "[BTN] btn-send-chat clicked"); sendAgentMessage(e); return false; });
+    document.getElementById("agent-chat-input").addEventListener("keydown", function(e) { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); appendLog("dash-log", "[BTN] chat Enter key"); sendAgentMessage(e); return false; } });
     document.getElementById("btn-save-settings").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-save-settings clicked"); saveSettings(); });
     document.getElementById("btn-reset-settings").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-reset-settings clicked"); resetSettings(); });
 
@@ -1693,6 +1877,26 @@
             if (installedFlag === "true") {
                 appendLog("boot-log", "[BOOT] boot(): entering dashboard (already installed)");
                 window.enterDashboard();
+                // Auto-save default settings if not set
+                if (!currentConfig.settings) {
+                    currentConfig.settings = {
+                        autonomy: "autonomous",
+                        port: "7331",
+                        tunnel: "none",
+                        identity: "bamboo",
+                        runtime: "native",
+                        loglevel: "info"
+                    };
+                    saveAllConfig();
+                    appendLog("dash-log", "[BOOT] Auto-saved default settings");
+                }
+                // Auto-start daemon if LLM is configured and daemon not running
+                setTimeout(function() {
+                    if (currentConfig.llm && currentConfig.llm.api_key && !daemonRunning) {
+                        appendLog("dash-log", "[BOOT] Auto-starting daemon (LLM configured)...");
+                        toggleDaemon();
+                    }
+                }, 500);
             } else {
                 appendLog("boot-log", "[BOOT] boot(): calling runSystemChecks()");
                 runSystemChecks();
