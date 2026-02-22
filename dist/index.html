@@ -1052,17 +1052,27 @@
         }
         showToast("Testing connection...", "info");
 
-        // Try Tauri daemon first
+        // Check if bambooclaw CLI is installed before trying Tauri invoke
+        var cliAvailable = false;
         try {
-            var result = await invokeShort("run_bambooclaw", { args: ["agent", "-m", "ping"] });
-            showToast("Connection successful: " + (result || "OK"), "success");
-            appendLog("dash-log", "[TEST] Tauri test OK: " + (result || "OK"));
-            return;
+            await invokeShort("check_prerequisite", { name: "bambooclaw" });
+            cliAvailable = true;
         } catch(e) {
-            appendLog("dash-log", "[TEST] Tauri unavailable, trying direct API...");
+            appendLog("dash-log", "[TEST] bambooclaw CLI not installed, skipping Tauri test");
         }
 
-        // Direct API test (browser mode)
+        if (cliAvailable) {
+            try {
+                var result = await invokeShort("run_bambooclaw", { args: ["agent", "-m", "ping"] });
+                showToast("Connection successful: " + (result || "OK"), "success");
+                appendLog("dash-log", "[TEST] Tauri test OK: " + (result || "OK"));
+                return;
+            } catch(e) {
+                appendLog("dash-log", "[TEST] Tauri run_bambooclaw failed: " + (e.message || e));
+            }
+        }
+
+        // Direct API test (browser mode / CLI not installed)
         try {
             if (provider === "openrouter") {
                 appendLog("dash-log", "[TEST] Calling openrouter.ai/api/v1/models...");
@@ -1332,6 +1342,16 @@
     async function testChannel(channel) {
         appendLog("dash-log", "[CH] testChannel(" + channel + ") called");
         showToast("Testing " + channel + " connection...", "info");
+
+        // Check if bambooclaw CLI is installed before invoking
+        try {
+            await invokeShort("check_prerequisite", { name: "bambooclaw" });
+        } catch(e) {
+            appendLog("dash-log", "[CH] bambooclaw CLI not installed");
+            showToast("BambooClaw CLI not installed. Install it first via the Installer tab, then test the channel.", "error");
+            return;
+        }
+
         try {
             var result = await invokeShort("run_bambooclaw", { args: ["channel", "test", channel] });
             showToast(channel + " test: " + (result || "OK"), "success");
@@ -1343,6 +1363,18 @@
     // =========== AGENT CONTROL ===========
     async function toggleDaemon() {
         appendLog("dash-log", "[DAEMON] toggleDaemon() called, daemonRunning=" + daemonRunning);
+
+        // Check if bambooclaw CLI is installed before daemon operations
+        if (!daemonRunning) {
+            try {
+                await invokeShort("check_prerequisite", { name: "bambooclaw" });
+            } catch(e) {
+                appendLog("dash-log", "[DAEMON] bambooclaw CLI not installed");
+                showToast("BambooClaw CLI not installed. Install it first via the Installer tab.", "error");
+                return;
+            }
+        }
+
         var btn = document.getElementById("btn-daemon-toggle");
         if (daemonRunning) {
             try {
@@ -1354,8 +1386,11 @@
                 appendLog("dash-log", "[DAEMON] Daemon stopped OK");
                 showToast("Agent daemon stopped", "info");
             } catch(e) {
+                // Process may have already exited — treat as stopped
                 appendLog("dash-log", "[DAEMON] stop_daemon ERROR: " + (e.message || e));
-                showToast("Failed to stop daemon: " + (e.message || e), "error");
+                daemonRunning = false;
+                updateDaemonUI();
+                showToast("Daemon process not found (may have already stopped)", "info");
             }
         } else {
             try {
