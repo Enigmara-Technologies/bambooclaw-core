@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src *; img-src 'self' data:;">
-    <title>BambooClaw Companion</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src *; img-src 'self' data: https:;">
+    <title>BambooClaw™</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -31,7 +31,7 @@
         }
         #app { display: flex; flex-direction: column; height: 100vh; }
         header {
-            padding: 1.5rem 2rem;
+            padding: 0.75rem 1.5rem;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
@@ -39,9 +39,11 @@
             background: rgba(10, 10, 15, 0.8);
             backdrop-filter: blur(10px);
             z-index: 100;
+            flex-shrink: 0;
         }
-        .logo { font-weight: 800; font-size: 1.25rem; letter-spacing: -0.025em; color: var(--accent); }
-        main { flex: 1; overflow-y: auto; padding: 2rem; position: relative; }
+        .logo { display: flex; align-items: center; gap: 0.6rem; font-weight: 800; font-size: 1.1rem; letter-spacing: -0.025em; color: var(--accent); }
+        .logo img { height: 32px; width: auto; }
+        main { flex: 1; overflow-y: auto; padding: 1rem 1.5rem; position: relative; min-height: 0; }
         .container { max-width: 800px; margin: 0 auto; }
         .hidden { display: none !important; }
 
@@ -58,8 +60,8 @@
             padding: 2rem;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
-        p.subtitle { color: var(--text-dim); margin-bottom: 2rem; }
+        h1 { font-size: 1.5rem; margin-bottom: 0.4rem; }
+        p.subtitle { color: var(--text-dim); margin-bottom: 1rem; }
 
         /* List Rows */
         .check-row {
@@ -94,7 +96,7 @@
             color: var(--text-dim);
         }
         .log-body {
-            height: 250px;
+            height: 150px;
             overflow-y: auto;
             padding: 1rem;
             font-family: 'JetBrains Mono', monospace;
@@ -133,11 +135,13 @@
         .btn-danger { background: var(--error); }
 
         /* Tabs */
-        .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 2rem; }
-        .tab { padding: 1rem 2rem; cursor: pointer; color: var(--text-dim); border-bottom: 2px solid transparent; transition: 0.2s; user-select: none; }
+        .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1rem; flex-wrap: wrap; }
+        .tab { padding: 0.6rem 1rem; cursor: pointer; color: var(--text-dim); border-bottom: 2px solid transparent; transition: 0.2s; user-select: none; font-size: 0.85rem; }
         .tab:hover { color: var(--text); }
         .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-        .tab { padding: 0.75rem 1.25rem; cursor: pointer; color: var(--text-dim); border-bottom: 2px solid transparent; transition: 0.2s; user-select: none; font-size: 0.9rem; }
+        .save-reminder { display: none; padding: 0.5rem 0.75rem; margin-top: 0.75rem; background: rgba(245,158,11,0.1); border: 1px solid var(--warning); border-radius: 6px; font-size: 0.8rem; color: var(--warning); }
+        .save-reminder.visible { display: block; }
+        .active-model-display { padding: 0.6rem 0.75rem; margin-bottom: 0.75rem; background: rgba(16,185,129,0.08); border: 1px solid var(--accent); border-radius: 6px; font-size: 0.85rem; }
 
         /* Skill Grid */
         .skill-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; }
@@ -405,8 +409,8 @@
 <body>
     <div id="app">
         <header>
-            <div class="logo">BAMBOOCLAW COMPANION</div>
-            <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent);"><span id="app-version">loading...</span></div>
+            <div class="logo"><img src="/bambooclaw-logo.png" alt="BambooClaw™ Logo" /><span>BambooClaw™</span></div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent);"><span id="app-version">loading...</span></div>
         </header>
         <main>
             <!-- ========== WIZARD ========== -->
@@ -421,7 +425,7 @@
                 <!-- Step 1: System Check -->
                 <div class="glass-card wizard-step" id="step-0">
                     <h1>Environment Audit</h1>
-                    <p class="subtitle">Ensuring your system is prepared for BambooClaw edge deployment.</p>
+                    <p class="subtitle">Ensuring your system is prepared for BambooClaw™ edge deployment.</p>
                     <div>
                         <div class="check-row">
                             <span>Operating System</span>
@@ -495,7 +499,7 @@
 
                 <!-- Step 3: Install BambooClaw -->
                 <div class="glass-card wizard-step hidden" id="step-2">
-                    <h1>Deploy BambooClaw</h1>
+                    <h1>Deploy BambooClaw™</h1>
                     <div class="form-group">
                         <label>Installation Method</label>
                         <select id="install-method">
@@ -522,7 +526,7 @@
                     <div style="text-align: center; padding: 2rem 0;">
                         <div style="font-size: 3rem; margin-bottom: 1rem;">✓</div>
                         <h1>Installation Complete</h1>
-                        <p class="subtitle">BambooClaw is now registered as a system service.</p>
+                        <p class="subtitle">BambooClaw™ is now registered as a system service.</p>
                         <div class="form-group" style="text-align: left;">
                             <label>Storage Path</label>
                             <input type="text" id="install-path-display" readonly value="~/.bambooclaw/bambooclaw" />
@@ -570,6 +574,11 @@
                     </div>
                     <div class="form-group hidden" id="or-models-area">
                         <label>Model <span id="or-model-count" style="color:var(--text-dim);font-size:0.8rem;"></span></label>
+                        <div class="active-model-display" id="or-active-model">
+                            <span style="color:var(--text-dim);font-size:0.8rem;">Active Model:</span>
+                            <strong style="color:var(--accent);margin-left:0.4rem;" id="or-active-model-name">None selected</strong>
+                        </div>
+                        <div id="or-save-reminder" class="save-reminder">⚠ You changed the model. Click <strong>Apply Configuration</strong> to save.</div>
                         <input type="text" id="or-model-search" placeholder="Search models..." style="margin-bottom:0.5rem;" />
                         <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;flex-wrap:wrap;">
                             <button class="btn btn-sm btn-outline" id="or-sort-name">▼ Name</button>
@@ -577,13 +586,13 @@
                             <button class="btn btn-sm btn-outline" id="or-sort-output">▼ Output $/1M</button>
                             <button class="btn btn-sm" id="btn-fetch-models">Fetch Models</button>
                         </div>
-                        <div id="or-model-list" style="max-height:350px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;background:#050507;"></div>
-                        <div id="or-selected-display" style="margin-top:0.5rem;font-size:0.85rem;color:var(--accent);"></div>
+                        <div id="or-model-list" style="height:420px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;background:#050507;"></div>
                     </div>
                     <div class="form-group">
                         <label>System Prompt (optional)</label>
                         <textarea id="llm-system-prompt" rows="3" placeholder="Custom instructions for the agent..."></textarea>
                     </div>
+                    <div id="llm-save-reminder" class="save-reminder">⚠ You have unsaved changes. Click <strong>Apply Configuration</strong> to save.</div>
                     <button class="btn" id="btn-apply-llm">Apply Configuration</button>
                     <button class="btn btn-outline" style="margin-left: 0.5rem;" id="btn-test-llm">Test Connection</button>
                 </div>
@@ -781,6 +790,7 @@
                             </p>
                         </div>
                     </div>
+                    <div id="settings-save-reminder" class="save-reminder">⚠ You have unsaved changes. Click <strong>Save Settings</strong> to apply.</div>
                     <div style="margin-top: 1rem;">
                         <button class="btn" id="btn-save-settings">Save Settings</button>
                         <button class="btn btn-outline" style="margin-left: 0.5rem;" id="btn-reset-settings">Reset Defaults</button>
@@ -789,7 +799,7 @@
 
                 <!-- Tab: Help -->
                 <div class="glass-card tab-panel hidden" id="tab-help">
-                    <h1 style="font-size: 1.3rem; margin-bottom: 0.25rem;">📖 BambooClaw Help Center</h1>
+                    <h1 style="font-size: 1.3rem; margin-bottom: 0.25rem;">📖 BambooClaw™ Help Center</h1>
                     <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1.25rem;">Everything you need to know, explained in plain English. Click any section to expand it.</p>
 
                     <div class="help-search-wrap">
@@ -798,9 +808,9 @@
 
                     <!-- 1. Welcome -->
                     <details class="help-section" open>
-                        <summary>👋 What is BambooClaw?</summary>
+                        <summary>👋 What is BambooClaw™?</summary>
                         <div class="help-body">
-                            <p><strong>BambooClaw is your personal AI assistant that lives on your computer.</strong> Think of it like ChatGPT, but it runs privately on your machine, talks to you through apps you already use (like Telegram or Discord), and can actually do things on your computer — browse the web, write files, run code, and more.</p>
+                            <p><strong>BambooClaw™ is your personal AI assistant that lives on your computer.</strong> Think of it like ChatGPT, but it runs privately on your machine, talks to you through apps you already use (like Telegram or Discord), and can actually do things on your computer — browse the web, write files, run code, and more.</p>
                             <p>This Companion App is the control panel for your assistant. From here you can:</p>
                             <ul>
                                 <li>Choose which AI brain powers your assistant (ChatGPT, Claude, Gemini, etc.)</li>
@@ -809,7 +819,7 @@
                                 <li>Add new skills (like reading emails or searching the web)</li>
                                 <li>Fine-tune how autonomous your assistant is</li>
                             </ul>
-                            <div class="help-tip">💡 <strong>Tip:</strong> BambooClaw runs as a background service on your computer. You don't need to keep this app open — once your assistant is running, it stays running until you stop it.</div>
+                            <div class="help-tip">💡 <strong>Tip:</strong> BambooClaw™ runs as a background service on your computer. You don't need to keep this app open — once your assistant is running, it stays running until you stop it.</div>
                         </div>
                     </details>
 
@@ -817,10 +827,10 @@
                     <details class="help-section">
                         <summary>🚀 Getting Started (First-Time Setup)</summary>
                         <div class="help-body">
-                            <p>When you first open BambooClaw, the installer wizard walks you through everything:</p>
+                            <p>When you first open BambooClaw™, the installer wizard walks you through everything:</p>
                             <div class="help-step"><div class="help-step-num">1</div><div><strong>Environment Audit</strong> — The app checks if your system has the required tools installed (Rust, Git, and Build Tools). Green ✓ means it's ready. If something is missing, it will offer to install it for you automatically.</div></div>
                             <div class="help-step"><div class="help-step-num">2</div><div><strong>Initialize Environment</strong> — Installs any missing tools. This may take a few minutes depending on your internet speed. You can watch the progress in the log window.</div></div>
-                            <div class="help-step"><div class="help-step-num">3</div><div><strong>Deploy Agent</strong> — Downloads and compiles the BambooClaw agent binary. This is the actual AI assistant engine. It takes 3–8 minutes depending on your PC speed.</div></div>
+                            <div class="help-step"><div class="help-step-num">3</div><div><strong>Deploy Agent</strong> — Downloads and compiles the BambooClaw™ agent binary. This is the actual AI assistant engine. It takes 3–8 minutes depending on your PC speed.</div></div>
                             <div class="help-step"><div class="help-step-num">4</div><div><strong>Enter Dashboard</strong> — Once done, you land here — the control panel where you configure and manage everything.</div></div>
                             <div class="help-warn">⚠️ <strong>Important:</strong> The first installation requires an internet connection and about 2 GB of free disk space. Subsequent updates are much faster.</div>
                             <div class="help-tip">💡 <strong>Tip:</strong> If a step fails, check the Boot Trace Log at the bottom of the screen for error details. The most common issue is a firewall blocking the download.</div>
@@ -835,7 +845,7 @@
 
                             <div class="help-sub">
                                 <h4>Choosing a Provider</h4>
-                                <p>BambooClaw supports many AI providers. Here's a quick comparison:</p>
+                                <p>BambooClaw™ supports many AI providers. Here's a quick comparison:</p>
                                 <ul>
                                     <li><strong>OpenRouter</strong> (Recommended) — One API key gives you access to hundreds of models from every provider. Best value and flexibility.</li>
                                     <li><strong>OpenAI</strong> — For GPT-4, GPT-5, and other OpenAI models directly.</li>
@@ -859,7 +869,7 @@
 
                             <div class="help-sub">
                                 <h4>System Prompt (Optional)</h4>
-                                <p>The system prompt tells the AI how to behave. For example: "You are a helpful coding assistant. Be concise." Leave it blank to use the default BambooClaw persona.</p>
+                                <p>The system prompt tells the AI how to behave. For example: "You are a helpful coding assistant. Be concise." Leave it blank to use the default BambooClaw™ persona.</p>
                             </div>
 
                             <div class="help-tip">💡 <strong>Tip:</strong> If you're new, start with <strong>OpenRouter</strong>. Sign up at openrouter.ai, add $5 credit, copy your key, and you'll have access to hundreds of models instantly.</div>
@@ -878,7 +888,7 @@
                                 <div class="help-step"><div class="help-step-num">1</div><div>Open Telegram and search for <strong>@BotFather</strong> (the official Telegram bot for creating bots).</div></div>
                                 <div class="help-step"><div class="help-step-num">2</div><div>Send <code>/newbot</code> to BotFather. It will ask you for a name and username for your bot.</div></div>
                                 <div class="help-step"><div class="help-step-num">3</div><div>BotFather will give you a <strong>Bot Token</strong> — a long string of numbers and letters. Copy it.</div></div>
-                                <div class="help-step"><div class="help-step-num">4</div><div>Back in BambooClaw, go to <strong>Channels → Telegram → Setup</strong>.</div></div>
+                                <div class="help-step"><div class="help-step-num">4</div><div>Back in BambooClaw™, go to <strong>Channels → Telegram → Setup</strong>.</div></div>
                                 <div class="help-step"><div class="help-step-num">5</div><div>Paste your Bot Token and click <strong>Save</strong>.</div></div>
                                 <div class="help-step"><div class="help-step-num">6</div><div>Add your Telegram user ID to the <strong>Allowed Users</strong> list. This prevents strangers from using your bot.</div></div>
                                 <div class="help-tip">💡 <strong>Tip:</strong> To find your Telegram user ID, search for <strong>@userinfobot</strong> on Telegram and send it any message. It will reply with your numeric ID.</div>
@@ -891,7 +901,7 @@
                                 <div class="help-step"><div class="help-step-num">3</div><div>Click "Reset Token" and copy the new <strong>Bot Token</strong>.</div></div>
                                 <div class="help-step"><div class="help-step-num">4</div><div>Enable these <strong>Privileged Gateway Intents</strong>: Message Content Intent, Server Members Intent.</div></div>
                                 <div class="help-step"><div class="help-step-num">5</div><div>Go to <strong>OAuth2 → URL Generator</strong>. Check "bot" scope, then "Send Messages" and "Read Message History" permissions. Copy the invite URL and add the bot to your server.</div></div>
-                                <div class="help-step"><div class="help-step-num">6</div><div>Back in BambooClaw, go to <strong>Channels → Discord → Setup</strong> and paste your Bot Token.</div></div>
+                                <div class="help-step"><div class="help-step-num">6</div><div>Back in BambooClaw™, go to <strong>Channels → Discord → Setup</strong> and paste your Bot Token.</div></div>
                             </div>
 
                             <div class="help-sub">
@@ -899,7 +909,7 @@
                                 <p>WhatsApp and Slack integrations are available but require additional setup with business APIs. Click the <strong>Setup</strong> button for each to see the step-by-step instructions specific to that platform.</p>
                             </div>
 
-                            <div class="help-warn">⚠️ <strong>Important:</strong> Your BambooClaw daemon must be running for channels to work. Messages received while the daemon is stopped will be missed.</div>
+                            <div class="help-warn">⚠️ <strong>Important:</strong> Your BambooClaw™ daemon must be running for channels to work. Messages received while the daemon is stopped will be missed.</div>
                         </div>
                     </details>
 
@@ -949,7 +959,7 @@
                                 <h4>Setting Up Skills</h4>
                                 <div class="help-step"><div class="help-step-num">1</div><div>Go to <strong>composio.dev</strong> and create a free account.</div></div>
                                 <div class="help-step"><div class="help-step-num">2</div><div>Navigate to your <strong>Settings → API Keys</strong> and copy your key.</div></div>
-                                <div class="help-step"><div class="help-step-num">3</div><div>In BambooClaw, go to the <strong>Skills</strong> tab and paste your Composio API Key.</div></div>
+                                <div class="help-step"><div class="help-step-num">3</div><div>In BambooClaw™, go to the <strong>Skills</strong> tab and paste your Composio API Key.</div></div>
                                 <div class="help-step"><div class="help-step-num">4</div><div>Toggle on any skills you want to enable. Each skill card shows what it does.</div></div>
                             </div>
 
@@ -1045,7 +1055,7 @@
 
                             <div class="help-sub">
                                 <h4>"Everything looks broken in the browser preview"</h4>
-                                <p>If you're viewing BambooClaw inside a web browser (e.g., the Lovable preview), some features won't work because they require the actual desktop app (Tauri). Specifically:</p>
+                                <p>If you're viewing BambooClaw™ inside a web browser (e.g., the Lovable preview), some features won't work because they require the actual desktop app (Tauri). Specifically:</p>
                                 <ul>
                                     <li>Starting/stopping the daemon</li>
                                     <li>System checks (OS detection, Rust, Git)</li>
@@ -1061,19 +1071,19 @@
 
                             <div class="help-sub">
                                 <h4>"Where is my data stored?"</h4>
-                                <p>All BambooClaw data is stored locally on your computer in the <code>~/.bambooclaw/</code> folder. This includes your configuration, API keys, and chat history. Nothing is sent to external servers except your messages to the AI provider you chose.</p>
+                                <p>All BambooClaw™ data is stored locally on your computer in the <code>~/.bambooclaw/</code> folder. This includes your configuration, API keys, and chat history. Nothing is sent to external servers except your messages to the AI provider you chose.</p>
                             </div>
                         </div>
                     </details>
                 </div>
 
                 <!-- Debug Log Panel (always visible in dashboard) -->
-                <div style="margin-top: 2rem;">
+                <div style="margin-top: 1rem;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 0.8rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace;">📋 DASHBOARD DEBUG LOG</span>
+                        <span style="font-size: 0.75rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace;">📋 DASHBOARD DEBUG LOG</span>
                         <button class="copy-btn" onclick="window.copyLog('dash-log')">Copy</button>
                     </div>
-                    <div class="log-body" id="dash-log" style="height:180px;margin-top:0.5rem;background:#050507;border:1px solid var(--border);border-radius:6px;font-size:0.75rem;"></div>
+                    <div class="log-body" id="dash-log" style="height:120px;margin-top:0.5rem;background:#050507;border:1px solid var(--border);border-radius:6px;font-size:0.7rem;"></div>
                 </div>
             </div>
         </main>
@@ -1535,6 +1545,9 @@
             showToast("Configuration saved successfully", "success");
             appendLog("dash-log", "[LLM] Config saved to localStorage (Tauri unavailable)");
         }
+        // Hide save reminders
+        var r1 = document.getElementById("or-save-reminder"); if (r1) r1.classList.remove("visible");
+        var r2 = document.getElementById("llm-save-reminder"); if (r2) r2.classList.remove("visible");
     }
 
     async function testLLMConfig() {
@@ -2341,7 +2354,30 @@
         };
         saveAllConfig();
         showToast("Settings saved", "success");
+        var sr = document.getElementById("settings-save-reminder"); if (sr) sr.classList.remove("visible");
     }
+
+    // Show settings save reminder on any change
+    ["set-autonomy","set-port","set-tunnel","set-identity","set-runtime","set-loglevel","set-tool-iterations"].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener("change", function() {
+            var sr = document.getElementById("settings-save-reminder"); if (sr) sr.classList.add("visible");
+        });
+        if (el) el.addEventListener("input", function() {
+            var sr = document.getElementById("settings-save-reminder"); if (sr) sr.classList.add("visible");
+        });
+    });
+
+    // Show LLM save reminder on any LLM field change
+    ["llm-provider","llm-api-key","llm-model","llm-system-prompt"].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener("change", function() {
+            var r = document.getElementById("llm-save-reminder"); if (r) r.classList.add("visible");
+        });
+        if (el) el.addEventListener("input", function() {
+            var r = document.getElementById("llm-save-reminder"); if (r) r.classList.add("visible");
+        });
+    });
 
     function resetSettings() {
         appendLog("dash-log", "[SETTINGS] resetSettings() called");
@@ -2721,7 +2757,13 @@
     window.selectORModel = function(id) {
         orSelectedModel = id;
         var m = orModels.find(function(x) { return x.id === id; });
-        document.getElementById("or-selected-display").textContent = "Selected: " + (m ? m.name + " (" + m.id + ")" : id);
+        var nameEl = document.getElementById("or-active-model-name");
+        if (nameEl) nameEl.textContent = m ? m.name + " (" + m.id + ")" : id;
+        // Show save reminder
+        var reminder = document.getElementById("or-save-reminder");
+        if (reminder) reminder.classList.add("visible");
+        var llmReminder = document.getElementById("llm-save-reminder");
+        if (llmReminder) llmReminder.classList.add("visible");
         // Also set the hidden select so config builder picks it up
         var sel = document.getElementById("llm-model");
         sel.innerHTML = "";
