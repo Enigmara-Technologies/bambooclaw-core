@@ -606,16 +606,23 @@
     // =========== TAURI HELPERS ===========
     function tauriInvoke(cmd, args) {
         if (!window.__TAURI__) return Promise.reject(new Error("Tauri not available (running in browser)"));
-        // Tauri v2: window.__TAURI__.core.invoke
-        // Tauri v1: window.__TAURI__.tauri.invoke (withGlobalTauri)
+        // Try known invoke locations first
         var inv = (window.__TAURI__.core && window.__TAURI__.core.invoke)
                || (window.__TAURI__.tauri && window.__TAURI__.tauri.invoke)
                || window.__TAURI__.invoke;
-        if (typeof inv !== "function") {
-            var keys = Object.keys(window.__TAURI__).join(", ");
-            return Promise.reject(new Error("Tauri invoke not found. Available keys: " + keys));
+        if (typeof inv === "function") return inv(cmd, args || {});
+        // Fallback: construct invoke from Tauri v1 primitives (transformCallback + __TAURI_IPC__)
+        if (typeof window.__TAURI__.transformCallback === "function" && typeof window.__TAURI_IPC__ === "function") {
+            return new Promise(function(resolve, reject) {
+                var cbId = window.__TAURI__.transformCallback(function(r) { resolve(r); }, true);
+                var errId = window.__TAURI__.transformCallback(function(e) { reject(e); }, true);
+                var payload = Object.assign({ cmd: cmd, callback: cbId, error: errId }, args || {});
+                window.__TAURI_IPC__(payload);
+            });
         }
-        return inv(cmd, args || {});
+        var keys = Object.keys(window.__TAURI__).join(", ");
+        var ipc = typeof window.__TAURI_IPC__;
+        return Promise.reject(new Error("Tauri invoke not found. Keys: " + keys + ", __TAURI_IPC__: " + ipc));
     }
     function invokeShort(cmd, args) {
         return Promise.race([
