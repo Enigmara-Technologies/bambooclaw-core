@@ -1088,7 +1088,7 @@
             '<p style="margin-bottom:1rem;color:var(--text-dim);">1. Open Telegram and talk to <strong>@BotFather</strong><br>2. Send /newbot and follow the prompts<br>3. Copy the bot token and paste it below</p>' +
             '<div class="form-group"><label>Bot Token</label><input type="text" id="tg-token" placeholder="123456:ABC-DEF1234ghIkl..." /></div>' +
             '<button class="btn btn-sm" onclick="saveTelegramToken()">Save Token</button>' +
-            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" onclick="testChannel('telegram')">Test</button>';
+            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" onclick="testChannel(\'telegram\')">Test</button>';
         document.getElementById("channel-setup-area").classList.remove("hidden");
         // Try to open BotFather in Telegram
         try {
@@ -1114,7 +1114,7 @@
             '<div class="form-group"><label>Bot Token</label><input type="text" id="dc-token" placeholder="MTA..." /></div>' +
             '<div class="form-group"><label>Guild ID (optional)</label><input type="text" id="dc-guild" placeholder="Server ID for slash commands" /></div>' +
             '<button class="btn btn-sm" onclick="saveDiscordToken()">Save Token</button>' +
-            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" onclick="testChannel('discord')">Test</button>';
+            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" onclick="testChannel(\'discord\')">Test</button>';
         document.getElementById("channel-setup-area").classList.remove("hidden");
     }
 
@@ -1137,7 +1137,7 @@
             '<div class="form-group"><label>Access Token</label><input type="text" id="wa-token" placeholder="EAA..." /></div>' +
             '<div class="form-group"><label>Webhook Verify Token</label><input type="text" id="wa-verify" placeholder="Your custom verify string" /></div>' +
             '<button class="btn btn-sm" onclick="saveWhatsApp()">Save Configuration</button>' +
-            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" onclick="testChannel('whatsapp')">Test</button>';
+            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" onclick="testChannel(\'whatsapp\')">Test</button>';
         document.getElementById("channel-setup-area").classList.remove("hidden");
     }
 
@@ -1161,7 +1161,7 @@
             '<div class="form-group"><label>Bot Token</label><input type="text" id="sl-bot-token" placeholder="xoxb-..." /></div>' +
             '<div class="form-group"><label>App Token</label><input type="text" id="sl-app-token" placeholder="xapp-..." /></div>' +
             '<button class="btn btn-sm" onclick="saveSlack()">Save Configuration</button>' +
-            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" onclick="testChannel('slack')">Test</button>';
+            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" onclick="testChannel(\'slack\')">Test</button>';
         document.getElementById("channel-setup-area").classList.remove("hidden");
     }
 
