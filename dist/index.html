@@ -900,12 +900,12 @@
 
     document.getElementById("btn-step2-next").addEventListener("click", function() { wizardGo(3); });
 
-    function enterDashboard() {
+    window.enterDashboard = function enterDashboard() {
         localStorage.setItem("bambooclaw-installed", "true");
         document.getElementById("wizard-view").classList.add("hidden");
         document.getElementById("dashboard-view").classList.remove("hidden");
         loadConfig();
-    }
+    };
 
     // =========== TAB SWITCHING ===========
     document.querySelectorAll(".tab").forEach(function(tab) {
