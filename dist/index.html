@@ -604,17 +604,22 @@
     }
 
     // =========== TAURI HELPERS ===========
-    function invokeShort(cmd, args) {
+    function tauriInvoke(cmd, args) {
         if (!window.__TAURI__) return Promise.reject(new Error("Tauri not available (running in browser)"));
+        // Tauri v2: invoke is under core; v1 fallback
+        var inv = (window.__TAURI__.core && window.__TAURI__.core.invoke) || window.__TAURI__.invoke;
+        if (typeof inv !== "function") return Promise.reject(new Error("Tauri invoke not found (check Tauri version)"));
+        return inv(cmd, args || {});
+    }
+    function invokeShort(cmd, args) {
         return Promise.race([
-            window.__TAURI__.invoke(cmd, args || {}),
+            tauriInvoke(cmd, args),
             new Promise(function(_, reject) { setTimeout(function() { reject(new Error("Timeout: " + cmd)); }, 8000); })
         ]);
     }
     function invokeLong(cmd, args, ms) {
-        if (!window.__TAURI__) return Promise.reject(new Error("Tauri not available (running in browser)"));
         return Promise.race([
-            window.__TAURI__.invoke(cmd, args || {}),
+            tauriInvoke(cmd, args),
             new Promise(function(_, reject) { setTimeout(function() { reject(new Error("Timeout: " + cmd)); }, ms || 600000); })
         ]);
     }
@@ -1092,7 +1097,11 @@
         document.getElementById("channel-setup-area").classList.remove("hidden");
         // Try to open BotFather in Telegram
         try {
-            if (window.__TAURI__) window.__TAURI__.shell.open("https://t.me/BotFather");
+            if (window.__TAURI__) {
+                // Tauri v2: shell.open moved to opener plugin or core
+                var opener = (window.__TAURI__.opener && window.__TAURI__.opener.openUrl) || (window.__TAURI__.shell && window.__TAURI__.shell.open);
+                if (opener) opener("https://t.me/BotFather");
+            }
         } catch(e) {}
     }
 
