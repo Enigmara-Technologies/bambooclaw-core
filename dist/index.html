@@ -409,7 +409,7 @@
 <body>
     <div id="app">
         <header>
-            <div class="logo"><img src="https://bamboo-synergy-prosper.lovable.app/bambooclaw-logo.png" alt="BambooClaw™ Logo" /><span>BambooClaw™</span></div>
+            <div class="logo"><img id="header-logo" src="" alt="BambooClaw™ Logo" /><span>BambooClaw™</span></div>
             <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent);"><span id="app-version">loading...</span></div>
         </header>
         <main>
@@ -544,6 +544,7 @@
                     <div class="tab" data-tab="tab-agent">Agent Control</div>
                     <div class="tab" data-tab="tab-skills">Skills</div>
                     <div class="tab" data-tab="tab-settings">Settings</div>
+                    <div class="tab" data-tab="tab-logs">Logs</div>
                     <div class="tab" data-tab="tab-help">Help</div>
                 </div>
 
@@ -1077,14 +1078,17 @@
                     </details>
                 </div>
 
-                <!-- Debug Log Panel (always visible in dashboard) -->
-                <div style="margin-top: 1rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 0.75rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace;">📋 DASHBOARD DEBUG LOG</span>
+                <!-- Tab: Logs -->
+                <div class="glass-card tab-panel hidden" id="tab-logs">
+                    <h1 style="font-size: 1.3rem; margin-bottom: 0.5rem;">📋 Debug Logs</h1>
+                    <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Real-time dashboard and system debug output.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <span style="font-size: 0.75rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace;">DASHBOARD DEBUG LOG</span>
                         <button class="copy-btn" onclick="window.copyLog('dash-log')">Copy</button>
                     </div>
-                    <div class="log-body" id="dash-log" style="height:120px;margin-top:0.5rem;background:#050507;border:1px solid var(--border);border-radius:6px;font-size:0.7rem;"></div>
+                    <div class="log-body" id="dash-log" style="height:350px;background:#050507;border:1px solid var(--border);border-radius:6px;font-size:0.7rem;"></div>
                 </div>
+
             </div>
         </main>
     </div>
@@ -2646,13 +2650,9 @@
             }
         }
         if (!validated) {
-            if (window.__TAURI__) {
-                statusEl.innerHTML = '<span style="color:var(--error);">✗ Could not reach Composio API. Check your internet connection.</span>';
-                showToast("Cannot reach Composio API", "error");
-            } else {
-                statusEl.innerHTML = '<span style="color:var(--warning);">⚠ Cannot validate from browser (CORS). Key saved — it will work in the desktop app.</span>';
-                showToast("Key saved — validation requires the desktop app", "info");
-            }
+            statusEl.innerHTML = '<span style="color:var(--warning);">⚠ Cannot validate from browser (CORS). Key saved — it will work in the desktop app.</span>';
+            showToast("Key saved — validation requires the desktop app", "info");
+            appendLog("dash-log", "[COMPOSIO] CORS blocked validation in browser preview. Key is saved and will work in the desktop app.");
         }
     }
 
