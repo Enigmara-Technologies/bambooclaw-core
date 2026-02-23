@@ -151,7 +151,8 @@
         }
         .skill-card:hover { border-color: var(--accent); transform: translateY(-1px); }
         .skill-card.enabled { border-color: var(--accent); background: rgba(16, 185, 129, 0.05); }
-        .skill-card .skill-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .skill-card .skill-icon { width: 48px; height: 48px; border-radius: 8px; background: #ffffff; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 0.5rem; flex-shrink: 0; font-size: 1.5rem; }
+        .skill-card .skill-icon img { width: 36px; height: 36px; object-fit: contain; display: block; }
         .skill-card .skill-name { font-weight: 600; font-size: 0.85rem; margin-bottom: 0.25rem; }
         .skill-card .skill-desc { font-size: 0.7rem; color: var(--text-dim); line-height: 1.3; display: none; }
         .skill-card .skill-meta { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.3rem; }
@@ -3222,7 +3223,7 @@
             }
             if (!imgSrc && tk.logo) imgSrc = tk.logo;
             if (imgSrc) {
-                html += '<div class="skill-icon"><img src="' + escapeHtml(imgSrc) + '" data-slug="' + escapeHtml(tk.slug) + '" style="width:24px;height:24px;border-radius:4px;" onerror="appendLog(\'dash-log\',\'[IMG] Failed: \' + this.src + \' | Toolkit: \' + this.dataset.slug); this.outerHTML=\'<span class=skill-icon>🧩</span>\'" /></div>';
+                html += '<div class="skill-icon"><img src="' + escapeHtml(imgSrc) + '" data-slug="' + escapeHtml(tk.slug) + '" onerror="appendLog(\'dash-log\',\'[IMG] Failed: \' + this.src + \' | Toolkit: \' + this.dataset.slug); this.outerHTML=\'<span class=skill-icon>🧩</span>\'" /></div>';
             } else {
                 html += '<div class="skill-icon">🧩</div>';
             }
