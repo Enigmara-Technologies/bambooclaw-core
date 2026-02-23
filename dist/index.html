@@ -185,6 +185,59 @@
             padding: 2px 8px; border-radius: 10px; letter-spacing: 0.02em;
         }
 
+        /* Active Tools Summary Panel */
+        .active-tools-panel {
+            margin-bottom: 1.5rem; padding: 1rem; border: 1px solid var(--border);
+            border-radius: 8px; background: rgba(16,185,129,0.03);
+        }
+        .active-tools-header {
+            display: flex; justify-content: space-between; align-items: center;
+            cursor: pointer; user-select: none;
+        }
+        .active-tools-header:hover { color: var(--accent); }
+        .active-tools-count {
+            font-size: 0.95rem; font-weight: 700;
+        }
+        .active-tools-badge {
+            font-size: 0.75rem; font-weight: 700; color: #000; background: var(--accent);
+            padding: 2px 10px; border-radius: 10px; min-width: 28px; text-align: center;
+        }
+        .active-tools-list {
+            display: none; margin-top: 0.75rem; max-height: 300px; overflow-y: auto;
+            border-top: 1px solid var(--border); padding-top: 0.5rem;
+        }
+        .active-tools-list.visible { display: block; }
+        .active-tool-entry {
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.25rem 0.5rem; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace;
+            border-radius: 4px;
+        }
+        .active-tool-entry:hover { background: rgba(16,185,129,0.05); }
+        .active-tool-entry .tool-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        .active-tool-entry .tool-dot.builtin { background: #60a5fa; }
+        .active-tool-entry .tool-dot.composio { background: var(--accent); }
+
+        /* Auth Warning Badge */
+        .auth-warning-badge {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            font-size: 0.6rem; color: var(--warning); background: rgba(245,158,11,0.1);
+            border: 1px solid rgba(245,158,11,0.3); padding: 2px 6px; border-radius: 4px;
+            margin-top: 0.3rem;
+        }
+
+        /* Trigger Entry */
+        .trigger-entry {
+            padding: 0.3rem 0; border-bottom: 1px solid rgba(30,41,59,0.3);
+            font-size: 0.65rem;
+        }
+        .trigger-entry .trigger-name { font-weight: 600; color: var(--warning); }
+        .trigger-entry .trigger-desc { color: var(--text-dim); margin-top: 0.1rem; }
+        .trigger-info-banner {
+            margin-top: 0.5rem; padding: 0.5rem 0.75rem; background: rgba(245,158,11,0.06);
+            border-left: 2px solid var(--warning); border-radius: 4px;
+            font-size: 0.65rem; color: var(--text-dim); line-height: 1.4;
+        }
+
         /* Approval Card */
         .approval-card {
             background: #1a1a2e; border: 1px solid var(--warning); border-radius: 8px; padding: 1rem; margin: 0.75rem 0;
@@ -860,6 +913,15 @@
                 <div class="glass-card tab-panel hidden" id="tab-skills">
                     <h1 style="font-size: 1.3rem; margin-bottom: 0.5rem;">🧩 Skills</h1>
                     <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Extend your agent with real integrations. Toggle skills to inject their tools into the agent.</p>
+
+                    <!-- Active Agent Tools Summary -->
+                    <div class="active-tools-panel" id="active-tools-summary">
+                        <div class="active-tools-header" onclick="window.toggleActiveToolsList()">
+                            <span class="active-tools-count">Active Agent Tools</span>
+                            <span class="active-tools-badge" id="active-tools-count-badge">0</span>
+                        </div>
+                        <div class="active-tools-list" id="active-tools-list"></div>
+                    </div>
 
                     <!-- Built-in Tools (always available) -->
                     <div style="margin-bottom: 1.5rem;">
@@ -2994,6 +3056,111 @@
     var composioCategories = ["All"];
     var composioActiveCategory = "All";
 
+    // =========== ACTIVE TOOLS SUMMARY ===========
+    function renderActiveToolsSummary() {
+        var badge = document.getElementById("active-tools-count-badge");
+        var listEl = document.getElementById("active-tools-list");
+        if (!badge || !listEl) return;
+        var count = agentTools.length;
+        badge.textContent = count;
+        var html = "";
+        agentTools.forEach(function(t) {
+            var name = t.function.name;
+            var isComposio = name.startsWith("composio_");
+            var dotClass = isComposio ? "composio" : "builtin";
+            var label = isComposio ? name.replace("composio_", "") : name;
+            html += '<div class="active-tool-entry"><span class="tool-dot ' + dotClass + '"></span>' + escapeHtml(label) + '</div>';
+        });
+        if (!html) html = '<div style="color:var(--text-dim);font-size:0.75rem;padding:0.25rem 0;">No tools loaded</div>';
+        listEl.innerHTML = html;
+    }
+    window.toggleActiveToolsList = function() {
+        var el = document.getElementById("active-tools-list");
+        if (el) el.classList.toggle("visible");
+    };
+
+    // =========== COMPOSIO CONNECTED ACCOUNT CHECK ===========
+    async function checkComposioConnection(slug) {
+        var composioKey = currentConfig.composioApiKey;
+        if (!composioKey) return;
+        try {
+            var endpoint = COMPOSIO_API_URL + "/connected_accounts?toolkit=" + encodeURIComponent(slug);
+            var resultJson = "";
+            if (window.__TAURI__) {
+                resultJson = await tauriInvoke("run_shell_command", {
+                    commandName: "curl",
+                    args: ["-s", "-H", "x-api-key: " + composioKey, endpoint]
+                });
+            } else {
+                var resp = await fetch(endpoint, { headers: { "x-api-key": composioKey } });
+                resultJson = await resp.text();
+            }
+            var data = JSON.parse(resultJson);
+            var accounts = data.items || data.results || [];
+            if (Array.isArray(data)) accounts = data;
+            var hasConnection = accounts.length > 0;
+            for (var i = 0; i < composioToolkits.length; i++) {
+                if (composioToolkits[i].slug === slug) {
+                    composioToolkits[i].auth_warning = !hasConnection;
+                    break;
+                }
+            }
+            if (!hasConnection) {
+                appendLog("dash-log", "[COMPOSIO] ⚠ No connected account for " + slug + " — tools will fail until user links their account at composio.dev");
+            } else {
+                appendLog("dash-log", "[COMPOSIO] ✓ " + slug + " has " + accounts.length + " connected account(s)");
+            }
+            renderComposioToolkits();
+        } catch(e) {
+            appendLog("dash-log", "[COMPOSIO] Connected account check failed for " + slug + ": " + (e.message || e));
+        }
+    }
+
+    // =========== COMPOSIO TRIGGER FETCHING ===========
+    async function fetchToolkitTriggers(slug) {
+        var composioKey = currentConfig.composioApiKey;
+        if (!composioKey) return;
+        try {
+            var endpoint = COMPOSIO_API_URL + "/triggers?toolkit=" + encodeURIComponent(slug) + "&limit=50";
+            var resultJson = "";
+            if (window.__TAURI__) {
+                resultJson = await tauriInvoke("run_shell_command", {
+                    commandName: "curl",
+                    args: ["-s", "-H", "x-api-key: " + composioKey, endpoint]
+                });
+            } else {
+                var resp = await fetch(endpoint, { headers: { "x-api-key": composioKey } });
+                resultJson = await resp.text();
+            }
+            var data = JSON.parse(resultJson);
+            var triggers = data.items || [];
+            composioToolkitDetails[slug + "_triggers"] = triggers;
+            appendLog("dash-log", "[COMPOSIO] " + slug + " has " + triggers.length + " triggers");
+            renderToolkitTriggers(slug);
+        } catch(e) {
+            appendLog("dash-log", "[COMPOSIO] Failed to fetch triggers for " + slug + ": " + (e.message || e));
+        }
+    }
+
+    function renderToolkitTriggers(slug) {
+        var el = document.getElementById("toolkit-triggers-" + slug);
+        if (!el) return;
+        var triggers = composioToolkitDetails[slug + "_triggers"];
+        if (!triggers || triggers.length === 0) {
+            el.innerHTML = "";
+            return;
+        }
+        var html = '<div style="font-size:0.7rem;font-weight:600;color:var(--warning);margin-top:0.75rem;margin-bottom:0.3rem;">⚡ Triggers (' + triggers.length + '):</div>';
+        triggers.forEach(function(tr) {
+            html += '<div class="trigger-entry">';
+            html += '<div class="trigger-name">' + escapeHtml(tr.name || tr.slug || "Unknown") + '</div>';
+            if (tr.description) html += '<div class="trigger-desc">' + escapeHtml(tr.description.substring(0, 150)) + (tr.description.length > 150 ? "…" : "") + '</div>';
+            html += '</div>';
+        });
+        html += '<div class="trigger-info-banner">⚡ Triggers require a local webhook endpoint. This feature is coming in a future update.</div>';
+        el.innerHTML = html;
+    }
+
     // Built-in tools that work via shell commands (no Composio needed)
     var builtinSkills = [
         { id: "web_browser", icon: "🌐", name: "Web Browser", desc: "Navigate and scrape websites via Playwright" },
@@ -3069,9 +3236,14 @@
             }
             html += '<button class="skill-info-btn" title="Show details">i</button>';
             html += '</div>';
+            // Auth warning badge
+            if (tk.auth_warning) {
+                html += '<div class="auth-warning-badge">⚠ Not connected — <span style="cursor:pointer;text-decoration:underline;" onclick="event.stopPropagation();window.open && window.open(\'https://app.composio.dev/apps/\' + \'' + escapeHtml(tk.slug) + '\', \'_blank\')">link account</span></div>';
+            }
             html += '<div class="skill-desc-full" data-toolkit-slug="' + tk.slug + '">';
             html += '<div>' + escapeHtml(descDisplay) + '</div>';
             html += '<div class="toolkit-tools-list" id="toolkit-tools-' + tk.slug + '"><div style="color:var(--text-dim);font-size:0.65rem;padding:0.3rem 0;">Click to load tools...</div></div>';
+            html += '<div id="toolkit-triggers-' + tk.slug + '"></div>';
             html += '</div>';
             html += '</div>';
         });
@@ -3232,6 +3404,7 @@
             appendLog("unified-log", "[SKILLS] Disabled: " + name);
             showToast(name + " disabled", "info");
         }
+        renderActiveToolsSummary();
     }
 
     // Cache for per-toolkit tool lists
@@ -3293,6 +3466,13 @@
 
             appendLog("dash-log", "[SKILLS] Injected " + tools.length + " real tool definitions for " + slug + ". Total agent tools: " + agentTools.length);
             showToast(slug + ": " + tools.length + " tools added to agent", "success");
+            renderActiveToolsSummary();
+
+            // Check if user has a connected account for this toolkit
+            checkComposioConnection(slug);
+
+            // Fetch triggers for this toolkit (display-only)
+            fetchToolkitTriggers(slug);
 
             // Update UI if the detail panel is open
             renderToolkitToolsList(slug);
@@ -3397,6 +3577,12 @@
             var data = JSON.parse(toolsJson);
             composioToolkitDetails[slug] = data.items || [];
             renderToolkitToolsList(slug);
+            // Also load triggers on demand
+            if (!composioToolkitDetails[slug + "_triggers"]) {
+                fetchToolkitTriggers(slug);
+            } else {
+                renderToolkitTriggers(slug);
+            }
         } catch(e) {
             if (el) el.innerHTML = '<div style="color:var(--error);font-size:0.65rem;">Failed to load tools: ' + escapeHtml(e.message || String(e)) + '</div>';
         }
@@ -3461,6 +3647,7 @@
         });
 
         appendLog("dash-log", "[SKILLS] Rebuilt built-in tools. Total agent tools: " + agentTools.length);
+        renderActiveToolsSummary();
     }
 
     // Kept for backward compatibility — now just calls rebuildBuiltinTools
@@ -3990,6 +4177,7 @@
                     renderBuiltinSkills();
                     rebuildBuiltinTools();
                     appendLog("dash-log", "[BOOT] Restored " + Object.keys(enabledSkills).filter(function(k) { return enabledSkills[k]; }).length + " enabled skills");
+                    renderActiveToolsSummary();
                 }
                 // Restore Composio API key and auto-reconnect
                 if (currentConfig.composioApiKey) {
