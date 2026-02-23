@@ -2285,7 +2285,7 @@
             var reply = await callLLM(msg);
             var typing = document.getElementById("typing-indicator");
             if (typing) typing.remove();
-            chatEl.innerHTML += '<div class="chat-msg assistant"><span class="role">Agent:</span> ' + escapeHtml(reply || "(no response)") + '</div>';
+            chatEl.innerHTML += '<div class="chat-msg assistant"><span class="role">Agent:</span> ' + formatMarkdownToHtml(reply || "(no response)") + '</div>';
             appendLog("unified-log", "[AGENT] Chat: " + msg.substring(0, 50) + " → Reply: " + (reply || "").substring(0, 80));
         } catch(err) {
             var typing = document.getElementById("typing-indicator");
@@ -2765,12 +2765,12 @@
                         await fetch("https://api.telegram.org/bot" + token + "/sendMessage", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ chat_id: chatId, text: reply })
+                            body: JSON.stringify({ chat_id: chatId, text: stripMarkdownForTelegram(reply), parse_mode: "Markdown" })
                         });
                         appendLog("unified-log", "[AGENT] [TELEGRAM] Replied to " + from + ": " + reply.substring(0, 500) + (reply.length > 500 ? "..." : ""));
                         // Append agent reply to Agent Chat UI
                         if (chatEl) {
-                            chatEl.innerHTML += '<div class="chat-msg assistant"><span class="role">Agent:</span> ' + escapeHtml(reply || "(no response)") + '</div>';
+                            chatEl.innerHTML += '<div class="chat-msg assistant"><span class="role">Agent:</span> ' + formatMarkdownToHtml(reply || "(no response)") + '</div>';
                             chatEl.scrollTop = chatEl.scrollHeight;
                         }
                     } catch(e) {
@@ -2791,6 +2791,40 @@
 
     function escapeHtml(str) {
         return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    function formatMarkdownToHtml(str) {
+        var s = escapeHtml(str);
+        var BT = String.fromCharCode(96);
+        // Headers: ### then ## then #
+        s = s.replace(/^### (.+)$/gm, '<h4 style="margin:0.6em 0 0.3em;font-size:0.95em;color:var(--accent);">$1</h4>');
+        s = s.replace(/^## (.+)$/gm, '<h3 style="margin:0.7em 0 0.3em;font-size:1.05em;color:var(--accent);">$1</h3>');
+        s = s.replace(/^# (.+)$/gm, '<h2 style="margin:0.8em 0 0.4em;font-size:1.15em;color:var(--accent);">$1</h2>');
+        // Bold: **text**
+        s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        // Italic: single *text* (simple version, after bold is handled)
+        s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
+        // Inline code: backtick
+        var codeRe = new RegExp(BT + '([^' + BT + ']+)' + BT, 'g');
+        s = s.replace(codeRe, '<code style="background:rgba(0,255,136,0.1);padding:0.1em 0.4em;border-radius:3px;font-size:0.9em;">$1</code>');
+        // Unordered list items: * item or - item
+        s = s.replace(/^[\*\-] (.+)$/gm, '<li style="margin-left:1.2em;list-style:disc;">$1</li>');
+        // Numbered list items: 1. item
+        s = s.replace(/^\d+\. (.+)$/gm, '<li style="margin-left:1.2em;list-style:decimal;">$1</li>');
+        // Wrap consecutive li in ul
+        s = s.replace(/((<li[^>]*>.*<\/li>\s*)+)/g, '<ul style="margin:0.3em 0;padding-left:0.5em;">$1</ul>');
+        // Line breaks
+        s = s.replace(/\n/g, '<br>');
+        // Clean up br before/after block elements
+        s = s.replace(/<br>\s*(<h[234]|<ul|<\/ul>)/g, '$1');
+        s = s.replace(/(<\/h[234]>|<\/ul>)\s*<br>/g, '$1');
+        return s;
+    }
+
+    function stripMarkdownForTelegram(str) {
+        // Convert ### headers to bullet markers for cleaner Telegram display
+        var s = str.replace(/^###+ (.+)$/gm, '\u25b8 $1');
+        return s;
     }
 
     // =========== SETTINGS ===========
