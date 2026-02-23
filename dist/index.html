@@ -3399,16 +3399,20 @@
                 if (composioToolkits[i].slug === slug) { tk = composioToolkits[i]; break; }
             }
             var name = tk ? (tk.meta_name || tk.name || slug) : slug;
+            // Build logo using same .skill-icon pattern as marketplace cards
+            var imgSrc = "";
+            if (tk && tk.local_logo && window.__TAURI__) {
+                var convertFn = (window.__TAURI__.core && window.__TAURI__.core.convertFileSrc)
+                    || (window.__TAURI__.tauri && window.__TAURI__.tauri.convertFileSrc)
+                    || window.__TAURI__.convertFileSrc;
+                if (convertFn) { try { imgSrc = convertFn(tk.local_logo); } catch(ce) { imgSrc = ""; } }
+            }
+            if (!imgSrc && tk && tk.logo) imgSrc = tk.logo;
             var logoHtml = "";
-            if (tk && tk.local_logo) {
-                var convertFn = (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.convertFileSrc)
-                    || (window.__TAURI__ && window.__TAURI__.tauri && window.__TAURI__.tauri.convertFileSrc)
-                    || (window.__TAURI__ && window.__TAURI__.convertFileSrc);
-                if (convertFn) {
-                    logoHtml = '<img src="' + convertFn(tk.local_logo) + '" style="width:28px;height:28px;border-radius:6px;object-fit:contain;background:#fff;" onerror="this.style.display=\'none\'" />';
-                }
-            } else if (tk && tk.logo) {
-                logoHtml = '<img src="' + tk.logo + '" style="width:28px;height:28px;border-radius:6px;object-fit:contain;background:#fff;" onerror="this.style.display=\'none\'" />';
+            if (imgSrc) {
+                logoHtml = '<div class="skill-icon"><img src="' + escapeHtml(imgSrc) + '" onerror="this.outerHTML=\'<span class=skill-icon>🧩</span>\'" /></div>';
+            } else {
+                logoHtml = '<div class="skill-icon">🧩</div>';
             }
             var toolCount = 0;
             agentTools.forEach(function(t) { if (t.function.name.indexOf(slug) > -1) toolCount++; });
@@ -3418,7 +3422,12 @@
             html += logoHtml;
             html += '<div style="flex:1;"><div style="font-size:0.85rem;font-weight:600;">' + escapeHtml(name) + '</div>' + countLabel + '</div>';
             html += '<span style="color:#ef4444;font-size:0.7rem;cursor:pointer;" title="Click to disable">✕</span>';
-            html += '</div></div>';
+            html += '</div>';
+            // Auth warning badge with OAuth link (same as marketplace cards)
+            if (tk && tk.auth_warning) {
+                html += '<div class="auth-warning-badge">⚠ Not connected — <span style="cursor:pointer;text-decoration:underline;" onclick="event.stopPropagation();initiateComposioOAuth(\'' + escapeHtml(slug) + '\')">link account</span></div>';
+            }
+            html += '</div>';
         });
         if (count > 0) {
             section.style.display = "";
@@ -4393,6 +4402,8 @@
                     // Auto-reconnect to fetch toolkits
                     setTimeout(function() { saveComposioKey(); }, 1000);
                 }
+                // Delayed counter refresh to ensure correct count after all async restoration
+                setTimeout(function() { renderActiveToolsSummary(); renderEnabledIntegrations(); }, 2000);
                 // Auto-start daemon if LLM is configured and daemon not running
                 setTimeout(function() {
                     if (currentConfig.llm && currentConfig.llm.api_key && !daemonRunning) {
