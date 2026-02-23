@@ -507,10 +507,44 @@
 <body>
     <div id="app">
         <div class="splash-overlay" id="splash-screen">
-            <img class="splash-logo" src="bamboo-claw-logo.webp" alt="BambooClaw Logo" onerror="this.style.display='none'" />
+            <svg class="splash-logo" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="80" cy="80" r="75" fill="none" stroke="#10b981" stroke-width="2" opacity="0.3"/>
+                <text x="80" y="90" text-anchor="middle" fill="#10b981" font-family="Inter,sans-serif" font-size="48" font-weight="800">BC</text>
+            </svg>
             <div class="splash-title">BambooClaw™</div>
             <div class="splash-bar-track"><div class="splash-bar-fill"></div></div>
         </div>
+        <script>
+        // Self-contained splash timer — runs independently of boot()
+        (function() {
+            var SPLASH_DURATION = 10000;
+            var splashEl = document.getElementById("splash-screen");
+            if (!splashEl) return;
+
+            // Try to load the real logo via Tauri convertFileSrc
+            try {
+                if (window.__TAURI__) {
+                    var convertFn = (window.__TAURI__.core && window.__TAURI__.core.convertFileSrc)
+                        || (window.__TAURI__.tauri && window.__TAURI__.tauri.convertFileSrc)
+                        || window.__TAURI__.convertFileSrc;
+                    if (convertFn) {
+                        var img = new Image();
+                        var svgEl = splashEl.querySelector("svg.splash-logo");
+                        img.className = "splash-logo";
+                        img.alt = "BambooClaw Logo";
+                        img.onload = function() { if (svgEl && svgEl.parentNode) svgEl.parentNode.replaceChild(img, svgEl); };
+                        img.src = convertFn("bamboo-claw-logo.webp");
+                    }
+                }
+            } catch(e) { /* SVG fallback stays */ }
+
+            setTimeout(function() {
+                if (!splashEl) return;
+                splashEl.classList.add("fade-out");
+                setTimeout(function() { if (splashEl.parentNode) splashEl.parentNode.removeChild(splashEl); }, 800);
+            }, SPLASH_DURATION);
+        })();
+        </script>
         <header>
             <div class="logo"><span style="font-size:1.1rem;font-weight:700;color:var(--accent);">BambooClaw™</span></div>
             <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent);"><span id="app-version">loading...</span></div>
@@ -3928,14 +3962,7 @@
     // =========== STARTUP ===========
     function boot() {
         try {
-            // Start splash screen timer — always show for 10 seconds
-            var splashEl = document.getElementById("splash-screen");
-            if (splashEl) {
-                setTimeout(function() {
-                    splashEl.classList.add("fade-out");
-                    setTimeout(function() { splashEl.remove(); }, 800);
-                }, 10000);
-            }
+            // Splash screen timer is now self-contained in inline script above
 
             var installedFlag = localStorage.getItem("bambooclaw-installed");
             appendLog("boot-log", "[BOOT] boot(): localStorage bambooclaw-installed = " + JSON.stringify(installedFlag));
