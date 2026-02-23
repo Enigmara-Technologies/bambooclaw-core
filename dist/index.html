@@ -2687,6 +2687,14 @@
         systemPrompt += "For screenshots, use the take_screenshot tool or run: python -c \"import pyautogui; pyautogui.screenshot('screenshot.png')\"\n";
         systemPrompt += "Be proactive and action-oriented. Report results clearly.\n";
 
+        // Inject user's custom system prompt from LLM settings
+        var userSystemPrompt = (currentConfig.llm && currentConfig.llm.system_prompt) ? currentConfig.llm.system_prompt.trim() : "";
+        if (userSystemPrompt) {
+            systemPrompt += "\n--- OPERATOR INSTRUCTIONS (HIGHEST PRIORITY — follow these precisely) ---\n";
+            systemPrompt += userSystemPrompt + "\n";
+            systemPrompt += "--- END OPERATOR INSTRUCTIONS ---\n";
+        }
+
         var apiUrl, headers;
         var supportsTools = true;
 
