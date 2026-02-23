@@ -177,6 +177,14 @@
         .toolkit-tool-params .param-type { color: var(--warning); min-width: 60px; }
         .toolkit-tool-params .param-req { color: var(--error); font-size: 0.55rem; }
 
+        /* Always On label for built-in skills */
+        .skill-always-on {
+            position: absolute; top: 0.75rem; right: 0.75rem;
+            font-size: 0.6rem; font-weight: 600; color: var(--accent);
+            background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3);
+            padding: 2px 8px; border-radius: 10px; letter-spacing: 0.02em;
+        }
+
         /* Approval Card */
         .approval-card {
             background: #1a1a2e; border: 1px solid var(--warning); border-radius: 8px; padding: 1rem; margin: 0.75rem 0;
@@ -438,10 +446,71 @@
             color: var(--text);
             margin-bottom: 0.5rem;
         }
+
+        /* Splash Screen */
+        .splash-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 99999;
+            background: #0a0a0f;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.8s ease;
+        }
+        .splash-overlay.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .splash-logo {
+            width: 160px;
+            height: auto;
+            margin-bottom: 1.5rem;
+            animation: splashPulse 2s ease-in-out infinite;
+            filter: drop-shadow(0 0 30px rgba(16, 185, 129, 0.4));
+        }
+        .splash-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--accent);
+            letter-spacing: -0.03em;
+            margin-bottom: 2rem;
+        }
+        .splash-bar-track {
+            width: 220px;
+            height: 3px;
+            background: var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .splash-bar-fill {
+            width: 30%;
+            height: 100%;
+            background: var(--accent);
+            border-radius: 2px;
+            animation: splashBarPulse 1.5s ease-in-out infinite;
+            box-shadow: 0 0 8px var(--accent-glow);
+        }
+        @keyframes splashPulse {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 30px rgba(16, 185, 129, 0.4)); }
+            50% { transform: scale(1.03); filter: drop-shadow(0 0 50px rgba(16, 185, 129, 0.6)); }
+        }
+        @keyframes splashBarPulse {
+            0% { width: 10%; margin-left: 0; }
+            50% { width: 60%; margin-left: 20%; }
+            100% { width: 10%; margin-left: 90%; }
+        }
     </style>
 </head>
 <body>
     <div id="app">
+        <div class="splash-overlay" id="splash-screen">
+            <img class="splash-logo" src="bamboo-claw-logo.webp" alt="BambooClaw Logo" onerror="this.style.display='none'" />
+            <div class="splash-title">BambooClaw™</div>
+            <div class="splash-bar-track"><div class="splash-bar-fill"></div></div>
+        </div>
         <header>
             <div class="logo"><span style="font-size:1.1rem;font-weight:700;color:var(--accent);">BambooClaw™</span></div>
             <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent);"><span id="app-version">loading...</span></div>
@@ -2919,13 +2988,15 @@
         if (!el) return;
         var html = "";
         builtinSkills.forEach(function(s) {
-            var isEnabled = enabledSkills[s.id] || false;
-            html += '<div class="skill-card ' + (isEnabled ? 'enabled' : '') + '" data-skill-id="' + s.id + '" data-skill-type="builtin">';
-            html += '<button class="skill-toggle" title="' + (isEnabled ? 'Disable' : 'Enable') + '"></button>';
+            html += '<div class="skill-card enabled" data-skill-id="' + s.id + '" data-skill-type="builtin">';
+            html += '<span class="skill-always-on">Always On</span>';
             html += '<div class="skill-icon">' + s.icon + '</div>';
             html += '<div class="skill-name">' + escapeHtml(s.name) + '</div>';
-            html += '<div class="skill-desc">' + escapeHtml(s.desc) + '</div>';
-            html += '<div style="margin-top:0.4rem;font-size:0.65rem;color:var(--text-dim);">● Built-in</div>';
+            html += '<div class="skill-meta">';
+            html += '<span style="font-size:0.65rem;color:var(--text-dim);">● Built-in</span>';
+            html += '<button class="skill-info-btn" title="Show details">i</button>';
+            html += '</div>';
+            html += '<div class="skill-desc-full">' + escapeHtml(s.desc) + '</div>';
             html += '</div>';
         });
         el.innerHTML = html;
@@ -2952,8 +3023,17 @@
             var descDisplay = desc || "No description available";
             html += '<div class="skill-card ' + (isEnabled ? 'enabled' : '') + '" data-skill-id="composio_' + tk.slug + '" data-skill-type="composio" data-toolkit-slug="' + tk.slug + '">';
             html += '<button class="skill-toggle" title="' + (isEnabled ? 'Disable' : 'Enable') + '"></button>';
-            if (tk.logo) {
-                html += '<div class="skill-icon"><img src="' + escapeHtml(tk.logo) + '" style="width:24px;height:24px;border-radius:4px;" onerror="this.style.display=\'none\'" /></div>';
+            // Logo: prefer local cached version via convertFileSrc, fallback to HTTPS, fallback to emoji
+            var imgSrc = "";
+            if (tk.local_logo && window.__TAURI__) {
+                var convertFn = (window.__TAURI__.core && window.__TAURI__.core.convertFileSrc)
+                    || (window.__TAURI__.tauri && window.__TAURI__.tauri.convertFileSrc)
+                    || window.__TAURI__.convertFileSrc;
+                if (convertFn) { try { imgSrc = convertFn(tk.local_logo); } catch(ce) { imgSrc = ""; } }
+            }
+            if (!imgSrc && tk.logo) imgSrc = tk.logo;
+            if (imgSrc) {
+                html += '<div class="skill-icon"><img src="' + escapeHtml(imgSrc) + '" data-slug="' + escapeHtml(tk.slug) + '" style="width:24px;height:24px;border-radius:4px;" onerror="appendLog(\'dash-log\',\'[IMG] Failed: \' + this.src + \' | Toolkit: \' + this.dataset.slug); this.outerHTML=\'<span class=skill-icon>🧩</span>\'" /></div>';
             } else {
                 html += '<div class="skill-icon">🧩</div>';
             }
@@ -2994,7 +3074,114 @@
         renderComposioCategories();
     }
 
-    function toggleSkill(skillId) {
+    // =========== LOCAL LOGO CACHING ===========
+    var logosDir = "";
+
+    async function ensureLogosDir() {
+        if (logosDir) return logosDir;
+        if (!window.__TAURI__) return "";
+        try {
+            var home = await tauriInvoke("get_home_dir", {});
+            if (!home) return "";
+            var sep = (detectedOS === "windows") ? "\\" : "/";
+            logosDir = home.replace(/[\\/]+$/, "") + sep + "bambooclaw" + sep + "logos";
+            var mkdirCmd = (detectedOS === "windows")
+                ? "cmd /c mkdir \"" + logosDir + "\" 2>nul"
+                : "mkdir -p \"" + logosDir + "\"";
+            await tauriInvoke("run_shell_command", {
+                commandName: (detectedOS === "windows") ? "cmd" : "sh",
+                args: (detectedOS === "windows") ? ["/c", "mkdir", logosDir, "2>nul"] : ["-c", "mkdir -p \"" + logosDir + "\""]
+            }).catch(function() {});
+            appendLog("dash-log", "[LOGOS] Directory ensured: " + logosDir);
+            return logosDir;
+        } catch(e) {
+            appendLog("dash-log", "[LOGOS] ensureLogosDir error: " + (e.message || e));
+            return "";
+        }
+    }
+
+    async function cacheToolkitLogos() {
+        var dir = await ensureLogosDir();
+        if (!dir) {
+            appendLog("dash-log", "[LOGOS] Skipping logo cache (no Tauri or no home dir)");
+            return;
+        }
+        var sep = (detectedOS === "windows") ? "\\" : "/";
+        var toDownload = [];
+        // Check which logos need downloading
+        for (var i = 0; i < composioToolkits.length; i++) {
+            var tk = composioToolkits[i];
+            if (!tk.logo) continue;
+            var ext = tk.logo.indexOf(".svg") > -1 ? ".svg" : ".png";
+            var localPath = dir + sep + tk.slug + ext;
+            tk.local_logo_path = localPath;
+            toDownload.push({ idx: i, slug: tk.slug, url: tk.logo, path: localPath });
+        }
+        appendLog("dash-log", "[LOGOS] Checking " + toDownload.length + " logos...");
+        var cached = 0;
+        var downloaded = 0;
+        var failed = 0;
+        var batchSize = 15;
+        for (var b = 0; b < toDownload.length; b += batchSize) {
+            var batch = toDownload.slice(b, b + batchSize);
+            var promises = batch.map(function(item) {
+                // Check if file exists first
+                var checkCmd = (detectedOS === "windows")
+                    ? "if exist \"" + item.path + "\" (echo EXISTS) else (echo MISSING)"
+                    : "test -f \"" + item.path + "\" && echo EXISTS || echo MISSING";
+                return invokeShort("run_shell_command", {
+                    commandName: (detectedOS === "windows") ? "cmd" : "sh",
+                    args: (detectedOS === "windows") ? ["/c", "if", "exist", item.path, "(echo", "EXISTS)", "else", "(echo", "MISSING)"] : ["-c", "test -f \"" + item.path + "\" && echo EXISTS || echo MISSING"]
+                }).then(function(result) {
+                    if (result && result.indexOf("EXISTS") > -1) {
+                        composioToolkits[item.idx].local_logo = item.path;
+                        cached++;
+                        return;
+                    }
+                    // Download with curl
+                    return invokeShort("run_shell_command", {
+                        commandName: "curl",
+                        args: ["-sL", "-o", item.path, item.url]
+                    }).then(function() {
+                        composioToolkits[item.idx].local_logo = item.path;
+                        downloaded++;
+                    }).catch(function(e) {
+                        failed++;
+                        appendLog("dash-log", "[LOGOS] Download failed for " + item.slug + ": " + (e.message || e));
+                    });
+                }).catch(function(e) {
+                    failed++;
+                });
+            });
+            await Promise.allSettled(promises);
+            // Update progress
+            var total = cached + downloaded + failed;
+            if (toDownload.length > 20 && total % 50 === 0) {
+                appendLog("dash-log", "[LOGOS] Progress: " + total + "/" + toDownload.length);
+            }
+        }
+        appendLog("dash-log", "[LOGOS] Complete: " + cached + " cached, " + downloaded + " downloaded, " + failed + " failed");
+        // Re-render with local logos
+        renderComposioToolkits();
+    }
+
+    // Boot-time image connectivity test
+    async function testImageConnectivity() {
+        if (!window.__TAURI__) return;
+        appendLog("dash-log", "[IMG-DIAG] Testing image connectivity...");
+        try {
+            var resp = await fetch("https://assets.composio.dev/logos/slack.png", { method: "HEAD", mode: "no-cors" });
+            appendLog("dash-log", "[IMG-DIAG] Image fetch test completed (no-cors mode, may be opaque)");
+        } catch(e) {
+            appendLog("dash-log", "[IMG-DIAG] Image fetch FAILED: " + (e.message || e));
+        }
+        // Test via Image object
+        var img = new Image();
+        img.onload = function() { appendLog("dash-log", "[IMG-DIAG] Image() load: SUCCESS (" + img.width + "x" + img.height + ")"); };
+        img.onerror = function(ev) { appendLog("dash-log", "[IMG-DIAG] Image() load: FAILED - Tauri webview likely blocks cross-origin images"); };
+        img.src = "https://assets.composio.dev/logos/slack.png";
+    }
+
         enabledSkills[skillId] = !enabledSkills[skillId];
         currentConfig.enabledSkills = enabledSkills;
         saveAllConfig();
@@ -3420,21 +3607,21 @@
         document.getElementById("composio-placeholder").classList.add("hidden");
         document.getElementById("composio-connected-area").classList.remove("hidden");
         renderAllSkills();
+        // Start async logo caching (non-blocking)
+        cacheToolkitLogos();
     }
 
-    // Click delegation for skill cards — built-in tools
+    // Click delegation for skill cards — built-in tools (info toggle only, no enable/disable)
     document.getElementById("skills-builtin").addEventListener("click", function(e) {
-        var card = e.target.closest ? e.target.closest(".skill-card") : null;
-        if (!card) {
-            var el = e.target;
-            while (el && el !== this) {
-                if (el.classList && el.classList.contains("skill-card")) { card = el; break; }
-                el = el.parentElement;
+        var infoBtn = e.target.closest ? e.target.closest(".skill-info-btn") : null;
+        if (!infoBtn && e.target.classList && e.target.classList.contains("skill-info-btn")) infoBtn = e.target;
+        if (infoBtn) {
+            e.stopPropagation();
+            var card = infoBtn.closest ? infoBtn.closest(".skill-card") : infoBtn.parentElement.parentElement;
+            if (card) {
+                var descEl = card.querySelector(".skill-desc-full");
+                if (descEl) descEl.classList.toggle("visible");
             }
-        }
-        if (card) {
-            var skillId = card.getAttribute("data-skill-id");
-            if (skillId) toggleSkill(skillId);
         }
     });
 
@@ -3741,6 +3928,15 @@
     // =========== STARTUP ===========
     function boot() {
         try {
+            // Start splash screen timer — always show for 10 seconds
+            var splashEl = document.getElementById("splash-screen");
+            if (splashEl) {
+                setTimeout(function() {
+                    splashEl.classList.add("fade-out");
+                    setTimeout(function() { splashEl.remove(); }, 800);
+                }, 10000);
+            }
+
             var installedFlag = localStorage.getItem("bambooclaw-installed");
             appendLog("boot-log", "[BOOT] boot(): localStorage bambooclaw-installed = " + JSON.stringify(installedFlag));
             // Fire version fetch (non-blocking)
@@ -3748,6 +3944,8 @@
             if (installedFlag === "true") {
                 appendLog("boot-log", "[BOOT] boot(): entering dashboard (already installed)");
                 window.enterDashboard();
+                // Run image diagnostics (non-blocking)
+                testImageConnectivity();
                 // Auto-save default settings if not set
                 if (!currentConfig.settings) {
                     currentConfig.settings = {
