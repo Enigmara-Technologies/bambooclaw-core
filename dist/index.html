@@ -409,7 +409,7 @@
 <body>
     <div id="app">
         <header>
-            <div class="logo"><img id="header-logo" src="https://bamboo-synergy-prosper.lovable.app/bambooclaw-logo.png" alt="BambooClaw™ Logo" onerror="this.style.display='none'" /><span>BambooClaw™</span></div>
+            <div class="logo"><span style="font-size:1.1rem;font-weight:700;color:var(--accent);">BambooClaw™</span></div>
             <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent);"><span id="app-version">loading...</span></div>
         </header>
         <main>
@@ -549,6 +549,7 @@
                     <div class="tab" data-tab="tab-settings">Settings</div>
                     <div class="tab" data-tab="tab-logs">Logs</div>
                     <div class="tab" data-tab="tab-help">Help</div>
+                    <div class="tab" data-tab="tab-about">About</div>
                 </div>
 
                 <!-- Tab: LLM Settings -->
@@ -677,7 +678,7 @@
                 <!-- Tab: Skills -->
                 <div class="glass-card tab-panel hidden" id="tab-skills">
                     <h1 style="font-size: 1.3rem; margin-bottom: 0.5rem;">🧩 Skill Marketplace</h1>
-                    <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Extend your agent with 10,000+ integrations via Composio. Enable skills to give your agent new abilities.</p>
+                    <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Extend your agent with Composio integrations. Enable skills to give your agent new abilities.</p>
 
                     <div style="margin-bottom: 1.5rem; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; background: #050507;">
                         <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
@@ -717,9 +718,6 @@
                         </div>
                     </div>
 
-                    <div style="text-align: center; margin-top: 1rem;">
-                        <button class="btn btn-outline" id="btn-browse-all-skills">Browse All 10,000+ Skills</button>
-                    </div>
                 </div>
 
                 <!-- Tab: Settings -->
@@ -1071,6 +1069,36 @@
                     </details>
                 </div>
 
+                <!-- Tab: About -->
+                <div class="glass-card tab-panel hidden" id="tab-about">
+                    <h1 style="font-size: 1.3rem; margin-bottom: 1rem;">About BambooClaw™</h1>
+                    <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 8px; background: #050507; margin-bottom: 1rem;">
+                        <div style="margin-bottom: 1rem;">
+                            <span style="color: var(--text-dim); font-size: 0.85rem;">Version</span>
+                            <div style="font-size: 1.1rem; font-weight: 700; color: var(--accent);" id="about-version">loading...</div>
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <span style="color: var(--text-dim); font-size: 0.85rem;">Trademark</span>
+                            <div style="font-size: 0.9rem;">BambooClaw™ is a trademark of <a href="https://www.bamboosynergytec.com" target="_blank" style="color: var(--accent); text-decoration: none;">Bamboo Synergy Technologies</a></div>
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <span style="color: var(--text-dim); font-size: 0.85rem;">Developer</span>
+                            <div style="font-size: 0.9rem;">Developed by <a href="https://www.enigmara.com" target="_blank" style="color: var(--accent); text-decoration: none;">Enigmara Technologies Corp.</a></div>
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <span style="color: var(--text-dim); font-size: 0.85rem;">Source Code</span>
+                            <div style="font-size: 0.9rem;"><a href="https://github.com/Enigmara-Technologies/bambooclaw-core" target="_blank" style="color: var(--accent); text-decoration: none;">github.com/Enigmara-Technologies/bambooclaw-core</a></div>
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <span style="color: var(--text-dim); font-size: 0.85rem;">Support</span>
+                            <div style="font-size: 0.9rem;"><a href="mailto:info@bamboosynergytec.com" style="color: var(--accent); text-decoration: none;">info@bamboosynergytec.com</a></div>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.8rem; color: var(--text-dim);" id="about-copyright">© 2025 Bamboo Synergy Technologies, Inc.</span>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Tab: Logs -->
                 <div class="glass-card tab-panel hidden" id="tab-logs">
                     <h1 style="font-size: 1.3rem; margin-bottom: 0.5rem;">📋 Session Log</h1>
@@ -1124,6 +1152,12 @@
         if (lbl) lbl.textContent = SESSION_ID;
         var pathEl = document.getElementById("log-path-display");
         if (pathEl) pathEl.value = LOG_FILE_PATH;
+        // About tab: set version and copyright year
+        var aboutVer = document.getElementById("about-version");
+        var appVer = document.getElementById("app-version");
+        if (aboutVer && appVer) aboutVer.textContent = appVer.textContent;
+        var copyrightEl = document.getElementById("about-copyright");
+        if (copyrightEl) copyrightEl.textContent = "© " + new Date().getFullYear() + " Bamboo Synergy Technologies, Inc.";
     }, 0);
 
     // =========== HELP FILTER ===========
@@ -2363,6 +2397,13 @@
                     appendLog("unified-log", "[AGENT] [TELEGRAM] Message from " + from + ": " + text);
                     appendLog("dash-log", "[TG-POLL] Received: " + text.substring(0, 50));
 
+                    // Append user message to Agent Chat UI
+                    var chatEl = document.getElementById("agent-chat-messages");
+                    if (chatEl) {
+                        chatEl.innerHTML += '<div class="chat-msg"><span class="role">You (Telegram):</span> ' + escapeHtml(text) + '</div>';
+                        chatEl.scrollTop = chatEl.scrollHeight;
+                    }
+
                     // Get LLM reply
                     try {
                         var reply = await callLLM(text);
@@ -2373,6 +2414,11 @@
                             body: JSON.stringify({ chat_id: chatId, text: reply })
                         });
                         appendLog("unified-log", "[AGENT] [TELEGRAM] Replied to " + from + ": " + reply.substring(0, 500) + (reply.length > 500 ? "..." : ""));
+                        // Append agent reply to Agent Chat UI
+                        if (chatEl) {
+                            chatEl.innerHTML += '<div class="chat-msg assistant"><span class="role">Agent:</span> ' + escapeHtml(reply || "(no response)") + '</div>';
+                            chatEl.scrollTop = chatEl.scrollHeight;
+                        }
                     } catch(e) {
                         appendLog("unified-log", "[AGENT] [TELEGRAM] LLM error: " + (e.message || e));
                         // Send error message to user
@@ -2698,45 +2744,61 @@
             "https://backend.composio.dev/api/v1/apps?limit=5"
         ];
         var validated = false;
-        for (var ei = 0; ei < endpoints.length; ei++) {
+
+        // In Tauri, use shell curl to bypass CORS
+        if (window.__TAURI__) {
             try {
-                appendLog("dash-log", "[COMPOSIO] Trying: " + endpoints[ei]);
-                var resp = await fetch(endpoints[ei], {
-                    method: "GET",
-                    headers: { "x-api-key": key }
-                });
-                appendLog("dash-log", "[COMPOSIO] Response: HTTP " + resp.status);
-                if (resp.ok) {
-                    var data = await resp.json();
-                    var count = data.totalCount || (data.items ? data.items.length : (Array.isArray(data) ? data.length : 0));
-                    statusEl.innerHTML = '<span style="color:var(--accent);">✓ Connected to Composio (' + count + ' apps available)</span>';
+                appendLog("dash-log", "[COMPOSIO] Tauri detected, using curl to validate...");
+                var curlResult = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-o", "/dev/null", "-w", "%{http_code}", "-H", "x-api-key: " + key, "https://backend.composio.dev/api/v3/apps?limit=1"] });
+                var httpCode = (curlResult || "").trim();
+                appendLog("dash-log", "[COMPOSIO] curl HTTP code: " + httpCode);
+                if (httpCode === "200") {
+                    statusEl.innerHTML = '<span style="color:var(--accent);">✓ Connected to Composio</span>';
                     showToast("Composio connected!", "success");
-                    appendLog("dash-log", "[COMPOSIO] Connected via " + endpoints[ei] + ", " + count + " apps available");
                     validated = true;
-                    break;
-                } else if (resp.status === 401 || resp.status === 403) {
+                } else if (httpCode === "401" || httpCode === "403") {
                     statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key — check your key at app.composio.dev/settings</span>';
                     showToast("Invalid Composio API key", "error");
                     validated = true;
-                    break;
                 }
-                // Other status — try next endpoint
             } catch(e) {
-                var msg = (e.message || String(e));
-                appendLog("dash-log", "[COMPOSIO] Endpoint " + endpoints[ei] + " error: " + msg);
-                // Continue to next endpoint
+                appendLog("dash-log", "[COMPOSIO] curl fallback failed: " + (e.message || e));
+            }
+        }
+
+        // Browser fallback: try fetch (may be blocked by CORS)
+        if (!validated) {
+            for (var ei = 0; ei < endpoints.length; ei++) {
+                try {
+                    appendLog("dash-log", "[COMPOSIO] Trying: " + endpoints[ei]);
+                    var resp = await fetch(endpoints[ei], {
+                        method: "GET",
+                        headers: { "x-api-key": key }
+                    });
+                    appendLog("dash-log", "[COMPOSIO] Response: HTTP " + resp.status);
+                    if (resp.ok) {
+                        var data = await resp.json();
+                        var count = data.totalCount || (data.items ? data.items.length : (Array.isArray(data) ? data.length : 0));
+                        statusEl.innerHTML = '<span style="color:var(--accent);">✓ Connected to Composio (' + count + ' apps available)</span>';
+                        showToast("Composio connected!", "success");
+                        appendLog("dash-log", "[COMPOSIO] Connected via " + endpoints[ei] + ", " + count + " apps available");
+                        validated = true;
+                        break;
+                    } else if (resp.status === 401 || resp.status === 403) {
+                        statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key — check your key at app.composio.dev/settings</span>';
+                        showToast("Invalid Composio API key", "error");
+                        validated = true;
+                        break;
+                    }
+                } catch(e) {
+                    appendLog("dash-log", "[COMPOSIO] Endpoint " + endpoints[ei] + " error: " + (e.message || String(e)));
+                }
             }
         }
         if (!validated) {
-            if (window.__TAURI__) {
-                statusEl.innerHTML = '<span style="color:var(--warning);">⚠ Connection failed — check your internet connection and API key.</span>';
-                showToast("Connection failed — check your internet", "error");
-                appendLog("unified-log", "[COMPOSIO] All endpoints failed in desktop app. Check internet.");
-            } else {
-                statusEl.innerHTML = '<span style="color:var(--warning);">⚠ Cannot validate from browser (CORS). Key saved — it will work in the desktop app.</span>';
-                showToast("Key saved — validation requires the desktop app", "info");
-                appendLog("unified-log", "[COMPOSIO] CORS blocked validation in browser preview. Key is saved.");
-            }
+            statusEl.innerHTML = '<span style="color:var(--warning);">⚠ Cannot validate from browser (CORS). Key saved — it will work in the desktop app.</span>';
+            showToast("Key saved — validation requires the desktop app", "info");
+            appendLog("unified-log", "[COMPOSIO] CORS blocked validation in browser preview. Key is saved.");
         }
     }
 
@@ -2758,79 +2820,6 @@
 
     document.getElementById("skill-search").addEventListener("input", function() { renderAllSkills(); });
     document.getElementById("btn-save-composio").addEventListener("click", function() { saveComposioKey(); });
-    document.getElementById("btn-browse-all-skills").addEventListener("click", function() {
-        // Try to load Composio app catalog in-app
-        var key = currentConfig.composioApiKey || "";
-        var browseBtn = this;
-        browseBtn.disabled = true;
-        browseBtn.textContent = "Loading...";
-        appendLog("unified-log", "[COMPOSIO] Fetching app catalog...");
-
-        var endpoints = [
-            COMPOSIO_API_URL + "/apps?limit=100",
-            "https://backend.composio.dev/api/v2/apps?limit=100",
-            "https://backend.composio.dev/api/v1/apps?limit=100"
-        ];
-        var fetched = false;
-        (async function() {
-            for (var i = 0; i < endpoints.length; i++) {
-                try {
-                    var headers = { "Content-Type": "application/json" };
-                    if (key) headers["x-api-key"] = key;
-                    var resp = await fetch(endpoints[i], { headers: headers });
-                    if (resp.ok) {
-                        var data = await resp.json();
-                        var apps = data.items || (Array.isArray(data) ? data : []);
-                        appendLog("unified-log", "[COMPOSIO] Loaded " + apps.length + " apps from catalog");
-                        // Display in-app browser panel
-                        var container = document.getElementById("skill-categories");
-                        var html = '<div style="margin-bottom:1.5rem;"><h2 style="font-size:1rem;color:var(--accent);margin-bottom:0.75rem;">🌍 All Composio Apps (' + apps.length + ')</h2>';
-                        html += '<input type="text" id="browse-skill-search" placeholder="Filter apps..." style="width:100%;margin-bottom:0.75rem;" />';
-                        html += '<div id="browse-skill-grid" class="skill-grid" style="max-height:400px;overflow-y:auto;">';
-                        apps.forEach(function(app) {
-                            html += '<div class="skill-card" style="cursor:default;">';
-                            html += '<div class="skill-icon">🔌</div>';
-                            html += '<div class="skill-name">' + escapeHtml(app.name || app.key || "Unknown") + '</div>';
-                            html += '<div class="skill-desc">' + escapeHtml((app.description || "").substring(0, 80)) + '</div>';
-                            html += '<div style="margin-top:0.4rem;font-size:0.65rem;color:var(--accent);">● Composio</div>';
-                            html += '</div>';
-                        });
-                        html += '</div></div>';
-                        container.innerHTML = html;
-                        // Search filter
-                        var searchEl = document.getElementById("browse-skill-search");
-                        if (searchEl) {
-                            searchEl.addEventListener("input", function() {
-                                var q = this.value.toLowerCase();
-                                var cards = document.querySelectorAll("#browse-skill-grid .skill-card");
-                                for (var c = 0; c < cards.length; c++) {
-                                    cards[c].style.display = cards[c].textContent.toLowerCase().indexOf(q) >= 0 ? "" : "none";
-                                }
-                            });
-                        }
-                        showToast("Loaded " + apps.length + " Composio apps", "success");
-                        fetched = true;
-                        break;
-                    }
-                } catch(e) {
-                    appendLog("unified-log", "[COMPOSIO] Browse endpoint " + endpoints[i] + " failed: " + (e.message || e));
-                }
-            }
-            if (!fetched) {
-                appendLog("unified-log", "[COMPOSIO] Could not load catalog, opening external browser");
-                if (window.__TAURI__) {
-                    try {
-                        if (window.__TAURI__.opener) window.__TAURI__.opener.openUrl("https://app.composio.dev/apps");
-                        else if (window.__TAURI__.shell) window.__TAURI__.shell.open("https://app.composio.dev/apps");
-                    } catch(e) { window.open("https://app.composio.dev/apps", "_blank"); }
-                } else {
-                    window.open("https://app.composio.dev/apps", "_blank");
-                }
-            }
-            browseBtn.disabled = false;
-            browseBtn.textContent = "Browse All 10,000+ Skills";
-        })();
-    });
 
     // Render skills on load
     renderAllSkills();
@@ -3051,6 +3040,8 @@
             var ver = data.tag_name || "v-unknown";
             var el = document.getElementById("app-version");
             if (el) el.textContent = ver;
+            var aboutVer = document.getElementById("about-version");
+            if (aboutVer) aboutVer.textContent = ver;
             appendLog("boot-log", "[BOOT] fetchVersion: resolved -> " + ver);
         } catch(e) {
             var el = document.getElementById("app-version");
