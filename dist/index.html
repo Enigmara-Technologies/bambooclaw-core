@@ -3295,6 +3295,41 @@
         }
     }
 
+    async function cacheSplashLogo() {
+        var dir = await ensureLogosDir();
+        if (!dir) return;
+        var sep = (detectedOS === "windows") ? "\\" : "/";
+        var localPath = dir + sep + "bambooclaw-logo.webp";
+        var remoteUrl = "https://bamboo-synergy-prosper.lovable.app/bamboo-claw-logo.webp";
+        var checkCmd = (detectedOS === "windows")
+            ? 'if exist "' + localPath + '" echo EXISTS'
+            : 'test -f "' + localPath + '" && echo EXISTS';
+        try {
+            var result = await tauriInvoke("run_shell_command", {
+                commandName: (detectedOS === "windows") ? "cmd" : "sh",
+                args: (detectedOS === "windows") ? ["/c", checkCmd] : ["-c", checkCmd]
+            });
+            var exists = (result && result.stdout && result.stdout.indexOf("EXISTS") !== -1);
+            if (!exists) {
+                var dlCmd = 'curl -fsSL -o "' + localPath + '" "' + remoteUrl + '"';
+                await tauriInvoke("run_shell_command", {
+                    commandName: (detectedOS === "windows") ? "cmd" : "sh",
+                    args: (detectedOS === "windows") ? ["/c", dlCmd] : ["-c", dlCmd]
+                });
+            }
+            var convertFn = (window.__TAURI__.core && window.__TAURI__.core.convertFileSrc)
+                || (window.__TAURI__.tauri && window.__TAURI__.tauri.convertFileSrc)
+                || window.__TAURI__.convertFileSrc;
+            if (convertFn) {
+                var assetUrl = convertFn(localPath);
+                var splashImg = document.querySelector(".splash-logo");
+                if (splashImg) splashImg.src = assetUrl;
+            }
+        } catch(e) {
+            appendLog("dash-log", "[SPLASH] Logo cache error: " + (e.message || e));
+        }
+    }
+
     async function cacheToolkitLogos() {
         var dir = await ensureLogosDir();
         if (!dir) {
@@ -4140,6 +4175,8 @@
     function boot() {
         try {
             // Splash screen timer is now self-contained in inline script above
+            // Cache splash logo locally (non-blocking) — same pattern as toolkit logos
+            cacheSplashLogo();
 
             var installedFlag = localStorage.getItem("bambooclaw-installed");
             appendLog("boot-log", "[BOOT] boot(): localStorage bambooclaw-installed = " + JSON.stringify(installedFlag));
