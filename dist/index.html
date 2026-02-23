@@ -161,8 +161,21 @@
             justify-content: center; transition: 0.2s; flex-shrink: 0; padding: 0; line-height: 1;
         }
         .skill-info-btn:hover { border-color: var(--accent); color: var(--accent); }
-        .skill-desc-full { display: none; margin-top: 0.5rem; font-size: 0.7rem; color: var(--text-dim); line-height: 1.4; border-top: 1px solid var(--border); padding-top: 0.5rem; }
+        .skill-desc-full { display: none; margin-top: 0.5rem; font-size: 0.7rem; color: var(--text-dim); line-height: 1.4; border-top: 1px solid var(--border); padding-top: 0.5rem; max-height: 300px; overflow-y: auto; }
         .skill-desc-full.visible { display: block; }
+        .toolkit-tools-list { margin-top: 0.5rem; }
+        .toolkit-tool-row { padding: 0.35rem 0; border-bottom: 1px solid rgba(30,41,59,0.5); cursor: pointer; }
+        .toolkit-tool-row:hover { background: rgba(16,185,129,0.05); }
+        .toolkit-tool-row .tool-header { display: flex; justify-content: space-between; align-items: center; }
+        .toolkit-tool-row .tool-name { font-weight: 600; font-size: 0.7rem; color: var(--text); }
+        .toolkit-tool-row .tool-slug { font-size: 0.6rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+        .toolkit-tool-row .tool-desc { font-size: 0.65rem; color: var(--text-dim); margin-top: 0.2rem; }
+        .toolkit-tool-params { display: none; margin-top: 0.3rem; padding: 0.3rem 0.5rem; background: rgba(5,5,7,0.5); border-radius: 4px; font-size: 0.6rem; font-family: 'JetBrains Mono', monospace; }
+        .toolkit-tool-params.visible { display: block; }
+        .toolkit-tool-params .param-row { display: flex; gap: 0.5rem; padding: 0.15rem 0; }
+        .toolkit-tool-params .param-name { color: var(--accent); min-width: 80px; }
+        .toolkit-tool-params .param-type { color: var(--warning); min-width: 60px; }
+        .toolkit-tool-params .param-req { color: var(--error); font-size: 0.55rem; }
 
         /* Approval Card */
         .approval-card {
@@ -2933,7 +2946,8 @@
         });
         filtered.forEach(function(tk) {
             var isEnabled = enabledSkills["composio_" + tk.slug] || false;
-            var toolCount = tk.tool_count || (tk.tools ? tk.tools.length : 0);
+            var toolCount = tk.tools_count || 0;
+            var triggerCount = tk.triggers_count || 0;
             var desc = tk.description || "";
             var descDisplay = desc || "No description available";
             html += '<div class="skill-card ' + (isEnabled ? 'enabled' : '') + '" data-skill-id="composio_' + tk.slug + '" data-skill-type="composio" data-toolkit-slug="' + tk.slug + '">';
@@ -2948,9 +2962,15 @@
             if (toolCount > 0) {
                 html += '<span style="font-size:0.65rem;color:var(--accent);">● ' + toolCount + ' tools</span>';
             }
-            html += '<button class="skill-info-btn" title="Show description">i</button>';
+            if (triggerCount > 0) {
+                html += '<span style="font-size:0.65rem;color:var(--warning);">⚡ ' + triggerCount + ' triggers</span>';
+            }
+            html += '<button class="skill-info-btn" title="Show details">i</button>';
             html += '</div>';
-            html += '<div class="skill-desc-full">' + escapeHtml(descDisplay) + '</div>';
+            html += '<div class="skill-desc-full" data-toolkit-slug="' + tk.slug + '">';
+            html += '<div>' + escapeHtml(descDisplay) + '</div>';
+            html += '<div class="toolkit-tools-list" id="toolkit-tools-' + tk.slug + '"><div style="color:var(--text-dim);font-size:0.65rem;padding:0.3rem 0;">Click to load tools...</div></div>';
+            html += '</div>';
             html += '</div>';
         });
         if (!html) html = '<div style="color:var(--text-dim);font-size:0.85rem;padding:0.5rem;">No matching toolkits</div>';
@@ -3004,7 +3024,10 @@
         }
     }
 
-    // Fetch real tool definitions for a Composio toolkit
+    // Cache for per-toolkit tool lists
+    var composioToolkitDetails = {};
+
+    // Fetch real tool definitions for a Composio toolkit from /api/v3/tools?toolkit=slug
     async function fetchToolkitTools(slug) {
         appendLog("dash-log", "[COMPOSIO] Fetching tools for toolkit: " + slug);
         var composioKey = currentConfig.composioApiKey;
@@ -3012,44 +3035,57 @@
 
         try {
             var toolsJson = "";
+            var endpoint = COMPOSIO_API_URL + "/tools?toolkit=" + encodeURIComponent(slug) + "&limit=200";
             if (window.__TAURI__) {
                 toolsJson = await tauriInvoke("run_shell_command", {
                     commandName: "curl",
-                    args: ["-s", "-H", "x-api-key: " + composioKey, COMPOSIO_API_URL + "/toolkits/" + slug]
+                    args: ["-s", "-H", "x-api-key: " + composioKey, endpoint]
                 });
             } else {
-                var resp = await fetch(COMPOSIO_API_URL + "/toolkits/" + slug, {
+                var resp = await fetch(endpoint, {
                     headers: { "x-api-key": composioKey }
                 });
                 toolsJson = await resp.text();
             }
 
             var data = JSON.parse(toolsJson);
-            var tools = data.tools || [];
+            var tools = data.items || [];
             appendLog("dash-log", "[COMPOSIO] Toolkit " + slug + " has " + tools.length + " tools");
+
+            // Cache for UI display
+            composioToolkitDetails[slug] = tools;
 
             // Remove old tools for this toolkit
             agentTools = agentTools.filter(function(t) {
-                return !t.function.name.startsWith("composio_" + slug + "_");
+                return !t.function.name.startsWith("composio_");
             });
 
-            // Build OpenAI-format tool definitions from real schemas
-            tools.forEach(function(tool) {
-                var params = tool.parameters || { type: "object", properties: {}, required: [] };
-                // Ensure additionalProperties is set
-                if (!params.additionalProperties) params.additionalProperties = false;
-                agentTools.push({
-                    type: "function",
-                    function: {
-                        name: "composio_" + slug + "_" + (tool.slug || tool.name || "").replace(/[^a-zA-Z0-9_]/g, "_"),
-                        description: (tool.description || tool.name || slug + " tool") + " [via Composio " + slug + "]",
-                        parameters: params
-                    }
-                });
+            // Re-add all enabled toolkit tools
+            Object.keys(enabledSkills).forEach(function(skillId) {
+                if (!enabledSkills[skillId] || !skillId.startsWith("composio_")) return;
+                var sk = skillId.replace("composio_", "");
+                var cachedTools = composioToolkitDetails[sk];
+                if (cachedTools) {
+                    cachedTools.forEach(function(tool) {
+                        var params = tool.input_parameters || tool.parameters || { type: "object", properties: {}, required: [] };
+                        if (!params.additionalProperties) params.additionalProperties = false;
+                        agentTools.push({
+                            type: "function",
+                            function: {
+                                name: "composio_" + (tool.slug || tool.name || "").replace(/[^a-zA-Z0-9_]/g, "_"),
+                                description: (tool.description || tool.name || sk + " tool") + " [via Composio " + sk + "]",
+                                parameters: params
+                            }
+                        });
+                    });
+                }
             });
 
             appendLog("dash-log", "[SKILLS] Injected " + tools.length + " real tool definitions for " + slug + ". Total agent tools: " + agentTools.length);
             showToast(slug + ": " + tools.length + " tools added to agent", "success");
+
+            // Update UI if the detail panel is open
+            renderToolkitToolsList(slug);
         } catch(e) {
             appendLog("dash-log", "[COMPOSIO] Failed to fetch tools for " + slug + ": " + (e.message || e));
             // Fallback: add a generic natural-language tool
@@ -3062,6 +3098,97 @@
                 }
             });
             showToast(slug + " added (generic mode — could not fetch tool schemas)", "info");
+        }
+    }
+
+    // Render expandable tools list inside toolkit detail panel
+    function renderToolkitToolsList(slug) {
+        var el = document.getElementById("toolkit-tools-" + slug);
+        if (!el) return;
+        var tools = composioToolkitDetails[slug];
+        if (!tools || tools.length === 0) {
+            el.innerHTML = '<div style="color:var(--text-dim);font-size:0.65rem;padding:0.3rem 0;">No tools found for this toolkit.</div>';
+            return;
+        }
+        var html = '<div style="font-size:0.7rem;font-weight:600;color:var(--text);margin-bottom:0.3rem;">Tools (' + tools.length + '):</div>';
+        tools.forEach(function(tool, idx) {
+            var toolSlug = tool.slug || "";
+            var toolName = tool.name || toolSlug;
+            var toolDesc = tool.description || "";
+            var params = tool.input_parameters || tool.parameters || {};
+            var props = params.properties || {};
+            var reqList = params.required || [];
+            var outParams = tool.output_parameters || {};
+            var outProps = outParams.properties || {};
+
+            html += '<div class="toolkit-tool-row" data-tool-idx="' + idx + '" data-toolkit-slug="' + slug + '">';
+            html += '<div class="tool-header"><span class="tool-name">▸ ' + escapeHtml(toolName) + '</span></div>';
+            html += '<div class="tool-slug">' + escapeHtml(toolSlug) + '</div>';
+            if (toolDesc) html += '<div class="tool-desc">' + escapeHtml(toolDesc.substring(0, 120)) + (toolDesc.length > 120 ? "…" : "") + '</div>';
+
+            // Parameters panel (hidden by default)
+            html += '<div class="toolkit-tool-params" id="tool-params-' + slug + '-' + idx + '">';
+            var propKeys = Object.keys(props);
+            if (propKeys.length > 0) {
+                html += '<div style="color:var(--accent);margin-bottom:0.2rem;">Input Parameters:</div>';
+                propKeys.forEach(function(pName) {
+                    var p = props[pName];
+                    var isReq = reqList.indexOf(pName) >= 0;
+                    html += '<div class="param-row">';
+                    html += '<span class="param-name">' + escapeHtml(pName) + '</span>';
+                    html += '<span class="param-type">' + escapeHtml(p.type || "any") + '</span>';
+                    if (isReq) html += '<span class="param-req">required</span>';
+                    html += '</div>';
+                    if (p.description) html += '<div style="color:var(--text-dim);font-size:0.55rem;padding-left:0.5rem;margin-bottom:0.15rem;">' + escapeHtml(p.description.substring(0, 100)) + '</div>';
+                });
+            }
+            var outKeys = Object.keys(outProps);
+            if (outKeys.length > 0) {
+                html += '<div style="color:var(--warning);margin-top:0.3rem;margin-bottom:0.2rem;">Output Parameters:</div>';
+                outKeys.forEach(function(pName) {
+                    var p = outProps[pName];
+                    html += '<div class="param-row">';
+                    html += '<span class="param-name">' + escapeHtml(pName) + '</span>';
+                    html += '<span class="param-type">' + escapeHtml(p.type || "any") + '</span>';
+                    html += '</div>';
+                });
+            }
+            if (propKeys.length === 0 && outKeys.length === 0) {
+                html += '<div style="color:var(--text-dim);">No parameters defined</div>';
+            }
+            html += '</div>'; // end params
+            html += '</div>'; // end tool-row
+        });
+        el.innerHTML = html;
+    }
+
+    // Load toolkit tools on demand when info panel is expanded
+    async function loadToolkitToolsOnDemand(slug) {
+        if (composioToolkitDetails[slug]) {
+            renderToolkitToolsList(slug);
+            return;
+        }
+        var el = document.getElementById("toolkit-tools-" + slug);
+        if (el) el.innerHTML = '<div style="color:var(--text-dim);font-size:0.65rem;padding:0.3rem 0;">Loading tools...</div>';
+        var composioKey = currentConfig.composioApiKey;
+        if (!composioKey) return;
+        try {
+            var toolsJson = "";
+            var endpoint = COMPOSIO_API_URL + "/tools?toolkit=" + encodeURIComponent(slug) + "&limit=200";
+            if (window.__TAURI__) {
+                toolsJson = await tauriInvoke("run_shell_command", {
+                    commandName: "curl",
+                    args: ["-s", "-H", "x-api-key: " + composioKey, endpoint]
+                });
+            } else {
+                var resp = await fetch(endpoint, { headers: { "x-api-key": composioKey } });
+                toolsJson = await resp.text();
+            }
+            var data = JSON.parse(toolsJson);
+            composioToolkitDetails[slug] = data.items || [];
+            renderToolkitToolsList(slug);
+        } catch(e) {
+            if (el) el.innerHTML = '<div style="color:var(--error);font-size:0.65rem;">Failed to load tools: ' + escapeHtml(e.message || String(e)) + '</div>';
         }
     }
 
@@ -3262,15 +3389,27 @@
             return;
         }
 
-        // Success — populate toolkit list
-        composioToolkits = toolkitsData.items || [];
+        // Success — populate toolkit list and normalize meta fields
+        var rawToolkits = toolkitsData.items || [];
+        composioToolkits = rawToolkits.map(function(tk) {
+            var m = tk.meta || {};
+            return {
+                slug: tk.slug,
+                name: tk.name || tk.slug,
+                description: m.description || tk.description || "",
+                logo: m.logo || tk.logo || "",
+                categories: (m.categories || tk.categories || []).map(function(c) { return (typeof c === "object" && c.name) ? c.name : String(c); }),
+                tools_count: m.tools_count || tk.tools_count || 0,
+                triggers_count: m.triggers_count || tk.triggers_count || 0
+            };
+        });
         var totalItems = toolkitsData.total_items || composioToolkits.length;
         statusEl.innerHTML = '<span style="color:var(--accent);">✓ Connected to Composio (' + totalItems + ' toolkits available)</span>';
         showToast("Composio connected! " + totalItems + " toolkits loaded.", "success");
         appendLog("dash-log", "[COMPOSIO] Connected. " + composioToolkits.length + " toolkits loaded.");
         appendLog("unified-log", "[COMPOSIO] Connected with " + totalItems + " toolkits available.");
 
-        // Extract categories
+        // Extract categories from normalized data
         var catSet = {};
         composioToolkits.forEach(function(tk) {
             (tk.categories || []).forEach(function(c) { catSet[c] = true; });
@@ -3301,7 +3440,18 @@
 
     // Click delegation for Composio toolkit cards
     document.getElementById("skills-composio").addEventListener("click", function(e) {
-        // Handle info button clicks - toggle description visibility
+        // Handle tool row clicks - toggle parameter visibility
+        var toolRow = e.target.closest ? e.target.closest(".toolkit-tool-row") : null;
+        if (toolRow) {
+            e.stopPropagation();
+            var idx = toolRow.getAttribute("data-tool-idx");
+            var tkSlug = toolRow.getAttribute("data-toolkit-slug");
+            var paramsEl = document.getElementById("tool-params-" + tkSlug + "-" + idx);
+            if (paramsEl) paramsEl.classList.toggle("visible");
+            return;
+        }
+
+        // Handle info button clicks - toggle description visibility + load tools
         var infoBtn = e.target.closest ? e.target.closest(".skill-info-btn") : null;
         if (!infoBtn && e.target.classList && e.target.classList.contains("skill-info-btn")) infoBtn = e.target;
         if (infoBtn) {
@@ -3309,11 +3459,20 @@
             var card = infoBtn.closest ? infoBtn.closest(".skill-card") : infoBtn.parentElement.parentElement;
             if (card) {
                 var descEl = card.querySelector(".skill-desc-full");
-                if (descEl) descEl.classList.toggle("visible");
+                if (descEl) {
+                    var wasVisible = descEl.classList.contains("visible");
+                    descEl.classList.toggle("visible");
+                    // Load tools on demand when expanding
+                    if (!wasVisible) {
+                        var tkSlug = descEl.getAttribute("data-toolkit-slug");
+                        if (tkSlug) loadToolkitToolsOnDemand(tkSlug);
+                    }
+                }
             }
             return;
         }
 
+        // Handle toggle clicks on the card itself
         var card = e.target.closest ? e.target.closest(".skill-card") : null;
         if (!card) {
             var el = e.target;
