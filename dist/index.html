@@ -153,7 +153,28 @@
         .skill-card.enabled { border-color: var(--accent); background: rgba(16, 185, 129, 0.05); }
         .skill-card .skill-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
         .skill-card .skill-name { font-weight: 600; font-size: 0.85rem; margin-bottom: 0.25rem; }
-        .skill-card .skill-desc { font-size: 0.7rem; color: var(--text-dim); line-height: 1.3; }
+        .skill-card .skill-desc { font-size: 0.7rem; color: var(--text-dim); line-height: 1.3; display: none; }
+        .skill-card .skill-meta { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.3rem; }
+        .skill-info-btn {
+            background: transparent; border: 1px solid var(--border); color: var(--text-dim); width: 20px; height: 20px;
+            border-radius: 50%; font-size: 0.65rem; cursor: pointer; display: inline-flex; align-items: center;
+            justify-content: center; transition: 0.2s; flex-shrink: 0; padding: 0; line-height: 1;
+        }
+        .skill-info-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .skill-desc-full { display: none; margin-top: 0.5rem; font-size: 0.7rem; color: var(--text-dim); line-height: 1.4; border-top: 1px solid var(--border); padding-top: 0.5rem; }
+        .skill-desc-full.visible { display: block; }
+
+        /* Approval Card */
+        .approval-card {
+            background: #1a1a2e; border: 1px solid var(--warning); border-radius: 8px; padding: 1rem; margin: 0.75rem 0;
+        }
+        .approval-card .approval-title { font-weight: 600; color: var(--warning); margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .approval-card .approval-detail { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); margin-bottom: 0.75rem; word-break: break-all; max-height: 100px; overflow-y: auto; }
+        .approval-card .approval-actions { display: flex; gap: 0.5rem; }
+        .approval-card .btn-approve { background: var(--success); color: #000; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .approval-card .btn-deny { background: var(--error); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .approval-card .approval-timeout { font-size: 0.7rem; color: var(--text-dim); margin-top: 0.5rem; }
+
         .skill-card .skill-toggle {
             position: absolute; top: 0.75rem; right: 0.75rem; width: 36px; height: 20px;
             background: var(--border); border-radius: 10px; transition: 0.2s; border: none; cursor: pointer;
@@ -1314,17 +1335,28 @@
             var ts = "[" + ("0"+now.getHours()).slice(-2) + ":" + ("0"+now.getMinutes()).slice(-2) + ":" + ("0"+now.getSeconds()).slice(-2) + "." + ("00"+now.getMilliseconds()).slice(-3) + "]";
             var taggedLine = ts + " " + line;
 
+            // --- Log level filtering ---
+            var logLevel = (currentConfig.settings && currentConfig.settings.loglevel) || "info";
+            var shouldShow = true;
+            if (logLevel === "error") {
+                shouldShow = /ERROR|FAIL|EXCEPTION/i.test(line);
+            } else if (logLevel === "warn") {
+                shouldShow = /ERROR|FAIL|EXCEPTION|WARN|WARNING/i.test(line);
+            } else if (logLevel === "info") {
+                shouldShow = !/^\[DEBUG\]/i.test(line);
+            }
+            // "debug" shows everything
+
             // Always write to the specific panel if it exists (for wizard inline logs)
             var el = document.getElementById(logId);
-            if (el && el.style.display !== "none") {
+            if (el && el.style.display !== "none" && shouldShow) {
                 el.textContent += taggedLine + "\n";
                 el.scrollTop = el.scrollHeight;
             }
 
-            // Always write to unified log
+            // Always write to unified log (respect log level)
             var unified = document.getElementById("unified-log");
-            if (unified) {
-                // Color agent entries differently
+            if (unified && shouldShow) {
                 unified.textContent += taggedLine + "\n";
                 unified.scrollTop = unified.scrollHeight;
             }
@@ -2351,12 +2383,99 @@
                     additionalProperties: false
                 }
             }
+        },
+        {
+            type: "function",
+            function: {
+                name: "take_screenshot",
+                description: "Take a screenshot of the user's screen. Returns the file path to the saved screenshot image. Use this to see what is currently on screen before performing GUI automation with pyautogui.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        filename: { type: "string", description: "Optional filename for the screenshot. Default: screenshot.png" }
+                    },
+                    additionalProperties: false
+                }
+            }
         }
     ];
+
+    // ---------- User Approval for Collaborative Mode ----------
+    var pendingApprovalId = 0;
+    async function awaitUserApproval(toolName, args) {
+        return new Promise(function(resolve, reject) {
+            pendingApprovalId++;
+            var aid = "approval-" + pendingApprovalId;
+            var argsStr = JSON.stringify(args);
+            if (argsStr.length > 300) argsStr = argsStr.substring(0, 300) + "...";
+            var chatArea = document.getElementById("chat-area");
+            if (!chatArea) { resolve(true); return; }
+            var card = document.createElement("div");
+            card.className = "approval-card";
+            card.id = aid;
+            card.innerHTML = '<div class="approval-title">⚠ Approval Required</div>' +
+                '<div class="approval-detail"><strong>' + escapeHtml(toolName) + '</strong><br>' + escapeHtml(argsStr) + '</div>' +
+                '<div class="approval-actions">' +
+                '<button class="btn-approve" data-aid="' + aid + '">✓ Allow</button>' +
+                '<button class="btn-deny" data-aid="' + aid + '">✗ Deny</button>' +
+                '</div>' +
+                '<div class="approval-timeout">Auto-denies in 120 seconds</div>';
+            chatArea.appendChild(card);
+            chatArea.scrollTop = chatArea.scrollHeight;
+            var timeout = setTimeout(function() {
+                appendLog("unified-log", "[AUTONOMY] Auto-denied: " + toolName + " (timeout)");
+                cleanup();
+                reject(new Error("User approval timed out for: " + toolName));
+            }, 120000);
+            function cleanup() {
+                var el = document.getElementById(aid);
+                if (el) el.remove();
+            }
+            card.querySelector(".btn-approve").addEventListener("click", function() {
+                clearTimeout(timeout);
+                appendLog("unified-log", "[AUTONOMY] User APPROVED: " + toolName);
+                cleanup();
+                resolve(true);
+            });
+            card.querySelector(".btn-deny").addEventListener("click", function() {
+                clearTimeout(timeout);
+                appendLog("unified-log", "[AUTONOMY] User DENIED: " + toolName);
+                cleanup();
+                reject(new Error("User denied tool execution: " + toolName));
+            });
+        });
+    }
+
+    // Dangerous tools that need user approval in collaborative mode
+    var DANGEROUS_TOOLS = ["run_shell", "write_file", "docker_command", "ssh_execute", "mqtt_publish"];
 
     // Execute a tool call via Tauri backend
     async function executeTool(toolName, args) {
         appendLog("unified-log", "[AGENT] [TOOL] Executing: " + toolName + "(" + JSON.stringify(args).substring(0, 100) + ")");
+
+        // ---------- AUTONOMY GATE ----------
+        var autonomy = (currentConfig.settings && currentConfig.settings.autonomy) || "collaborative";
+        // Fallback: read from DOM
+        try { var sel = document.getElementById("setting-autonomy"); if (sel) autonomy = sel.value; } catch(e) {}
+
+        if (autonomy === "observe") {
+            var msg = "[BLOCKED] Observation Only mode is active. Tool execution is disabled. Change to Collaborative or Full Autonomy in Settings.";
+            appendLog("unified-log", "[AUTONOMY] " + msg);
+            return msg;
+        }
+
+        if (autonomy === "collaborative") {
+            var isDangerous = DANGEROUS_TOOLS.indexOf(toolName) >= 0 || toolName.startsWith("composio_");
+            if (isDangerous) {
+                try {
+                    await awaitUserApproval(toolName, args);
+                } catch(e) {
+                    return "Tool execution denied: " + (e.message || String(e));
+                }
+            }
+        }
+        // "autonomous" mode: proceed immediately (no gate)
+
         try {
             if (toolName === "run_shell") {
                 var cmd = args.command || "";
@@ -2398,6 +2517,14 @@
                 var result = await invokeShort("run_shell_command", { commandName: cmd, args: cmdArgs });
                 appendLog("unified-log", "[AGENT] [TOOL] list_directory result: " + (result || "").substring(0, 200));
                 return result || "(empty directory)";
+            } else if (toolName === "take_screenshot") {
+                var fname = args.filename || "screenshot.png";
+                var platform = await invokeShort("get_platform");
+                var screenshotPath = platform === "windows" ? "C:\\tmp\\" + fname : "/tmp/" + fname;
+                var pyCmd = "import pyautogui; pyautogui.screenshot('" + screenshotPath.replace(/\\/g, "\\\\") + "'); print('" + screenshotPath + "')";
+                var result = await invokeShort("run_shell_command", { commandName: "python", args: ["-c", pyCmd] });
+                appendLog("unified-log", "[AGENT] [TOOL] take_screenshot saved to: " + screenshotPath);
+                return "Screenshot saved to: " + screenshotPath + "\n" + (result || "");
             } else if (["web_browse","web_search","docker_command","ssh_execute","mqtt_publish"].indexOf(toolName) >= 0 || toolName.startsWith("composio_")) {
                 return await executeSkillTool(toolName, args);
             } else {
@@ -2426,7 +2553,43 @@
         var platform = "unknown";
         try { platform = await invokeShort("get_platform"); } catch(e) {}
 
-        var systemPrompt = "You are BambooClaw, a fully autonomous AI agent running on the user's " + platform + " computer. You have FULL CONTROL over this computer through tools. You can run any shell command, read/write files, make HTTP requests, and list directories. When the user asks you to do something on their computer, USE YOUR TOOLS to actually do it. Don't say you can't — you CAN. Execute commands, browse the filesystem, install software, open applications, search the web, etc. Be proactive and action-oriented. Always try to fulfill the user's request by using your tools. For multi-step tasks, chain tool calls as needed. Report results clearly.";
+        // ---- Dynamic System Prompt Builder ----
+        var autonomy = (currentConfig.settings && currentConfig.settings.autonomy) || "collaborative";
+        try { var sel = document.getElementById("setting-autonomy"); if (sel) autonomy = sel.value; } catch(e) {}
+        var maxIter = (currentConfig.settings && currentConfig.settings.maxIterations) || MAX_TOOL_ITERATIONS;
+
+        var systemPrompt = "You are BambooClaw, an AI agent running on the user's " + platform + " computer.\n\n";
+
+        // Autonomy-specific instructions
+        if (autonomy === "observe") {
+            systemPrompt += "MODE: OBSERVATION ONLY. You may analyze and respond to questions, but you MUST NOT call any tools. Simply explain what you would do if you had permission.\n\n";
+        } else if (autonomy === "collaborative") {
+            systemPrompt += "MODE: COLLABORATIVE. You may use tools freely. The user will be shown an approval prompt for potentially dangerous operations (shell commands, file writes, Composio actions). Read-only operations proceed automatically.\n\n";
+        } else {
+            // autonomous
+            systemPrompt += "MODE: FULL AUTONOMY. You have absolute control over this computer.\n\n";
+            systemPrompt += "CRITICAL RULES FOR FULL AUTONOMY:\n";
+            systemPrompt += "1. NEVER tell the user to do something manually. YOU are the agent. YOU do it. NEVER say 'please click', 'you need to', 'go to', or 'open'. YOU execute every action.\n";
+            systemPrompt += "2. For GUI tasks (clicking, typing, scrolling in desktop apps):\n";
+            systemPrompt += "   - First, take a screenshot: run_shell python -c \"import pyautogui; pyautogui.screenshot('C:/tmp/bc_screen.png')\"\n";
+            systemPrompt += "   - Analyze the screenshot to find UI element positions\n";
+            systemPrompt += "   - Use pyautogui to move the mouse, click, type, scroll. Example: python -c \"import pyautogui; pyautogui.click(500, 300)\"\n";
+            systemPrompt += "   - Use pyautogui.write() for typing text, pyautogui.hotkey() for keyboard shortcuts\n";
+            systemPrompt += "   - Verify by taking another screenshot after the action\n";
+            systemPrompt += "3. For web service tasks (Google Calendar, Gmail, Slack, etc.):\n";
+            systemPrompt += "   - PREFERRED: Write a complete Python script that uses the service API and execute it via run_shell\n";
+            systemPrompt += "   - Example for Google Calendar: write a Python script using the Google Calendar API, save it, run it\n";
+            systemPrompt += "   - FALLBACK: If API is not available, open the browser and use pyautogui to interact with the page\n";
+            systemPrompt += "4. Chain as many tool calls as needed. Do not stop halfway. Your max iterations: " + maxIter + "\n";
+            systemPrompt += "5. If a task requires multiple steps, complete ALL steps before responding.\n";
+            systemPrompt += "6. For file operations: just do them. For installs: just run the package manager. For searches: use curl or python requests.\n\n";
+        }
+
+        // Available capabilities
+        systemPrompt += "AVAILABLE TOOLS: shell commands (run_shell), file read/write (read_file, write_file), HTTP requests (http_request), directory listing (list_directory), screenshot (take_screenshot).\n";
+        systemPrompt += "Python 3 is available. For ANY GUI interaction, write a Python script using pyautogui and execute it via run_shell. pyautogui, pillow, and requests are installed.\n";
+        systemPrompt += "For screenshots, use the take_screenshot tool or run: python -c \"import pyautogui; pyautogui.screenshot('screenshot.png')\"\n";
+        systemPrompt += "Be proactive and action-oriented. Report results clearly.\n";
 
         var apiUrl, headers;
         var supportsTools = true;
@@ -2737,6 +2900,8 @@
         filtered.forEach(function(tk) {
             var isEnabled = enabledSkills["composio_" + tk.slug] || false;
             var toolCount = tk.tool_count || (tk.tools ? tk.tools.length : 0);
+            var desc = tk.description || "";
+            var descDisplay = desc || "No description available";
             html += '<div class="skill-card ' + (isEnabled ? 'enabled' : '') + '" data-skill-id="composio_' + tk.slug + '" data-skill-type="composio" data-toolkit-slug="' + tk.slug + '">';
             html += '<button class="skill-toggle" title="' + (isEnabled ? 'Disable' : 'Enable') + '"></button>';
             if (tk.logo) {
@@ -2745,10 +2910,13 @@
                 html += '<div class="skill-icon">🧩</div>';
             }
             html += '<div class="skill-name">' + escapeHtml(tk.name) + '</div>';
-            html += '<div class="skill-desc">' + escapeHtml((tk.description || "").substring(0, 80)) + '</div>';
+            html += '<div class="skill-meta">';
             if (toolCount > 0) {
-                html += '<div style="margin-top:0.4rem;font-size:0.65rem;color:var(--accent);">● ' + toolCount + ' tools</div>';
+                html += '<span style="font-size:0.65rem;color:var(--accent);">● ' + toolCount + ' tools</span>';
             }
+            html += '<button class="skill-info-btn" title="Show description">i</button>';
+            html += '</div>';
+            html += '<div class="skill-desc-full">' + escapeHtml(descDisplay) + '</div>';
             html += '</div>';
         });
         if (!html) html = '<div style="color:var(--text-dim);font-size:0.85rem;padding:0.5rem;">No matching toolkits</div>';
@@ -3099,6 +3267,19 @@
 
     // Click delegation for Composio toolkit cards
     document.getElementById("skills-composio").addEventListener("click", function(e) {
+        // Handle info button clicks - toggle description visibility
+        var infoBtn = e.target.closest ? e.target.closest(".skill-info-btn") : null;
+        if (!infoBtn && e.target.classList && e.target.classList.contains("skill-info-btn")) infoBtn = e.target;
+        if (infoBtn) {
+            e.stopPropagation();
+            var card = infoBtn.closest ? infoBtn.closest(".skill-card") : infoBtn.parentElement.parentElement;
+            if (card) {
+                var descEl = card.querySelector(".skill-desc-full");
+                if (descEl) descEl.classList.toggle("visible");
+            }
+            return;
+        }
+
         var card = e.target.closest ? e.target.closest(".skill-card") : null;
         if (!card) {
             var el = e.target;
