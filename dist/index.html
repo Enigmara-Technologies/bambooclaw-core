@@ -464,7 +464,8 @@
             pointer-events: none;
         }
         .splash-logo {
-            width: 160px;
+            width: 400px;
+            max-width: 80vw;
             height: auto;
             margin-bottom: 1.5rem;
             animation: splashPulse 2s ease-in-out infinite;
@@ -507,10 +508,7 @@
 <body>
     <div id="app">
         <div class="splash-overlay" id="splash-screen">
-            <svg class="splash-logo" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="80" cy="80" r="75" fill="none" stroke="#10b981" stroke-width="2" opacity="0.3"/>
-                <text x="80" y="90" text-anchor="middle" fill="#10b981" font-family="Inter,sans-serif" font-size="48" font-weight="800">BC</text>
-            </svg>
+            <img class="splash-logo" src="https://bamboo-synergy-prosper.lovable.app/bamboo-claw-logo.webp" alt="BambooClaw Logo" onerror="this.style.display='none';" />
             <div class="splash-title">BambooClaw™</div>
             <div class="splash-bar-track"><div class="splash-bar-fill"></div></div>
         </div>
@@ -520,24 +518,6 @@
             var SPLASH_DURATION = 10000;
             var splashEl = document.getElementById("splash-screen");
             if (!splashEl) return;
-
-            // Try to load the real logo via Tauri convertFileSrc
-            try {
-                if (window.__TAURI__) {
-                    var convertFn = (window.__TAURI__.core && window.__TAURI__.core.convertFileSrc)
-                        || (window.__TAURI__.tauri && window.__TAURI__.tauri.convertFileSrc)
-                        || window.__TAURI__.convertFileSrc;
-                    if (convertFn) {
-                        var img = new Image();
-                        var svgEl = splashEl.querySelector("svg.splash-logo");
-                        img.className = "splash-logo";
-                        img.alt = "BambooClaw Logo";
-                        img.onload = function() { if (svgEl && svgEl.parentNode) svgEl.parentNode.replaceChild(img, svgEl); };
-                        img.src = convertFn("bamboo-claw-logo.webp");
-                    }
-                }
-            } catch(e) { /* SVG fallback stays */ }
-
             setTimeout(function() {
                 if (!splashEl) return;
                 splashEl.classList.add("fade-out");
@@ -3216,6 +3196,7 @@
         img.src = "https://assets.composio.dev/logos/slack.png";
     }
 
+    function toggleSkill(skillId) {
         enabledSkills[skillId] = !enabledSkills[skillId];
         currentConfig.enabledSkills = enabledSkills;
         saveAllConfig();
