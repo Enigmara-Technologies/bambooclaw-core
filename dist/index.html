@@ -226,6 +226,35 @@
             margin-top: 0.3rem;
         }
 
+        /* Connection Modal */
+        .conn-modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center;
+        }
+        .conn-modal-overlay.visible { display: flex; }
+        .conn-modal {
+            background: #0f1117; border: 1px solid var(--border); border-radius: 12px;
+            padding: 1.5rem; width: 90%; max-width: 420px; color: var(--text);
+        }
+        .conn-modal h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+        .conn-modal p { font-size: 0.8rem; color: var(--text-dim); margin: 0 0 1rem; line-height: 1.4; }
+        .conn-modal label { display: block; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.3rem; }
+        .conn-modal input[type="text"], .conn-modal input[type="password"] {
+            width: 100%; box-sizing: border-box; padding: 0.5rem 0.75rem; background: #050507;
+            border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.85rem;
+            margin-bottom: 0.75rem; font-family: 'JetBrains Mono', monospace;
+        }
+        .conn-modal input:focus { border-color: var(--accent); outline: none; }
+        .conn-modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.5rem; }
+        .conn-modal-actions button { padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer; border: none; }
+        .conn-modal-actions .btn-connect { background: var(--accent); color: #000; font-weight: 600; }
+        .conn-modal-actions .btn-connect:hover { opacity: 0.9; }
+        .conn-modal-actions .btn-cancel { background: transparent; border: 1px solid var(--border); color: var(--text-dim); }
+        .conn-modal-actions .btn-cancel:hover { border-color: var(--text); color: var(--text); }
+        .conn-modal .conn-or { text-align: center; font-size: 0.7rem; color: var(--text-dim); margin: 0.5rem 0; }
+        .conn-modal .btn-oauth { width: 100%; padding: 0.5rem; background: rgba(16,185,129,0.1); border: 1px solid var(--accent); color: var(--accent); border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600; }
+        .conn-modal .btn-oauth:hover { background: rgba(16,185,129,0.2); }
+
         /* Trigger Entry */
         .trigger-entry {
             padding: 0.3rem 0; border-bottom: 1px solid rgba(30,41,59,0.3);
@@ -3063,6 +3092,71 @@
     var composioCategories = ["All"];
     var composioActiveCategory = "All";
 
+    // =========== SCHEMA SANITIZER ===========
+    // OpenAI function-calling only allows: type, properties, required, enum, items, description, additionalProperties, anyOf/oneOf (limited).
+    // Composio schemas often include $ref, default, examples, allOf, title, etc. which cause HTTP 400.
+    function sanitizeToolSchema(rawParams) {
+        if (!rawParams || typeof rawParams !== "object") {
+            return { type: "object", properties: {}, required: [], additionalProperties: false };
+        }
+        // Deep-clone to avoid mutating cached data
+        var p;
+        try { p = JSON.parse(JSON.stringify(rawParams)); } catch(e) {
+            return { type: "object", properties: {}, required: [], additionalProperties: false };
+        }
+
+        function cleanProp(obj) {
+            if (!obj || typeof obj !== "object") return obj;
+            if (Array.isArray(obj)) return obj.map(cleanProp);
+            // Remove unsupported keys
+            var badKeys = ["$ref", "$defs", "$schema", "$id", "default", "examples", "example", "title", "format",
+                           "readOnly", "writeOnly", "deprecated", "externalDocs", "xml", "discriminator",
+                           "minLength", "maxLength", "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum",
+                           "multipleOf", "pattern", "minItems", "maxItems", "uniqueItems", "minProperties", "maxProperties",
+                           "const", "contentMediaType", "contentEncoding", "if", "then", "else", "not"];
+            badKeys.forEach(function(k) { delete obj[k]; });
+            // Flatten allOf with single item
+            if (obj.allOf && Array.isArray(obj.allOf) && obj.allOf.length === 1) {
+                var inner = cleanProp(obj.allOf[0]);
+                delete obj.allOf;
+                Object.keys(inner).forEach(function(k) { if (!obj[k]) obj[k] = inner[k]; });
+            } else if (obj.allOf) {
+                // Merge all allOf items into the object
+                obj.allOf.forEach(function(item) {
+                    var cleaned = cleanProp(item);
+                    if (cleaned.properties) {
+                        if (!obj.properties) obj.properties = {};
+                        Object.keys(cleaned.properties).forEach(function(pk) { obj.properties[pk] = cleaned.properties[pk]; });
+                    }
+                    if (cleaned.required && Array.isArray(cleaned.required)) {
+                        if (!obj.required) obj.required = [];
+                        cleaned.required.forEach(function(r) { if (obj.required.indexOf(r) < 0) obj.required.push(r); });
+                    }
+                });
+                delete obj.allOf;
+            }
+            // Recursively clean nested objects
+            if (obj.properties && typeof obj.properties === "object") {
+                Object.keys(obj.properties).forEach(function(k) {
+                    obj.properties[k] = cleanProp(obj.properties[k]);
+                });
+            }
+            if (obj.items) obj.items = cleanProp(obj.items);
+            if (obj.anyOf) obj.anyOf = obj.anyOf.map(cleanProp);
+            if (obj.oneOf) obj.oneOf = obj.oneOf.map(cleanProp);
+            return obj;
+        }
+
+        p = cleanProp(p);
+        if (!p.type) p.type = "object";
+        if (!p.properties) p.properties = {};
+        if (!p.required) p.required = [];
+        p.additionalProperties = false;
+        // Ensure required only references existing properties
+        p.required = p.required.filter(function(r) { return p.properties.hasOwnProperty(r); });
+        return p;
+    }
+
     // =========== ACTIVE TOOLS SUMMARY ===========
     function renderActiveToolsSummary() {
         var badge = document.getElementById("active-tools-count-badge");
@@ -3138,8 +3232,126 @@
         }
     }
 
+    // =========== CONNECTION MODAL ===========
+    function showConnectionModal(slug) {
+        // Remove existing modal if any
+        var existing = document.getElementById("conn-modal-overlay");
+        if (existing) existing.remove();
+
+        var tk = null;
+        for (var i = 0; i < composioToolkits.length; i++) {
+            if (composioToolkits[i].slug === slug) { tk = composioToolkits[i]; break; }
+        }
+        var name = tk ? (tk.meta_name || tk.name || slug) : slug;
+
+        var overlay = document.createElement("div");
+        overlay.id = "conn-modal-overlay";
+        overlay.className = "conn-modal-overlay visible";
+        overlay.innerHTML = '<div class="conn-modal">' +
+            '<h3>Connect ' + escapeHtml(name) + '</h3>' +
+            '<p>Link your ' + escapeHtml(name) + ' account so the agent can use its tools on your behalf.</p>' +
+            '<label for="conn-api-key">API Key / Access Token</label>' +
+            '<input type="password" id="conn-api-key" placeholder="Paste your API key or token here" />' +
+            '<div class="conn-modal-actions" style="margin-bottom:0.75rem;">' +
+                '<button class="btn-connect" id="conn-btn-save-key">Connect with API Key</button>' +
+            '</div>' +
+            '<div class="conn-or">— or —</div>' +
+            '<button class="btn-oauth" id="conn-btn-oauth">🔗 Connect via OAuth (opens browser)</button>' +
+            '<div class="conn-modal-actions" style="margin-top:1rem;">' +
+                '<button class="btn-cancel" id="conn-btn-cancel">Cancel</button>' +
+            '</div>' +
+        '</div>';
+
+        document.body.appendChild(overlay);
+
+        // Close on overlay click
+        overlay.addEventListener("click", function(e) { if (e.target === overlay) overlay.remove(); });
+        document.getElementById("conn-btn-cancel").addEventListener("click", function() { overlay.remove(); });
+
+        // Save API key connection
+        document.getElementById("conn-btn-save-key").addEventListener("click", async function() {
+            var apiKeyInput = document.getElementById("conn-api-key");
+            var key = apiKeyInput ? apiKeyInput.value.trim() : "";
+            if (!key) { showToast("Please enter an API key or token", "error"); return; }
+
+            var composioKey = currentConfig.composioApiKey;
+            if (!composioKey) { showToast("Set your Composio API key first", "error"); return; }
+
+            appendLog("dash-log", "[COMPOSIO] Connecting " + slug + " with API key...");
+            showToast("Connecting " + slug + "...", "info");
+
+            try {
+                // Find integration ID
+                var intEndpoint = COMPOSIO_API_URL + "/integrations?appName=" + encodeURIComponent(slug);
+                var intJson = "";
+                if (window.__TAURI__) {
+                    intJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, intEndpoint] });
+                } else {
+                    var intResp = await fetch(intEndpoint, { headers: { "x-api-key": composioKey } });
+                    intJson = await intResp.text();
+                }
+                var intData = JSON.parse(intJson);
+                var integrations = intData.items || intData || [];
+                if (!integrations.length) {
+                    showToast("No integration found for " + slug + ". Set it up at app.composio.dev first.", "error");
+                    return;
+                }
+                var integrationId = integrations[0].id;
+
+                // Create connected account with API key
+                var connEndpoint = COMPOSIO_API_URL + "/connectedAccounts";
+                var connBody = JSON.stringify({
+                    integrationId: integrationId,
+                    entityId: "default",
+                    data: { api_key: key, token: key, access_token: key }
+                });
+                var connJson = "";
+                if (window.__TAURI__) {
+                    connJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-X", "POST", "-H", "x-api-key: " + composioKey, "-H", "Content-Type: application/json", "-d", connBody, connEndpoint] });
+                } else {
+                    var connResp = await fetch(connEndpoint, { method: "POST", headers: { "x-api-key": composioKey, "Content-Type": "application/json" }, body: connBody });
+                    connJson = await connResp.text();
+                }
+                var connData = JSON.parse(connJson);
+                if (connData.connectionStatus === "ACTIVE" || connData.status === "ACTIVE" || connData.id) {
+                    showToast(slug + " connected successfully!", "success");
+                    appendLog("dash-log", "[COMPOSIO] ✓ " + slug + " connected with API key");
+                    for (var i = 0; i < composioToolkits.length; i++) {
+                        if (composioToolkits[i].slug === slug) { composioToolkits[i].auth_warning = false; break; }
+                    }
+                    renderComposioToolkits();
+                    renderEnabledIntegrations();
+                    overlay.remove();
+                } else if (connData.redirectUrl) {
+                    // Service requires OAuth instead
+                    showToast("This service requires OAuth. Opening authorization page...", "info");
+                    if (window.__TAURI__ && window.__TAURI__.shell && window.__TAURI__.shell.open) {
+                        window.__TAURI__.shell.open(connData.redirectUrl);
+                    } else {
+                        window.open(connData.redirectUrl, "_blank");
+                    }
+                    setTimeout(function() { checkComposioConnection(slug); }, 15000);
+                    overlay.remove();
+                } else {
+                    appendLog("dash-log", "[COMPOSIO] Connection response: " + connJson);
+                    showToast("Connection attempt returned unexpected response. Check logs.", "error");
+                }
+            } catch(e) {
+                appendLog("dash-log", "[COMPOSIO] API key connection error: " + (e.message || e));
+                showToast("Connection error: " + (e.message || e), "error");
+            }
+        });
+
+        // OAuth button
+        document.getElementById("conn-btn-oauth").addEventListener("click", function() {
+            overlay.remove();
+            performComposioOAuth(slug);
+        });
+    }
+    window.showConnectionModal = showConnectionModal;
+
     // =========== COMPOSIO OAUTH INITIATION ===========
-    async function initiateComposioOAuth(slug) {
+    async function performComposioOAuth(slug) {
         var composioKey = currentConfig.composioApiKey;
         if (!composioKey) {
             showToast("Set your Composio API key first", "error");
@@ -3164,7 +3376,6 @@
             var integrations = intData.items || intData || [];
             if (!integrations.length) {
                 showToast("No integration found for " + slug + ". Set it up at app.composio.dev first.", "error");
-                // Fallback: open Composio dashboard
                 var fallbackUrl = "https://app.composio.dev/apps/" + slug;
                 if (window.__TAURI__ && window.__TAURI__.shell && window.__TAURI__.shell.open) {
                     window.__TAURI__.shell.open(fallbackUrl);
@@ -3228,6 +3439,8 @@
             showToast("Connection error: " + (e.message || e), "error");
         }
     }
+    // initiateComposioOAuth now opens the connection modal
+    function initiateComposioOAuth(slug) { showConnectionModal(slug); }
     window.initiateComposioOAuth = initiateComposioOAuth;
 
 
@@ -3661,13 +3874,13 @@
                 var cachedTools = composioToolkitDetails[sk];
                 if (cachedTools) {
                     cachedTools.forEach(function(tool) {
-                        var params = tool.input_parameters || tool.parameters || { type: "object", properties: {}, required: [] };
-                        if (!params.additionalProperties) params.additionalProperties = false;
+                        var rawParams = tool.input_parameters || tool.parameters || { type: "object", properties: {}, required: [] };
+                        var params = sanitizeToolSchema(rawParams);
                         agentTools.push({
                             type: "function",
                             function: {
                                 name: "composio_" + (tool.slug || tool.name || "").replace(/[^a-zA-Z0-9_]/g, "_"),
-                                description: (tool.description || tool.name || sk + " tool") + " [via Composio " + sk + "]",
+                                description: (tool.description || tool.name || sk + " tool").substring(0, 1024) + " [via Composio " + sk + "]",
                                 parameters: params
                             }
                         });
