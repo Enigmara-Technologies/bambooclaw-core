@@ -741,10 +741,17 @@
 
                 <!-- Tab: Skills -->
                 <div class="glass-card tab-panel hidden" id="tab-skills">
-                    <h1 style="font-size: 1.3rem; margin-bottom: 0.5rem;">🧩 Skill Marketplace</h1>
-                    <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Extend your agent with Composio integrations. Enable skills to give your agent new abilities.</p>
+                    <h1 style="font-size: 1.3rem; margin-bottom: 0.5rem;">🧩 Skills</h1>
+                    <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Extend your agent with real integrations. Toggle skills to inject their tools into the agent.</p>
 
-                    <div style="margin-bottom: 1.5rem; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; background: #050507;">
+                    <!-- Built-in Tools (always available) -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <h2 style="font-size: 1rem; color: var(--text-dim); margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">⚡ Built-in Tools (always available)</h2>
+                        <div class="skill-grid" id="skills-builtin"></div>
+                    </div>
+
+                    <!-- Composio Section -->
+                    <div style="margin-bottom: 1rem; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; background: #050507;">
                         <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
                             <div class="form-group" style="flex:1; margin-bottom: 0;">
                                 <label>Composio API Key</label>
@@ -758,27 +765,19 @@
                         <div id="composio-status" style="font-size: 0.8rem; margin-top: 0.5rem; display: none;"></div>
                     </div>
 
-                    <div style="margin-bottom: 1rem;">
-                        <input type="text" id="skill-search" placeholder="Search skills..." style="width: 100%;" />
-                    </div>
+                    <div id="composio-integrations-area">
+                        <div id="composio-placeholder" style="padding: 2rem; text-align: center; color: var(--text-dim); border: 1px dashed var(--border); border-radius: 8px; margin-bottom: 1rem;">
+                            Enter your Composio API key and click Connect to load available integrations.
+                        </div>
 
-                    <!-- Skill Categories -->
-                    <div id="skill-categories">
-                        <div style="margin-bottom: 1.5rem;">
-                            <h2 style="font-size: 1rem; color: var(--accent); margin-bottom: 0.75rem;">📧 Productivity</h2>
-                            <div class="skill-grid" id="skills-productivity"></div>
-                        </div>
-                        <div style="margin-bottom: 1.5rem;">
-                            <h2 style="font-size: 1rem; color: var(--accent); margin-bottom: 0.75rem;">⚙️ Developer</h2>
-                            <div class="skill-grid" id="skills-developer"></div>
-                        </div>
-                        <div style="margin-bottom: 1.5rem;">
-                            <h2 style="font-size: 1rem; color: var(--accent); margin-bottom: 0.75rem;">🏠 Smart Home & IoT</h2>
-                            <div class="skill-grid" id="skills-smarthome"></div>
-                        </div>
-                        <div style="margin-bottom: 1.5rem;">
-                            <h2 style="font-size: 1rem; color: var(--accent); margin-bottom: 0.75rem;">🌐 Web & Research</h2>
-                            <div class="skill-grid" id="skills-web"></div>
+                        <!-- Dynamic content after connection -->
+                        <div id="composio-connected-area" class="hidden">
+                            <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center;">
+                                <input type="text" id="skill-search" placeholder="Search toolkits..." style="flex: 1;" />
+                            </div>
+                            <div id="composio-category-tabs" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;"></div>
+                            <div class="skill-grid" id="skills-composio"></div>
+                            <div id="composio-pagination" style="text-align: center; margin-top: 1rem;"></div>
                         </div>
                     </div>
 
@@ -2690,128 +2689,192 @@
     var COMPOSIO_API_URL = "https://backend.composio.dev/api/v3";
     var enabledSkills = {};
     var composioTools = [];
+    var composioToolkits = [];
+    var composioCategories = ["All"];
+    var composioActiveCategory = "All";
 
-    // Curated skill catalog
-    var skillCatalog = {
-        productivity: [
-            { id: "gmail", icon: "📧", name: "Gmail", desc: "Send, read, and manage emails", composioApp: "gmail" },
-            { id: "google_calendar", icon: "📅", name: "Google Calendar", desc: "Create, view, and manage calendar events", composioApp: "googlecalendar" },
-            { id: "notion", icon: "📝", name: "Notion", desc: "Create and edit pages, databases, blocks", composioApp: "notion" },
-            { id: "google_sheets", icon: "📊", name: "Google Sheets", desc: "Read and write spreadsheet data", composioApp: "googlesheets" },
-            { id: "google_drive", icon: "📁", name: "Google Drive", desc: "Search, upload, and manage files", composioApp: "googledrive" },
-            { id: "todoist", icon: "✅", name: "Todoist", desc: "Create and manage tasks and projects", composioApp: "todoist" },
-        ],
-        developer: [
-            { id: "github", icon: "🐙", name: "GitHub", desc: "Manage repos, issues, PRs, and actions", composioApp: "github" },
-            { id: "docker", icon: "🐳", name: "Docker", desc: "Manage containers, images, and volumes", composioApp: null },
-            { id: "ssh_remote", icon: "🔑", name: "SSH Remote", desc: "Execute commands on remote servers", composioApp: null },
-            { id: "postgresql", icon: "🐘", name: "PostgreSQL", desc: "Query and manage databases", composioApp: null },
-            { id: "jira", icon: "📋", name: "Jira", desc: "Manage issues, sprints, and projects", composioApp: "jira" },
-            { id: "slack_dev", icon: "💬", name: "Slack", desc: "Send messages, manage channels", composioApp: "slack" },
-        ],
-        smarthome: [
-            { id: "home_assistant", icon: "🏠", name: "Home Assistant", desc: "Control lights, switches, sensors, and scenes", composioApp: null },
-            { id: "mqtt_bridge", icon: "📡", name: "MQTT Bridge", desc: "Publish/subscribe to MQTT topics", composioApp: null },
-            { id: "serial_port", icon: "🔌", name: "Serial Port", desc: "Read/write to serial devices (Arduino, ESP32)", composioApp: null },
-            { id: "b500_telemetry", icon: "🎋", name: "B500 Telemetry", desc: "Monitor BambooCore B500 facility sensors", composioApp: null },
-        ],
-        web: [
-            { id: "web_browser", icon: "🌐", name: "Web Browser", desc: "Navigate, scrape, and interact with websites", composioApp: null },
-            { id: "web_search", icon: "🔍", name: "Web Search", desc: "Search Google, DuckDuckGo, or Bing", composioApp: null },
-            { id: "youtube", icon: "📺", name: "YouTube", desc: "Search videos, get transcripts", composioApp: "youtube" },
-            { id: "twitter", icon: "🐦", name: "X (Twitter)", desc: "Post, search, and read tweets", composioApp: "twitter" },
-            { id: "firecrawl", icon: "🔥", name: "Firecrawl", desc: "AI-powered web scraping and data extraction", composioApp: "firecrawl" },
-            { id: "perplexity", icon: "🧠", name: "Perplexity AI", desc: "AI-powered research and answers", composioApp: null },
-        ]
-    };
+    // Built-in tools that work via shell commands (no Composio needed)
+    var builtinSkills = [
+        { id: "web_browser", icon: "🌐", name: "Web Browser", desc: "Navigate and scrape websites via Playwright" },
+        { id: "web_search", icon: "🔍", name: "Web Search", desc: "Search Google, DuckDuckGo, or Bing" },
+        { id: "docker", icon: "🐳", name: "Docker", desc: "Manage containers, images, and volumes" },
+        { id: "ssh_remote", icon: "🔑", name: "SSH Remote", desc: "Execute commands on remote servers" },
+        { id: "mqtt_bridge", icon: "📡", name: "MQTT Bridge", desc: "Publish/subscribe to MQTT topics" },
+        { id: "serial_port", icon: "🔌", name: "Serial Port", desc: "Read/write to serial devices (Arduino, ESP32)" },
+        { id: "b500_telemetry", icon: "🎋", name: "B500 Telemetry", desc: "Monitor BambooCore B500 facility sensors" }
+    ];
 
-    function renderSkillGrid(category, containerId) {
-        var el = document.getElementById(containerId);
+    function renderBuiltinSkills() {
+        var el = document.getElementById("skills-builtin");
         if (!el) return;
-        var skills = skillCatalog[category] || [];
-        var search = (document.getElementById("skill-search").value || "").toLowerCase();
         var html = "";
-        skills.forEach(function(s) {
-            if (search && s.name.toLowerCase().indexOf(search) < 0 && s.desc.toLowerCase().indexOf(search) < 0) return;
+        builtinSkills.forEach(function(s) {
             var isEnabled = enabledSkills[s.id] || false;
-            html += '<div class="skill-card ' + (isEnabled ? 'enabled' : '') + '" data-skill-id="' + s.id + '">';
+            html += '<div class="skill-card ' + (isEnabled ? 'enabled' : '') + '" data-skill-id="' + s.id + '" data-skill-type="builtin">';
             html += '<button class="skill-toggle" title="' + (isEnabled ? 'Disable' : 'Enable') + '"></button>';
             html += '<div class="skill-icon">' + s.icon + '</div>';
             html += '<div class="skill-name">' + escapeHtml(s.name) + '</div>';
             html += '<div class="skill-desc">' + escapeHtml(s.desc) + '</div>';
-            if (s.composioApp) {
-                html += '<div style="margin-top:0.4rem;font-size:0.65rem;color:var(--accent);">● Composio</div>';
+            html += '<div style="margin-top:0.4rem;font-size:0.65rem;color:var(--text-dim);">● Built-in</div>';
+            html += '</div>';
+        });
+        el.innerHTML = html;
+    }
+
+    function renderComposioToolkits() {
+        var el = document.getElementById("skills-composio");
+        if (!el) return;
+        var search = (document.getElementById("skill-search") ? document.getElementById("skill-search").value : "").toLowerCase();
+        var html = "";
+        var filtered = composioToolkits.filter(function(tk) {
+            if (search && tk.name.toLowerCase().indexOf(search) < 0 && (tk.description || "").toLowerCase().indexOf(search) < 0 && tk.slug.toLowerCase().indexOf(search) < 0) return false;
+            if (composioActiveCategory !== "All") {
+                var cats = tk.categories || [];
+                if (cats.indexOf(composioActiveCategory) < 0) return false;
+            }
+            return true;
+        });
+        filtered.forEach(function(tk) {
+            var isEnabled = enabledSkills["composio_" + tk.slug] || false;
+            var toolCount = tk.tool_count || (tk.tools ? tk.tools.length : 0);
+            html += '<div class="skill-card ' + (isEnabled ? 'enabled' : '') + '" data-skill-id="composio_' + tk.slug + '" data-skill-type="composio" data-toolkit-slug="' + tk.slug + '">';
+            html += '<button class="skill-toggle" title="' + (isEnabled ? 'Disable' : 'Enable') + '"></button>';
+            if (tk.logo) {
+                html += '<div class="skill-icon"><img src="' + escapeHtml(tk.logo) + '" style="width:24px;height:24px;border-radius:4px;" onerror="this.style.display=\'none\'" /></div>';
             } else {
-                html += '<div style="margin-top:0.4rem;font-size:0.65rem;color:var(--text-dim);">● Built-in</div>';
+                html += '<div class="skill-icon">🧩</div>';
+            }
+            html += '<div class="skill-name">' + escapeHtml(tk.name) + '</div>';
+            html += '<div class="skill-desc">' + escapeHtml((tk.description || "").substring(0, 80)) + '</div>';
+            if (toolCount > 0) {
+                html += '<div style="margin-top:0.4rem;font-size:0.65rem;color:var(--accent);">● ' + toolCount + ' tools</div>';
             }
             html += '</div>';
         });
-        if (!html) html = '<div style="color:var(--text-dim);font-size:0.85rem;padding:0.5rem;">No matching skills</div>';
+        if (!html) html = '<div style="color:var(--text-dim);font-size:0.85rem;padding:0.5rem;">No matching toolkits</div>';
+        el.innerHTML = html;
+    }
+
+    function renderComposioCategories() {
+        var el = document.getElementById("composio-category-tabs");
+        if (!el) return;
+        var html = "";
+        composioCategories.forEach(function(cat) {
+            var active = cat === composioActiveCategory;
+            html += '<button class="btn btn-sm ' + (active ? '' : 'btn-outline') + '" style="font-size:0.75rem;" data-composio-cat="' + escapeHtml(cat) + '">' + escapeHtml(cat) + '</button>';
+        });
         el.innerHTML = html;
     }
 
     function renderAllSkills() {
-        renderSkillGrid("productivity", "skills-productivity");
-        renderSkillGrid("developer", "skills-developer");
-        renderSkillGrid("smarthome", "skills-smarthome");
-        renderSkillGrid("web", "skills-web");
+        renderBuiltinSkills();
+        renderComposioToolkits();
+        renderComposioCategories();
     }
-
-    // Skill descriptions for toggle feedback
-    var skillToolDescriptions = {
-        gmail: "read, send, search, and manage emails",
-        google_calendar: "create, view, and manage calendar events",
-        notion: "create and edit pages, databases, and blocks",
-        google_sheets: "read and write spreadsheet data",
-        google_drive: "search, upload, and manage files",
-        todoist: "create and manage tasks and projects",
-        github: "manage repos, issues, PRs, and actions",
-        docker: "manage containers, images, and volumes via shell",
-        ssh_remote: "execute commands on remote servers via SSH",
-        postgresql: "query and manage databases via shell",
-        jira: "manage issues, sprints, and projects",
-        slack_dev: "send messages and manage channels",
-        home_assistant: "control lights, switches, sensors, and scenes",
-        mqtt_bridge: "publish/subscribe to MQTT topics",
-        serial_port: "read/write to serial devices",
-        b500_telemetry: "monitor BambooCore B500 facility sensors",
-        web_browser: "navigate and scrape websites",
-        web_search: "search Google, DuckDuckGo, or Bing",
-        youtube: "search videos and get transcripts",
-        twitter: "post, search, and read tweets",
-        firecrawl: "AI-powered web scraping and data extraction",
-        perplexity: "AI-powered research and answers"
-    };
 
     function toggleSkill(skillId) {
         enabledSkills[skillId] = !enabledSkills[skillId];
         currentConfig.enabledSkills = enabledSkills;
         saveAllConfig();
         renderAllSkills();
-        rebuildComposioTools();
 
-        var allSkills = [].concat(skillCatalog.productivity, skillCatalog.developer, skillCatalog.smarthome, skillCatalog.web);
-        var skill = allSkills.find(function(s) { return s.id === skillId; });
-        var name = skill ? skill.name : skillId;
-        var toolDesc = skillToolDescriptions[skillId] || skill.desc || "";
         if (enabledSkills[skillId]) {
-            appendLog("unified-log", "[SKILLS] Enabled: " + name + " — Agent can now " + toolDesc);
-            showToast(name + " enabled — Agent can now " + toolDesc, "success");
+            // If it's a Composio toolkit, fetch its real tool definitions
+            if (skillId.startsWith("composio_")) {
+                var slug = skillId.replace("composio_", "");
+                fetchToolkitTools(slug);
+            } else {
+                rebuildBuiltinTools();
+            }
+            var name = skillId.startsWith("composio_") ? skillId.replace("composio_", "") : skillId;
+            appendLog("unified-log", "[SKILLS] Enabled: " + name);
+            showToast(name + " enabled", "success");
         } else {
+            rebuildBuiltinTools();
+            // Remove composio tools for this toolkit
+            if (skillId.startsWith("composio_")) {
+                var prefix = skillId.replace("composio_", "");
+                agentTools = agentTools.filter(function(t) { return t.function.name.indexOf(prefix) < 0; });
+            }
+            var name = skillId.startsWith("composio_") ? skillId.replace("composio_", "") : skillId;
             appendLog("unified-log", "[SKILLS] Disabled: " + name);
             showToast(name + " disabled", "info");
         }
     }
 
-    // Build additional tool definitions for enabled skills
-    function rebuildComposioTools() {
-        composioTools = [];
-        var allSkills = [].concat(skillCatalog.productivity, skillCatalog.developer, skillCatalog.smarthome, skillCatalog.web);
-        allSkills.forEach(function(s) {
+    // Fetch real tool definitions for a Composio toolkit
+    async function fetchToolkitTools(slug) {
+        appendLog("dash-log", "[COMPOSIO] Fetching tools for toolkit: " + slug);
+        var composioKey = currentConfig.composioApiKey;
+        if (!composioKey) return;
+
+        try {
+            var toolsJson = "";
+            if (window.__TAURI__) {
+                toolsJson = await tauriInvoke("run_shell_command", {
+                    commandName: "curl",
+                    args: ["-s", "-H", "x-api-key: " + composioKey, COMPOSIO_API_URL + "/toolkits/" + slug]
+                });
+            } else {
+                var resp = await fetch(COMPOSIO_API_URL + "/toolkits/" + slug, {
+                    headers: { "x-api-key": composioKey }
+                });
+                toolsJson = await resp.text();
+            }
+
+            var data = JSON.parse(toolsJson);
+            var tools = data.tools || [];
+            appendLog("dash-log", "[COMPOSIO] Toolkit " + slug + " has " + tools.length + " tools");
+
+            // Remove old tools for this toolkit
+            agentTools = agentTools.filter(function(t) {
+                return !t.function.name.startsWith("composio_" + slug + "_");
+            });
+
+            // Build OpenAI-format tool definitions from real schemas
+            tools.forEach(function(tool) {
+                var params = tool.parameters || { type: "object", properties: {}, required: [] };
+                // Ensure additionalProperties is set
+                if (!params.additionalProperties) params.additionalProperties = false;
+                agentTools.push({
+                    type: "function",
+                    function: {
+                        name: "composio_" + slug + "_" + (tool.slug || tool.name || "").replace(/[^a-zA-Z0-9_]/g, "_"),
+                        description: (tool.description || tool.name || slug + " tool") + " [via Composio " + slug + "]",
+                        parameters: params
+                    }
+                });
+            });
+
+            appendLog("dash-log", "[SKILLS] Injected " + tools.length + " real tool definitions for " + slug + ". Total agent tools: " + agentTools.length);
+            showToast(slug + ": " + tools.length + " tools added to agent", "success");
+        } catch(e) {
+            appendLog("dash-log", "[COMPOSIO] Failed to fetch tools for " + slug + ": " + (e.message || e));
+            // Fallback: add a generic natural-language tool
+            agentTools.push({
+                type: "function",
+                function: {
+                    name: "composio_" + slug,
+                    description: "Use " + slug + " via Composio. Describe the action you want to perform.",
+                    parameters: { type: "object", properties: { action: { type: "string", description: "What to do (natural language)" } }, required: ["action"], additionalProperties: false }
+                }
+            });
+            showToast(slug + " added (generic mode — could not fetch tool schemas)", "info");
+        }
+    }
+
+    // Build tool definitions for built-in (non-Composio) skills
+    function rebuildBuiltinTools() {
+        // Remove old built-in skill tools
+        agentTools = agentTools.filter(function(t) {
+            return !["web_browse","web_search","docker_command","ssh_execute","mqtt_publish"].includes(t.function.name);
+        });
+
+        builtinSkills.forEach(function(s) {
             if (!enabledSkills[s.id]) return;
 
             if (s.id === "web_browser") {
-                composioTools.push({
+                agentTools.push({
                     type: "function",
                     function: {
                         name: "web_browse",
@@ -2820,7 +2883,7 @@
                     }
                 });
             } else if (s.id === "web_search") {
-                composioTools.push({
+                agentTools.push({
                     type: "function",
                     function: {
                         name: "web_search",
@@ -2829,7 +2892,7 @@
                     }
                 });
             } else if (s.id === "docker") {
-                composioTools.push({
+                agentTools.push({
                     type: "function",
                     function: {
                         name: "docker_command",
@@ -2838,7 +2901,7 @@
                     }
                 });
             } else if (s.id === "ssh_remote") {
-                composioTools.push({
+                agentTools.push({
                     type: "function",
                     function: {
                         name: "ssh_execute",
@@ -2847,7 +2910,7 @@
                     }
                 });
             } else if (s.id === "mqtt_bridge") {
-                composioTools.push({
+                agentTools.push({
                     type: "function",
                     function: {
                         name: "mqtt_publish",
@@ -2855,23 +2918,15 @@
                         parameters: { type: "object", properties: { broker: { type: "string" }, topic: { type: "string" }, message: { type: "string" } }, required: ["broker", "topic", "message"], additionalProperties: false }
                     }
                 });
-            } else if (s.composioApp) {
-                // Generic Composio-backed skill — use Composio API for actions
-                composioTools.push({
-                    type: "function",
-                    function: {
-                        name: "composio_" + s.id,
-                        description: "Use " + s.name + " via Composio. Describe the action you want to perform in natural language.",
-                        parameters: { type: "object", properties: { action: { type: "string", description: "What to do with " + s.name + " (e.g., 'send email to x', 'list repos', 'create issue', etc.)" } }, required: ["action"], additionalProperties: false }
-                    }
-                });
             }
         });
 
-        // Inject into agentTools — remove old composio tools, add new ones
-        agentTools = agentTools.filter(function(t) { return !t.function.name.startsWith("composio_") && !["web_browse","web_search","docker_command","ssh_execute","mqtt_publish"].includes(t.function.name); });
-        agentTools = agentTools.concat(composioTools);
-        appendLog("dash-log", "[SKILLS] Active tools: " + agentTools.length + " (built-in + " + composioTools.length + " skills)");
+        appendLog("dash-log", "[SKILLS] Rebuilt built-in tools. Total agent tools: " + agentTools.length);
+    }
+
+    // Kept for backward compatibility — now just calls rebuildBuiltinTools
+    function rebuildComposioTools() {
+        rebuildBuiltinTools();
     }
 
     // Execute skill-specific tools
@@ -2879,7 +2934,6 @@
         appendLog("unified-log", "[AGENT] [SKILL] " + toolName + "(" + JSON.stringify(args).substring(0, 100) + ")");
         try {
             if (toolName === "web_browse") {
-                // Use built-in http_request to fetch page
                 return await executeTool("http_request", { url: args.url, method: "GET" });
             } else if (toolName === "web_search") {
                 var engine = args.engine || "google";
@@ -2894,22 +2948,38 @@
             } else if (toolName === "mqtt_publish") {
                 return await executeTool("run_shell", { command: "mosquitto_pub", args: ["-h", args.broker, "-t", args.topic, "-m", args.message] });
             } else if (toolName.startsWith("composio_")) {
-                // Call Composio API
+                // Real Composio tool execution via v3 API
                 var composioKey = currentConfig.composioApiKey;
                 if (!composioKey) return "Composio API key not configured. Go to Skills tab and enter your key.";
-                var appName = toolName.replace("composio_", "");
-                appendLog("unified-log", "[AGENT] [COMPOSIO] Executing action for " + appName + ": " + args.action);
-                var resp = await fetch(COMPOSIO_API_URL + "/actions/execute", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "x-api-key": composioKey },
-                    body: JSON.stringify({ app: appName, action_description: args.action, text: args.action })
-                });
-                if (!resp.ok) {
-                    var err = await resp.text();
-                    return "Composio error (HTTP " + resp.status + "): " + err.substring(0, 500);
+
+                // Extract the tool slug from the function name
+                var toolSlug = toolName.replace("composio_", "");
+                appendLog("unified-log", "[AGENT] [COMPOSIO] Executing tool: " + toolSlug);
+
+                var execBody = JSON.stringify(args);
+                var result = "";
+
+                if (window.__TAURI__) {
+                    result = await tauriInvoke("run_shell_command", {
+                        commandName: "curl",
+                        args: ["-s", "-X", "POST",
+                            "-H", "Content-Type: application/json",
+                            "-H", "x-api-key: " + composioKey,
+                            "-d", execBody,
+                            COMPOSIO_API_URL + "/tools/execute/" + toolSlug]
+                    });
+                } else {
+                    var resp = await fetch(COMPOSIO_API_URL + "/tools/execute/" + toolSlug, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "x-api-key": composioKey },
+                        body: execBody
+                    });
+                    result = await resp.text();
+                    if (!resp.ok) return "Composio error (HTTP " + resp.status + "): " + result.substring(0, 500);
                 }
-                var data = await resp.json();
-                return JSON.stringify(data, null, 2).substring(0, 5000);
+
+                appendLog("unified-log", "[AGENT] [COMPOSIO] Result: " + (result || "").substring(0, 200));
+                return result.substring(0, 5000) || "(no output)";
             }
             return "Unknown skill tool: " + toolName;
         } catch(e) {
@@ -2923,79 +2993,96 @@
         currentConfig.composioApiKey = key;
         saveAllConfig();
 
-        // Validate by fetching tools list
         var statusEl = document.getElementById("composio-status");
         statusEl.style.display = "block";
-        statusEl.innerHTML = '<span style="color:var(--text-dim);">⟳ Validating key...</span>';
-        appendLog("dash-log", "[COMPOSIO] Validating key at " + COMPOSIO_API_URL + "...");
+        statusEl.innerHTML = '<span style="color:var(--text-dim);">⟳ Validating key and fetching toolkits...</span>';
+        appendLog("dash-log", "[COMPOSIO] Validating key via " + COMPOSIO_API_URL + "/toolkits...");
 
-        // Try multiple endpoints in case one fails
-        var endpoints = [
-            COMPOSIO_API_URL + "/apps?limit=5",
-            "https://backend.composio.dev/api/v2/apps?limit=5",
-            "https://backend.composio.dev/api/v1/apps?limit=5"
-        ];
         var validated = false;
+        var toolkitsData = null;
 
-        // In Tauri, use shell curl to bypass CORS
+        // Use Tauri curl to bypass CORS
         if (window.__TAURI__) {
             try {
-                appendLog("dash-log", "[COMPOSIO] Tauri detected, using curl to validate...");
-                var curlResult = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-o", "/dev/null", "-w", "%{http_code}", "-H", "x-api-key: " + key, "https://backend.composio.dev/api/v3/apps?limit=1"] });
-                var httpCode = (curlResult || "").trim();
-                appendLog("dash-log", "[COMPOSIO] curl HTTP code: " + httpCode);
-                if (httpCode === "200") {
-                    statusEl.innerHTML = '<span style="color:var(--accent);">✓ Connected to Composio</span>';
-                    showToast("Composio connected!", "success");
-                    validated = true;
-                } else if (httpCode === "401" || httpCode === "403") {
-                    statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key — check your key at app.composio.dev/settings</span>';
-                    showToast("Invalid Composio API key", "error");
-                    validated = true;
-                }
-            } catch(e) {
-                appendLog("dash-log", "[COMPOSIO] curl fallback failed: " + (e.message || e));
-            }
-        }
-
-        // Browser fallback: try fetch (may be blocked by CORS)
-        if (!validated) {
-            for (var ei = 0; ei < endpoints.length; ei++) {
+                appendLog("dash-log", "[COMPOSIO] Tauri detected, using curl...");
+                var curlResult = await tauriInvoke("run_shell_command", {
+                    commandName: "curl",
+                    args: ["-s", "-H", "x-api-key: " + key, COMPOSIO_API_URL + "/toolkits?limit=500"]
+                });
+                appendLog("dash-log", "[COMPOSIO] curl response length: " + (curlResult || "").length);
                 try {
-                    appendLog("dash-log", "[COMPOSIO] Trying: " + endpoints[ei]);
-                    var resp = await fetch(endpoints[ei], {
-                        method: "GET",
-                        headers: { "x-api-key": key }
-                    });
-                    appendLog("dash-log", "[COMPOSIO] Response: HTTP " + resp.status);
-                    if (resp.ok) {
-                        var data = await resp.json();
-                        var count = data.totalCount || (data.items ? data.items.length : (Array.isArray(data) ? data.length : 0));
-                        statusEl.innerHTML = '<span style="color:var(--accent);">✓ Connected to Composio (' + count + ' apps available)</span>';
-                        showToast("Composio connected!", "success");
-                        appendLog("dash-log", "[COMPOSIO] Connected via " + endpoints[ei] + ", " + count + " apps available");
+                    toolkitsData = JSON.parse(curlResult);
+                    if (toolkitsData.items) {
                         validated = true;
-                        break;
-                    } else if (resp.status === 401 || resp.status === 403) {
+                    } else if (toolkitsData.error || toolkitsData.status === 401) {
                         statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key — check your key at app.composio.dev/settings</span>';
                         showToast("Invalid Composio API key", "error");
-                        validated = true;
-                        break;
+                        return;
                     }
-                } catch(e) {
-                    appendLog("dash-log", "[COMPOSIO] Endpoint " + endpoints[ei] + " error: " + (e.message || String(e)));
+                } catch(parseErr) {
+                    // Check if it's an HTTP error code
+                    if ((curlResult || "").indexOf("401") >= 0 || (curlResult || "").indexOf("Unauthorized") >= 0) {
+                        statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key</span>';
+                        showToast("Invalid Composio API key", "error");
+                        return;
+                    }
+                    appendLog("dash-log", "[COMPOSIO] curl parse error: " + parseErr.message);
                 }
+            } catch(e) {
+                appendLog("dash-log", "[COMPOSIO] curl failed: " + (e.message || e));
             }
         }
+
+        // Browser fallback
         if (!validated) {
-            statusEl.innerHTML = '<span style="color:var(--warning);">⚠ Cannot validate from browser (CORS). Key saved — it will work in the desktop app.</span>';
-            showToast("Key saved — validation requires the desktop app", "info");
-            appendLog("unified-log", "[COMPOSIO] CORS blocked validation in browser preview. Key is saved.");
+            try {
+                var resp = await fetch(COMPOSIO_API_URL + "/toolkits?limit=500", {
+                    headers: { "x-api-key": key }
+                });
+                appendLog("dash-log", "[COMPOSIO] fetch response: HTTP " + resp.status);
+                if (resp.ok) {
+                    toolkitsData = await resp.json();
+                    if (toolkitsData.items) validated = true;
+                } else if (resp.status === 401 || resp.status === 403) {
+                    statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key — check your key at app.composio.dev/settings</span>';
+                    showToast("Invalid Composio API key", "error");
+                    return;
+                }
+            } catch(e) {
+                appendLog("dash-log", "[COMPOSIO] fetch error (CORS?): " + (e.message || e));
+            }
         }
+
+        if (!validated || !toolkitsData) {
+            statusEl.innerHTML = '<span style="color:var(--warning);">⚠ Cannot validate from browser (CORS). Key saved — it will work in the desktop app.</span>';
+            showToast("Key saved — Composio integration requires the desktop app", "info");
+            appendLog("unified-log", "[COMPOSIO] CORS blocked in browser. Key saved for desktop use.");
+            return;
+        }
+
+        // Success — populate toolkit list
+        composioToolkits = toolkitsData.items || [];
+        var totalItems = toolkitsData.total_items || composioToolkits.length;
+        statusEl.innerHTML = '<span style="color:var(--accent);">✓ Connected to Composio (' + totalItems + ' toolkits available)</span>';
+        showToast("Composio connected! " + totalItems + " toolkits loaded.", "success");
+        appendLog("dash-log", "[COMPOSIO] Connected. " + composioToolkits.length + " toolkits loaded.");
+        appendLog("unified-log", "[COMPOSIO] Connected with " + totalItems + " toolkits available.");
+
+        // Extract categories
+        var catSet = {};
+        composioToolkits.forEach(function(tk) {
+            (tk.categories || []).forEach(function(c) { catSet[c] = true; });
+        });
+        composioCategories = ["All"].concat(Object.keys(catSet).sort());
+
+        // Show connected area, hide placeholder
+        document.getElementById("composio-placeholder").classList.add("hidden");
+        document.getElementById("composio-connected-area").classList.remove("hidden");
+        renderAllSkills();
     }
 
-    // Click delegation for skill cards
-    document.getElementById("skill-categories").addEventListener("click", function(e) {
+    // Click delegation for skill cards — built-in tools
+    document.getElementById("skills-builtin").addEventListener("click", function(e) {
         var card = e.target.closest ? e.target.closest(".skill-card") : null;
         if (!card) {
             var el = e.target;
@@ -3010,11 +3097,46 @@
         }
     });
 
-    document.getElementById("skill-search").addEventListener("input", function() { renderAllSkills(); });
+    // Click delegation for Composio toolkit cards
+    document.getElementById("skills-composio").addEventListener("click", function(e) {
+        var card = e.target.closest ? e.target.closest(".skill-card") : null;
+        if (!card) {
+            var el = e.target;
+            while (el && el !== this) {
+                if (el.classList && el.classList.contains("skill-card")) { card = el; break; }
+                el = el.parentElement;
+            }
+        }
+        if (card) {
+            var skillId = card.getAttribute("data-skill-id");
+            if (skillId) toggleSkill(skillId);
+        }
+    });
+
+    // Click delegation for category tabs
+    document.getElementById("composio-category-tabs").addEventListener("click", function(e) {
+        var btn = e.target.closest ? e.target.closest("[data-composio-cat]") : null;
+        if (!btn) {
+            var el = e.target;
+            while (el && el !== this) {
+                if (el.getAttribute && el.getAttribute("data-composio-cat")) { btn = el; break; }
+                el = el.parentElement;
+            }
+        }
+        if (btn) {
+            composioActiveCategory = btn.getAttribute("data-composio-cat");
+            renderAllSkills();
+        }
+    });
+
+    // Search filter for skills
+    document.addEventListener("input", function(e) {
+        if (e.target && e.target.id === "skill-search") renderComposioToolkits();
+    });
     document.getElementById("btn-save-composio").addEventListener("click", function() { saveComposioKey(); });
 
-    // Render skills on load
-    renderAllSkills();
+    // Render built-in skills on load
+    renderBuiltinSkills();
 
     async function saveAllConfig() {
         var toml = buildConfigToml();
@@ -3277,14 +3399,16 @@
                 // Restore enabled skills from saved config
                 if (currentConfig.enabledSkills) {
                     enabledSkills = currentConfig.enabledSkills;
-                    renderAllSkills();
-                    rebuildComposioTools();
+                    renderBuiltinSkills();
+                    rebuildBuiltinTools();
                     appendLog("dash-log", "[BOOT] Restored " + Object.keys(enabledSkills).filter(function(k) { return enabledSkills[k]; }).length + " enabled skills");
                 }
-                // Restore Composio API key
+                // Restore Composio API key and auto-reconnect
                 if (currentConfig.composioApiKey) {
                     var ckEl = document.getElementById("composio-api-key");
                     if (ckEl) ckEl.value = currentConfig.composioApiKey;
+                    // Auto-reconnect to fetch toolkits
+                    setTimeout(function() { saveComposioKey(); }, 1000);
                 }
                 // Auto-start daemon if LLM is configured and daemon not running
                 setTimeout(function() {
