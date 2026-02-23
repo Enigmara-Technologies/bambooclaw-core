@@ -2856,7 +2856,22 @@
         appendLog("dash-log", "[LLM-CALL] Calling " + provider + " / " + model + " (with tools)");
 
         for (var iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
-            var reqBody = { model: model, messages: messages, tools: agentTools, tool_choice: "auto" };
+            // Deduplicate tools, ensure descriptions, omit if empty
+            var dedupedTools = [];
+            var seenToolNames = {};
+            agentTools.forEach(function(t) {
+                var tn = t.function.name;
+                if (!seenToolNames[tn]) {
+                    seenToolNames[tn] = true;
+                    if (!t.function.description) t.function.description = tn;
+                    dedupedTools.push(t);
+                }
+            });
+            var reqBody = { model: model, messages: messages };
+            if (dedupedTools.length > 0) {
+                reqBody.tools = dedupedTools;
+                reqBody.tool_choice = "auto";
+            }
             var resp = await fetch(apiUrl, { method: "POST", headers: headers, body: JSON.stringify(reqBody) });
             if (!resp.ok) {
                 var errText = await resp.text();
@@ -3142,8 +3157,17 @@
                 });
             }
             if (obj.items) obj.items = cleanProp(obj.items);
-            if (obj.anyOf) obj.anyOf = obj.anyOf.map(cleanProp);
-            if (obj.oneOf) obj.oneOf = obj.oneOf.map(cleanProp);
+            // Flatten anyOf/oneOf to first option (many LLM APIs reject these)
+            if (obj.anyOf && Array.isArray(obj.anyOf) && obj.anyOf.length > 0) {
+                var first = cleanProp(obj.anyOf[0]);
+                delete obj.anyOf;
+                Object.keys(first).forEach(function(fk) { if (!obj[fk]) obj[fk] = first[fk]; });
+            }
+            if (obj.oneOf && Array.isArray(obj.oneOf) && obj.oneOf.length > 0) {
+                var first2 = cleanProp(obj.oneOf[0]);
+                delete obj.oneOf;
+                Object.keys(first2).forEach(function(fk) { if (!obj[fk]) obj[fk] = first2[fk]; });
+            }
             return obj;
         }
 
@@ -3565,7 +3589,7 @@
             html += '</div>';
             // Auth warning badge
             if (tk.auth_warning) {
-                html += '<div class="auth-warning-badge">⚠ Not connected — <span style="cursor:pointer;text-decoration:underline;" onclick="event.stopPropagation();initiateComposioOAuth(\'' + escapeHtml(tk.slug) + '\')">link account</span></div>';
+                html += '<div class="auth-warning-badge">⚠ Not connected — <span style="cursor:pointer;text-decoration:underline;" data-connect-slug="' + escapeHtml(tk.slug) + '">link account</span></div>';
             }
             html += '<div class="skill-desc-full" data-toolkit-slug="' + tk.slug + '">';
             html += '<div>' + escapeHtml(descDisplay) + '</div>';
@@ -3576,6 +3600,13 @@
         });
         if (!html) html = '<div style="color:var(--text-dim);font-size:0.85rem;padding:0.5rem;">No matching toolkits</div>';
         el.innerHTML = html;
+        // Attach event delegation for connection links
+        el.querySelectorAll("span[data-connect-slug]").forEach(function(span) {
+            span.addEventListener("click", function(e) {
+                e.stopPropagation();
+                showConnectionModal(span.dataset.connectSlug);
+            });
+        });
     }
 
     function renderComposioCategories() {
@@ -3638,13 +3669,20 @@
             html += '</div>';
             // Auth warning badge with OAuth link (same as marketplace cards)
             if (tk && tk.auth_warning) {
-                html += '<div class="auth-warning-badge">⚠ Not connected — <span style="cursor:pointer;text-decoration:underline;" onclick="event.stopPropagation();initiateComposioOAuth(\'' + escapeHtml(slug) + '\')">link account</span></div>';
+                html += '<div class="auth-warning-badge">⚠ Not connected — <span style="cursor:pointer;text-decoration:underline;" data-connect-slug="' + escapeHtml(slug) + '">link account</span></div>';
             }
             html += '</div>';
         });
         if (count > 0) {
             section.style.display = "";
             grid.innerHTML = html;
+            // Attach event delegation for connection links
+            grid.querySelectorAll("span[data-connect-slug]").forEach(function(span) {
+                span.addEventListener("click", function(e) {
+                    e.stopPropagation();
+                    showConnectionModal(span.dataset.connectSlug);
+                });
+            });
         } else {
             section.style.display = "none";
             grid.innerHTML = "";
@@ -3817,12 +3855,30 @@
             appendLog("unified-log", "[SKILLS] Enabled: " + name);
             showToast(name + " enabled", "success");
         } else {
+            // Full rebuild: remove ALL composio tools then re-add only enabled ones
+            agentTools = agentTools.filter(function(t) {
+                return !t.function.name.startsWith("composio_");
+            });
+            Object.keys(enabledSkills).forEach(function(sk) {
+                if (!enabledSkills[sk] || !sk.startsWith("composio_")) return;
+                var skSlug = sk.replace("composio_", "");
+                var cached = composioToolkitDetails[skSlug];
+                if (cached) {
+                    cached.forEach(function(tool) {
+                        var rawP = tool.input_parameters || tool.parameters || { type: "object", properties: {}, required: [] };
+                        var params = sanitizeToolSchema(rawP);
+                        agentTools.push({
+                            type: "function",
+                            function: {
+                                name: "composio_" + (tool.slug || tool.name || "").replace(/[^a-zA-Z0-9_]/g, "_"),
+                                description: (tool.description || tool.name || skSlug + " tool").substring(0, 1024),
+                                parameters: params
+                            }
+                        });
+                    });
+                }
+            });
             rebuildBuiltinTools();
-            // Remove composio tools for this toolkit
-            if (skillId.startsWith("composio_")) {
-                var prefix = skillId.replace("composio_", "");
-                agentTools = agentTools.filter(function(t) { return t.function.name.indexOf(prefix) < 0; });
-            }
             var name = skillId.startsWith("composio_") ? skillId.replace("composio_", "") : skillId;
             appendLog("unified-log", "[SKILLS] Disabled: " + name);
             showToast(name + " disabled", "info");
