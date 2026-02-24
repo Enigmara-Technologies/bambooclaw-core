@@ -113,15 +113,15 @@ fn start_daemon(state: tauri::State<DaemonState>) -> Result<String, String> {
     // Spawn a no-op placeholder child (sleep) so we have a PID to track.
     // The real agent logic lives in the webview JS agentic loop.
     #[cfg(target_os = "windows")]
-    let child = std::process::Command::new("cmd")
-        .args(["/C", "timeout /t 2147483 /nobreak >nul"])
-        .creation_flags({
-            #[allow(unused_imports)]
-            use std::os::windows::process::CommandExt;
-            0x08000000u32 // CREATE_NO_WINDOW
-        })
-        .spawn()
-        .map_err(|e| format!("Failed to start daemon thread: {}", e))?;
+    let child = {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        std::process::Command::new("cmd")
+            .args(["/C", "timeout /t 2147483 /nobreak >nul"])
+            .creation_flags(CREATE_NO_WINDOW)
+            .spawn()
+            .map_err(|e| format!("Failed to start daemon thread: {}", e))?
+    };
 
     #[cfg(not(target_os = "windows"))]
     let child = std::process::Command::new("sleep")
