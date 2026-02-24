@@ -100,36 +100,35 @@ fn download_binary(url: String, dest: String) -> Result<String, String> {
     run_shell_command("curl".to_string(), vec!["-sL".to_string(), "-o".to_string(), dest, url])
 }
 
-// 8. Start the BambooClaw background daemon (HEADLESS)
+// 8. Start the BambooClaw background daemon (in-process thread)
+// The agentic loop runs in the JS frontend; this command only toggles
+// a lightweight keep-alive thread so the backend knows the daemon is "on".
 #[tauri::command]
 fn start_daemon(state: tauri::State<DaemonState>) -> Result<String, String> {
-    let home = get_home_dir()?;
-    
-    #[cfg(target_os = "windows")]
-    let bin_name = "bambooclaw.exe";
-    #[cfg(not(target_os = "windows"))]
-    let bin_name = "bambooclaw";
-    
-    let bin_path = Path::new(&home).join(".bambooclaw").join(bin_name);
-    
     let mut child_guard = state.0.lock().unwrap();
     if child_guard.is_some() {
         return Ok("Daemon is already running".to_string());
     }
-    
-    let mut cmd = std::process::Command::new(bin_path);
 
-    // Prevent the background agent from spawning its own window
+    // Spawn a no-op placeholder child (sleep) so we have a PID to track.
+    // The real agent logic lives in the webview JS agentic loop.
     #[cfg(target_os = "windows")]
-    {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x08000000;
-        cmd.creation_flags(CREATE_NO_WINDOW);
-    }
-    
-    let child = cmd.spawn()
-        .map_err(|e| format!("Failed to start daemon: {}", e))?;
-        
+    let child = std::process::Command::new("cmd")
+        .args(["/C", "timeout /t 2147483 /nobreak >nul"])
+        .creation_flags({
+            #[allow(unused_imports)]
+            use std::os::windows::process::CommandExt;
+            0x08000000u32 // CREATE_NO_WINDOW
+        })
+        .spawn()
+        .map_err(|e| format!("Failed to start daemon thread: {}", e))?;
+
+    #[cfg(not(target_os = "windows"))]
+    let child = std::process::Command::new("sleep")
+        .arg("infinity")
+        .spawn()
+        .map_err(|e| format!("Failed to start daemon thread: {}", e))?;
+
     *child_guard = Some(child);
     Ok("Daemon started".to_string())
 }

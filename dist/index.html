@@ -1919,8 +1919,8 @@
         appendLog(log, "[INFO] Building from source (this may take several minutes)...");
         try {
             var cargoCmd = detectedOS === "windows"
-                ? { commandName: "cmd", args: ["/C", "%USERPROFILE%\\.cargo\\bin\\cargo install --git https://github.com/Enigmara-Technologies/bambooclaw-core --package BambooClawCore --force --locked"] }
-                : { commandName: "sh", args: ["-c", "$HOME/.cargo/bin/cargo install --git https://github.com/Enigmara-Technologies/bambooclaw-core --package BambooClawCore --force --locked"] };
+                ? { commandName: "cmd", args: ["/C", "%USERPROFILE%\\.cargo\\bin\\cargo install --git https://github.com/Enigmara-Technologies/bambooclaw-core BambooClawCore --force --locked"] }
+                : { commandName: "sh", args: ["-c", "$HOME/.cargo/bin/cargo install --git https://github.com/Enigmara-Technologies/bambooclaw-core BambooClawCore --force --locked"] };
             var result = await invokeLong("run_shell_command", cargoCmd);
             appendLog(log, result);
             appendLog(log, "[DONE] BambooClaw built and installed.");
