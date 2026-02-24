@@ -134,15 +134,10 @@ fn start_daemon(state: tauri::State<DaemonState>) -> Result<String, String> {
     Ok("Daemon started".to_string())
 }
 
-// 9. Stop the background daemon
+// 9. Stop the background daemon (only kills the managed child process)
 #[tauri::command]
 fn stop_daemon(state: tauri::State<DaemonState>) -> Result<String, String> {
     let mut child_guard = state.0.lock().unwrap();
-    
-    #[cfg(target_os = "windows")]
-    let _ = run_shell_command("taskkill".to_string(), vec!["/F".to_string(), "/IM".to_string(), "bambooclaw.exe".to_string()]);
-    #[cfg(not(target_os = "windows"))]
-    let _ = run_shell_command("pkill".to_string(), vec!["-f".to_string(), "bambooclaw".to_string()]);
 
     if let Some(mut child) = child_guard.take() {
         let _ = child.kill();
@@ -162,13 +157,10 @@ fn emergency_flush(state: tauri::State<DaemonState>) -> Result<String, String> {
         let _ = child.wait();
     }
 
-    // Kill all bambooclaw, python, and cmd processes via OS commands
+    // Kill rogue agent scripts only — NOT bambooclaw.exe (that is this app!)
     #[cfg(target_os = "windows")]
     {
-        let targets = ["bambooclaw.exe", "python.exe", "cmd.exe"];
-        for t in &targets {
-            let _ = run_shell_command("taskkill".to_string(), vec!["/F".to_string(), "/IM".to_string(), t.to_string()]);
-        }
+        let _ = run_shell_command("taskkill".to_string(), vec!["/F".to_string(), "/IM".to_string(), "python.exe".to_string()]);
         // Clean tmp directory
         let tmp = Path::new("C:\\tmp");
         if tmp.exists() {
@@ -178,7 +170,6 @@ fn emergency_flush(state: tauri::State<DaemonState>) -> Result<String, String> {
     }
     #[cfg(not(target_os = "windows"))]
     {
-        let _ = run_shell_command("pkill".to_string(), vec!["-f".to_string(), "bambooclaw".to_string()]);
         let _ = run_shell_command("pkill".to_string(), vec!["-f".to_string(), "python".to_string()]);
         // Clean /tmp/bambooclaw if it exists
         let tmp = Path::new("/tmp/bambooclaw");
