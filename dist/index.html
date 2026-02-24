@@ -4576,8 +4576,15 @@
         })
         .then(function(data) {
             appendLog("dash-log", "[OR] Raw models count: " + (data.data ? data.data.length : 0));
+            var seen = {};
             orModels = (data.data || []).filter(function(m) {
-                return m.name && m.pricing;
+                if (!m.name || !m.pricing || !m.id) return false;
+                // Skip duplicates: keep only the first entry per model id
+                if (seen[m.id]) return false;
+                // Skip entries where the name is just the id (lowercase slug duplicate)
+                if (m.name === m.id) return false;
+                seen[m.id] = true;
+                return true;
             }).map(function(m) {
                 return {
                     id: m.id,
