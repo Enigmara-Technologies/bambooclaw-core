@@ -133,6 +133,8 @@
         .btn-outline:hover { border-color: var(--accent); }
         .btn-sm { padding: 0.5rem 1rem; font-size: 0.85rem; }
         .btn-danger { background: var(--error); }
+        .btn-flush { background: transparent; border: 2px solid #ff4444; color: #ff4444; font-weight: 700; }
+        .btn-flush:hover { background: #ff4444; color: #fff; }
 
         /* Tabs */
         .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1rem; flex-wrap: wrap; }
@@ -923,7 +925,10 @@
                                 <span id="daemon-status-text">Stopped</span>
                             </span>
                         </div>
-                        <button class="btn" id="btn-daemon-toggle">Start Agent Daemon</button>
+                        <div style="display:flex;gap:0.75rem;align-items:center;">
+                            <button class="btn btn-flush" id="btn-emergency-flush">⚠ Emergency Flush</button>
+                            <button class="btn" id="btn-daemon-toggle">Start Agent Daemon</button>
+                        </div>
                     </div>
 
                     <h2 style="font-size: 1rem; margin-bottom: 0.5rem; color: var(--text-dim);">Agent Chat</h2>
@@ -2449,6 +2454,23 @@
             btn.textContent = "Start Agent Daemon";
             btn.classList.remove("btn-danger");
         }
+    }
+
+    async function emergencyFlush() {
+        showToast("Flushing system processes...", "info");
+        appendLog("unified-log", "[SYSTEM] Emergency flush initiated...");
+        stopTelegramPolling();
+        try { await invokeShort("emergency_flush"); } catch(e) {
+            appendLog("dash-log", "[FLUSH] emergency_flush backend: " + (e.message||e));
+            try { await invokeShort("stop_daemon"); } catch(e2) {}
+        }
+        daemonRunning = false;
+        updateDaemonUI();
+        chatHistory = [];
+        var chatEl = document.getElementById("agent-chat-messages");
+        if (chatEl) chatEl.innerHTML = '<div class="chat-msg assistant"><span class="role">Agent:</span> System flushed. All processes stopped and memory cleared.</div>';
+        appendLog("unified-log", "[SYSTEM] Emergency flush complete.");
+        showToast("System flushed successfully", "success");
     }
 
     async function sendAgentMessage(e) {
@@ -4540,6 +4562,7 @@
     window.saveSlack = saveSlack;
     window.testChannel = testChannel;
     window.toggleDaemon = toggleDaemon;
+    window.emergencyFlush = emergencyFlush;
     window.sendAgentMessage = sendAgentMessage;
     window.saveSettings = saveSettings;
     window.resetSettings = resetSettings;
@@ -4569,6 +4592,7 @@
     document.getElementById("btn-setup-sl").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-setup-sl clicked"); setupSlack(); });
     document.getElementById("btn-close-channel").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-close-channel clicked"); closeChannelSetup(); });
     document.getElementById("btn-daemon-toggle").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-daemon-toggle clicked"); toggleDaemon(); });
+    document.getElementById("btn-emergency-flush").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-emergency-flush clicked"); emergencyFlush(); });
     document.getElementById("btn-send-chat").addEventListener("click", function(e) { e.preventDefault(); e.stopPropagation(); appendLog("dash-log", "[BTN] btn-send-chat clicked"); sendAgentMessage(e); return false; });
     document.getElementById("agent-chat-input").addEventListener("keydown", function(e) { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); appendLog("dash-log", "[BTN] chat Enter key"); sendAgentMessage(e); return false; } });
     document.getElementById("btn-save-settings").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-save-settings clicked"); saveSettings(); });

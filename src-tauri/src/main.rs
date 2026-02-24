@@ -1,168 +1,210 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::fs;
-use std::io::Write;
-use std::path::PathBuf;
-use std::process::Command;
+use std::sync::Mutex;
+use std::process::Child;
+use std::path::Path;
 
-use futures_util::StreamExt;
-use sysinfo::System;
-use tauri::command;
+// State manager to keep track of the running background daemon
+struct DaemonState(Mutex<Option<Child>>);
 
-fn config_dir() -> Result<PathBuf, String> {
-    dirs::home_dir()
-        .map(|h| h.join(".bambooclaw"))
-        .ok_or_else(|| "Could not determine home directory".to_string())
-}
-
-#[command]
+// 1. Get the current OS (Windows, macOS, Linux)
+#[tauri::command]
 fn get_platform() -> String {
-    if cfg!(target_os = "windows") { "windows".into() }
-    else if cfg!(target_os = "macos") { "macos".into() }
-    else { "linux".into() }
+    std::env::consts::OS.to_string()
 }
 
-#[command]
+// 2. Get the user's home directory safely across operating systems
+#[tauri::command]
+fn get_home_dir() -> Result<String, String> {
+    #[cfg(target_os = "windows")]
+    {
+        std::env::var("USERPROFILE").map_err(|e| e.to_string())
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        std::env::var("HOME").map_err(|e| e.to_string())
+    }
+}
+
+// 3. Execute any shell command and return stdout or stderr (HEADLESS)
+#[tauri::command]
 fn run_shell_command(command_name: String, args: Vec<String>) -> Result<String, String> {
-    let output = Command::new(&command_name).args(&args).output()
-        .map_err(|e| format!("Failed to run {}: {}", command_name, e))?;
+    let mut cmd = std::process::Command::new(&command_name);
+    cmd.args(&args);
+
+    // This block specifically hides the CMD window on Windows
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+
+    let output = cmd.output()
+        .map_err(|e| format!("Failed to execute process '{}': {}", command_name, e))?;
+    
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);
-    Ok(format!("{}{}", stdout, stderr))
+    
+    if output.status.success() {
+        Ok(stdout.to_string())
+    } else {
+        Err(format!("Command failed: {}\n{}", output.status, stderr))
+    }
 }
 
-#[command]
-fn run_bambooclaw(args: Vec<String>) -> Result<String, String> {
-    run_shell_command("bambooclaw".to_string(), args)
-}
-
-#[command]
+// 4. Verify system prerequisites during the boot wizard
+#[tauri::command]
 fn check_prerequisite(name: String) -> Result<String, String> {
     match name.as_str() {
         "rustc" => run_shell_command("rustc".to_string(), vec!["--version".to_string()]),
-        "cargo" => run_shell_command("cargo".to_string(), vec!["--version".to_string()]),
-        "bambooclaw" => {
-            match which::which("bambooclaw") {
-                Ok(p) => Ok(format!("Found at: {}", p.display())),
-                Err(_) => Err("bambooclaw not found in PATH".to_string()),
+        "vs_build_tools" => {
+            #[cfg(target_os = "windows")]
+            {
+                let vswhere = "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe";
+                run_shell_command(vswhere.to_string(), vec!["-latest".to_string(), "-property".to_string(), "installationPath"])
             }
-        }
-        "vs_build_tools" => check_vs_build_tools(),
-        _ => Err(format!("Unknown prerequisite: {}", name)),
+            #[cfg(not(target_os = "windows"))]
+            {
+                Ok("Not required on this OS".to_string())
+            }
+        },
+        _ => Err(format!("Unknown prerequisite: {}", name))
     }
 }
 
-#[cfg(target_os = "windows")]
-fn check_vs_build_tools() -> Result<String, String> {
-    let output = Command::new("cmd").args(["/C", "where", "cl.exe"]).output()
-        .map_err(|e| format!("Failed to check VS Build Tools: {}", e))?;
-    if output.status.success() {
-        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
-    } else { Err("Visual Studio Build Tools not found".to_string()) }
-}
-
-#[cfg(not(target_os = "windows"))]
-fn check_vs_build_tools() -> Result<String, String> {
-    Ok("Not required on this platform".to_string())
-}
-
-#[command]
+// 5. Read the config.toml file
+#[tauri::command]
 fn read_config() -> Result<String, String> {
-    let path = config_dir()?.join("config.toml");
-    fs::read_to_string(&path).map_err(|e| format!("Failed to read config: {}", e))
+    let home = get_home_dir()?;
+    let path = Path::new(&home).join(".bambooclaw").join("config.toml");
+    std::fs::read_to_string(path).map_err(|e| e.to_string())
 }
 
-#[command]
-fn write_config(content: String) -> Result<(), String> {
-    let dir = config_dir()?;
-    fs::create_dir_all(&dir).map_err(|e| format!("Failed to create config dir: {}", e))?;
+// 6. Save the config.toml file
+#[tauri::command]
+fn write_config(content: String) -> Result<String, String> {
+    let home = get_home_dir()?;
+    let dir = Path::new(&home).join(".bambooclaw");
+    
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    
     let path = dir.join("config.toml");
-    let mut file = fs::File::create(&path).map_err(|e| format!("Failed to create config file: {}", e))?;
-    file.write_all(content.as_bytes()).map_err(|e| format!("Failed to write config: {}", e))
+    std::fs::write(path, content).map_err(|e| e.to_string())?;
+    Ok("Config written".to_string())
 }
 
-#[command]
-fn save_config(key: String, value: String) -> Result<(), String> {
-    let dir = config_dir()?;
-    fs::create_dir_all(&dir).map_err(|e| format!("Failed to create config dir: {}", e))?;
-    let path = dir.join("config.toml");
-    let mut existing = fs::read_to_string(&path).unwrap_or_default();
-    // Simple append/replace logic for key=value pairs
-    let line = format!("{}=\"{}\"", key, value);
-    let key_prefix = format!("{}=", key);
-    if existing.contains(&key_prefix) {
-        let lines: Vec<&str> = existing.lines().collect();
-        let updated: Vec<String> = lines.iter().map(|l| {
-            if l.starts_with(&key_prefix) { line.clone() } else { l.to_string() }
-        }).collect();
-        existing = updated.join("\n");
-    } else {
-        if !existing.is_empty() && !existing.ends_with('\n') {
-            existing.push('\n');
-        }
-        existing.push_str(&line);
+// 7. Download a binary
+#[tauri::command]
+fn download_binary(url: String, dest: String) -> Result<String, String> {
+    run_shell_command("curl".to_string(), vec!["-sL".to_string(), "-o".to_string(), dest, url])
+}
+
+// 8. Start the BambooClaw background daemon (HEADLESS)
+#[tauri::command]
+fn start_daemon(state: tauri::State<DaemonState>) -> Result<String, String> {
+    let home = get_home_dir()?;
+    
+    #[cfg(target_os = "windows")]
+    let bin_name = "bambooclaw.exe";
+    #[cfg(not(target_os = "windows"))]
+    let bin_name = "bambooclaw";
+    
+    let bin_path = Path::new(&home).join(".bambooclaw").join(bin_name);
+    
+    let mut child_guard = state.0.lock().unwrap();
+    if child_guard.is_some() {
+        return Ok("Daemon is already running".to_string());
     }
-    let mut file = fs::File::create(&path).map_err(|e| format!("Failed to create config file: {}", e))?;
-    file.write_all(existing.as_bytes()).map_err(|e| format!("Failed to write config: {}", e))
+    
+    let mut cmd = std::process::Command::new(bin_path);
+
+    // Prevent the background agent from spawning its own window
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+    
+    let child = cmd.spawn()
+        .map_err(|e| format!("Failed to start daemon: {}", e))?;
+        
+    *child_guard = Some(child);
+    Ok("Daemon started".to_string())
 }
 
-#[command]
-fn start_daemon() -> Result<String, String> {
-    // Start daemon as a background thread within the app — NOT by spawning a new process
-    std::thread::spawn(|| {
-        // The daemon loop runs here inside the existing app process
-        loop {
-            // Placeholder: poll channels, process messages, run agent logic
-            std::thread::sleep(std::time::Duration::from_secs(5));
+// 9. Stop the background daemon
+#[tauri::command]
+fn stop_daemon(state: tauri::State<DaemonState>) -> Result<String, String> {
+    let mut child_guard = state.0.lock().unwrap();
+    
+    #[cfg(target_os = "windows")]
+    let _ = run_shell_command("taskkill".to_string(), vec!["/F".to_string(), "/IM".to_string(), "bambooclaw.exe".to_string()]);
+    #[cfg(not(target_os = "windows"))]
+    let _ = run_shell_command("pkill".to_string(), vec!["-f".to_string(), "bambooclaw".to_string()]);
+
+    if let Some(mut child) = child_guard.take() {
+        let _ = child.kill();
+        let _ = child.wait();
+    }
+    
+    Ok("Daemon stopped".to_string())
+}
+
+// 10. Emergency Flush — kill all agent-related processes and clean temp files
+#[tauri::command]
+fn emergency_flush(state: tauri::State<DaemonState>) -> Result<String, String> {
+    // First, stop the managed daemon child process
+    let mut child_guard = state.0.lock().unwrap();
+    if let Some(mut child) = child_guard.take() {
+        let _ = child.kill();
+        let _ = child.wait();
+    }
+
+    // Kill all bambooclaw, python, and cmd processes via OS commands
+    #[cfg(target_os = "windows")]
+    {
+        let targets = ["bambooclaw.exe", "python.exe", "cmd.exe"];
+        for t in &targets {
+            let _ = run_shell_command("taskkill".to_string(), vec!["/F".to_string(), "/IM".to_string(), t.to_string()]);
         }
-    });
-    Ok("Daemon thread started".to_string())
-}
-
-#[command]
-fn stop_daemon() -> Result<String, String> {
-    let mut sys = System::new_all();
-    sys.refresh_all();
-    let mut found = false;
-    for (_pid, process) in sys.processes() {
-        if process.name().to_string().contains("bambooclaw") {
-            process.kill();
-            found = true;
+        // Clean tmp directory
+        let tmp = Path::new("C:\\tmp");
+        if tmp.exists() {
+            let _ = std::fs::remove_dir_all(tmp);
+            let _ = std::fs::create_dir_all(tmp);
         }
     }
-    if found { Ok("Daemon stopped".to_string()) } else { Err("No running bambooclaw process found".to_string()) }
-}
-
-#[command]
-async fn download_binary(url: String, dest: String) -> Result<String, String> {
-    let response = reqwest::get(&url).await
-        .map_err(|e| format!("Download failed: {}", e))?;
-    let _total_size = response.content_length().unwrap_or(0);
-    let mut stream = response.bytes_stream();
-    let mut file = std::fs::File::create(&dest)
-        .map_err(|e| format!("Failed to create file: {}", e))?;
-    let mut downloaded: u64 = 0;
-    while let Some(item) = stream.next().await {
-        let chunk = item.map_err(|e| format!("Stream error: {}", e))?;
-        file.write_all(&chunk).map_err(|e| format!("Write error: {}", e))?;
-        downloaded += chunk.len() as u64;
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = run_shell_command("pkill".to_string(), vec!["-f".to_string(), "bambooclaw".to_string()]);
+        let _ = run_shell_command("pkill".to_string(), vec!["-f".to_string(), "python".to_string()]);
+        // Clean /tmp/bambooclaw if it exists
+        let tmp = Path::new("/tmp/bambooclaw");
+        if tmp.exists() {
+            let _ = std::fs::remove_dir_all(tmp);
+            let _ = std::fs::create_dir_all(tmp);
+        }
     }
-    Ok(format!("Downloaded {} bytes to {}", downloaded, dest))
+
+    Ok("Emergency flush complete: processes killed, temp files cleaned".to_string())
 }
 
 fn main() {
     tauri::Builder::default()
+        .manage(DaemonState(Mutex::new(None)))
         .invoke_handler(tauri::generate_handler![
             get_platform,
+            get_home_dir,
             run_shell_command,
-            run_bambooclaw,
             check_prerequisite,
             read_config,
             write_config,
-            save_config,
+            download_binary,
             start_daemon,
             stop_daemon,
-            download_binary
+            emergency_flush
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
