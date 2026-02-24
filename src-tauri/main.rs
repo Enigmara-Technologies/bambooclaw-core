@@ -26,12 +26,21 @@ fn get_home_dir() -> Result<String, String> {
     }
 }
 
-// 3. Execute any shell command and return stdout or stderr
+// 3. Execute any shell command and return stdout or stderr (HEADLESS)
 #[tauri::command]
 fn run_shell_command(command_name: String, args: Vec<String>) -> Result<String, String> {
-    let output = std::process::Command::new(&command_name)
-        .args(&args)
-        .output()
+    let mut cmd = std::process::Command::new(&command_name);
+    cmd.args(&args);
+
+    // This block specifically hides the CMD window on Windows
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+
+    let output = cmd.output()
         .map_err(|e| format!("Failed to execute process '{}': {}", command_name, e))?;
     
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -52,7 +61,6 @@ fn check_prerequisite(name: String) -> Result<String, String> {
         "vs_build_tools" => {
             #[cfg(target_os = "windows")]
             {
-                // Visual Studio installer path for vswhere.exe
                 let vswhere = "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe";
                 run_shell_command(vswhere.to_string(), vec!["-latest".to_string(), "-property".to_string(), "installationPath"])
             }
@@ -79,7 +87,6 @@ fn write_config(content: String) -> Result<String, String> {
     let home = get_home_dir()?;
     let dir = Path::new(&home).join(".bambooclaw");
     
-    // Create the directory if it doesn't exist
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     
     let path = dir.join("config.toml");
@@ -87,13 +94,13 @@ fn write_config(content: String) -> Result<String, String> {
     Ok("Config written".to_string())
 }
 
-// 7. Download a binary (uses curl to avoid extra Rust dependencies)
+// 7. Download a binary
 #[tauri::command]
 fn download_binary(url: String, dest: String) -> Result<String, String> {
     run_shell_command("curl".to_string(), vec!["-sL".to_string(), "-o".to_string(), dest, url])
 }
 
-// 8. Start the BambooClaw background daemon
+// 8. Start the BambooClaw background daemon (HEADLESS)
 #[tauri::command]
 fn start_daemon(state: tauri::State<DaemonState>) -> Result<String, String> {
     let home = get_home_dir()?;
@@ -110,8 +117,17 @@ fn start_daemon(state: tauri::State<DaemonState>) -> Result<String, String> {
         return Ok("Daemon is already running".to_string());
     }
     
-    let child = std::process::Command::new(bin_path)
-        .spawn()
+    let mut cmd = std::process::Command::new(bin_path);
+
+    // Prevent the background agent from spawning its own window
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+    
+    let child = cmd.spawn()
         .map_err(|e| format!("Failed to start daemon: {}", e))?;
         
     *child_guard = Some(child);
@@ -123,13 +139,11 @@ fn start_daemon(state: tauri::State<DaemonState>) -> Result<String, String> {
 fn stop_daemon(state: tauri::State<DaemonState>) -> Result<String, String> {
     let mut child_guard = state.0.lock().unwrap();
     
-    // Force-kill it via OS level to be absolutely sure we don't leave zombie processes
     #[cfg(target_os = "windows")]
     let _ = run_shell_command("taskkill".to_string(), vec!["/F".to_string(), "/IM".to_string(), "bambooclaw.exe".to_string()]);
     #[cfg(not(target_os = "windows"))]
     let _ = run_shell_command("pkill".to_string(), vec!["-f".to_string(), "bambooclaw".to_string()]);
 
-    // Clean up the Rust child process state
     if let Some(mut child) = child_guard.take() {
         let _ = child.kill();
         let _ = child.wait();
@@ -140,9 +154,7 @@ fn stop_daemon(state: tauri::State<DaemonState>) -> Result<String, String> {
 
 fn main() {
     tauri::Builder::default()
-        // Pass the empty daemon state into Tauri so it can be managed
         .manage(DaemonState(Mutex::new(None)))
-        // Register all our new commands
         .invoke_handler(tauri::generate_handler![
             get_platform,
             get_home_dir,
