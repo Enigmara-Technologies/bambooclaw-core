@@ -591,7 +591,7 @@
 <body>
     <div id="app">
         <div class="splash-overlay" id="splash-screen">
-            <img class="splash-logo" src="https://bamboo-synergy-prosper.lovable.app/bamboo-claw-logo.webp" alt="BambooClaw Logo" onerror="this.onerror=null;this.style.display='none';var svg=document.createElement('div');svg.innerHTML='<svg viewBox=&quot;0 0 200 200&quot; width=&quot;200&quot; height=&quot;200&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;><rect width=&quot;200&quot; height=&quot;200&quot; rx=&quot;30&quot; fill=&quot;#10b981&quot;/><text x=&quot;100&quot; y=&quot;130&quot; text-anchor=&quot;middle&quot; font-size=&quot;90&quot; font-weight=&quot;800&quot; fill=&quot;white&quot; font-family=&quot;Inter,sans-serif&quot;>BC</text></svg>';svg.style.cssText='width:200px;max-width:60vw;';this.parentNode.insertBefore(svg,this);" />
+            <img class="splash-logo" src="logo.png" alt="BambooClaw Logo">
             <div class="splash-title">BambooClaw™</div>
             <div class="splash-bar-track"><div class="splash-bar-fill"></div></div>
         </div>
@@ -3715,46 +3715,6 @@
         }
     }
 
-    async function cacheSplashLogo() {
-        var dir = await ensureLogosDir();
-        if (!dir) return;
-        var sep = (detectedOS === "windows") ? "\\" : "/";
-        var localPath = dir + sep + "bambooclaw-logo.webp";
-        var remoteUrl = "https://bamboo-synergy-prosper.lovable.app/bamboo-claw-logo.webp";
-        try {
-            // Check if already cached — same pattern as cacheToolkitLogos
-            var checkResult = await invokeShort("run_shell_command", {
-                commandName: (detectedOS === "windows") ? "cmd" : "sh",
-                args: (detectedOS === "windows") ? ["/c", "if", "exist", localPath, "(echo", "EXISTS)", "else", "(echo", "MISSING)"] : ["-c", "test -f \"" + localPath + "\" && echo EXISTS || echo MISSING"]
-            });
-            var exists = (checkResult && checkResult.indexOf("EXISTS") > -1);
-            if (!exists) {
-                // Download with curl — exact same pattern as toolkit logos
-                await invokeShort("run_shell_command", {
-                    commandName: "curl",
-                    args: ["-sL", "-o", localPath, remoteUrl]
-                });
-                appendLog("dash-log", "[SPLASH] Logo downloaded to " + localPath);
-            } else {
-                appendLog("dash-log", "[SPLASH] Logo already cached at " + localPath);
-            }
-            // Swap splash img src to local asset URL
-            var convertFn = (window.__TAURI__.core && window.__TAURI__.core.convertFileSrc)
-                || (window.__TAURI__.tauri && window.__TAURI__.tauri.convertFileSrc)
-                || window.__TAURI__.convertFileSrc;
-            if (convertFn) {
-                var assetUrl = convertFn(localPath);
-                var splashImg = document.querySelector(".splash-logo");
-                if (splashImg) {
-                    splashImg.src = assetUrl;
-                    appendLog("dash-log", "[SPLASH] Logo src set to asset URL");
-                }
-            }
-        } catch(e) {
-            appendLog("dash-log", "[SPLASH] Logo cache error: " + (e.message || e));
-        }
-    }
-
     async function cacheToolkitLogos() {
         var dir = await ensureLogosDir();
         if (!dir) {
@@ -4620,11 +4580,10 @@
     // =========== STARTUP ===========
     function boot() {
         try {
-            // Splash screen timer is now self-contained in inline script above
-            // Cache splash logo locally (non-blocking) — same pattern as toolkit logos
-            cacheSplashLogo();
-
-            var installedFlag = localStorage.getItem("bambooclaw-installed");
+        // Splash screen timer is self-contained in inline script above.
+        // Using local logo.png bundled directly by Tauri.
+        
+        var installedFlag = localStorage.getItem("bambooclaw-installed");
             appendLog("boot-log", "[BOOT] boot(): localStorage bambooclaw-installed = " + JSON.stringify(installedFlag));
             // Fire version fetch (non-blocking)
             fetchVersion();
