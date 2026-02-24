@@ -62,7 +62,7 @@ fn check_prerequisite(name: String) -> Result<String, String> {
             #[cfg(target_os = "windows")]
             {
                 let vswhere = "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe";
-                run_shell_command(vswhere.to_string(), vec!["-latest".to_string(), "-property".to_string(), "installationPath"])
+                run_shell_command(vswhere.to_string(), vec!["-latest".to_string(), "-property".to_string(), "installationPath".to_string()])
             }
             #[cfg(not(target_os = "windows"))]
             {
