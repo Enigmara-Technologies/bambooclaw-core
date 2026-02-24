@@ -859,8 +859,7 @@
                         </div>
                         <div id="or-model-list" style="height:420px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;background:#050507;"></div>
                     </div>
-                    <div class="form-group">
-                        <label>System Prompt (optional)</label>
+                    <div class="form-group" style="display:none;">
                         <textarea id="llm-system-prompt" rows="3" placeholder="Custom instructions for the agent..."></textarea>
                     </div>
                     <div id="llm-save-reminder" class="save-reminder">⚠ You have unsaved changes. Click <strong>Apply Configuration</strong> to save.</div>
@@ -917,7 +916,7 @@
 
                 <!-- Tab: Agent Control -->
                 <div class="glass-card tab-panel hidden" id="tab-agent">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
                         <div>
                             <h1 style="font-size: 1.3rem; margin-bottom: 0.25rem;">Daemon Status</h1>
                             <span class="status-pill stopped" id="daemon-status-pill">
@@ -925,9 +924,9 @@
                                 <span id="daemon-status-text">Stopped</span>
                             </span>
                         </div>
-                        <div style="display:flex;gap:0.75rem;align-items:center;">
-                            <button class="btn btn-flush" id="btn-emergency-flush">⚠ Emergency Flush</button>
+                        <div style="display:flex;flex-direction:column;gap:10px;align-items:stretch;">
                             <button class="btn" id="btn-daemon-toggle">Start Agent Daemon</button>
+                            <button class="btn btn-flush" id="btn-emergency-flush">⚠ Emergency Flush</button>
                         </div>
                     </div>
 
@@ -1065,8 +1064,48 @@
                             </p>
                         </div>
                     </div>
+
+                    <!-- System Prompt (moved from LLM Settings) -->
+                    <div class="form-group" style="margin-top: 1.5rem;">
+                        <label>System Prompt</label>
+                        <textarea id="settings-system-prompt" rows="20" placeholder="Custom instructions for the agent. These are injected as highest-priority operator instructions..." style="min-height:400px;overflow-y:auto;resize:vertical;"></textarea>
+                        <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.4rem;">
+                            Custom instructions injected into every agent conversation as highest-priority operator directives.
+                        </p>
+                    </div>
+
+                    <!-- Persona Management -->
+                    <div style="margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1.5rem;">
+                        <h2 style="font-size: 1.1rem; margin-bottom: 0.5rem;">🎭 Personas</h2>
+                        <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Create reusable personas. The selected persona is combined with the System Prompt above and applied to every agent conversation.</p>
+
+                        <div style="margin-bottom: 1rem;">
+                            <label style="font-size: 0.85rem;">Active Persona</label>
+                            <select id="persona-selector" style="margin-bottom: 0.5rem;">
+                                <option value="">— None (use System Prompt only) —</option>
+                            </select>
+                        </div>
+
+                        <div id="persona-list" style="margin-bottom: 1rem;"></div>
+
+                        <details style="border: 1px solid var(--border); border-radius: 8px; padding: 0; background: #050507;">
+                            <summary style="padding: 0.75rem 1rem; cursor: pointer; font-weight: 600; font-size: 0.9rem; color: var(--accent); user-select: none; list-style: none;">+ Create New Persona</summary>
+                            <div style="padding: 1rem;">
+                                <div class="form-group">
+                                    <label>Persona Name</label>
+                                    <input type="text" id="new-persona-name" placeholder="e.g. Code Reviewer, Creative Writer..." />
+                                </div>
+                                <div class="form-group">
+                                    <label>Persona Prompt</label>
+                                    <textarea id="new-persona-prompt" rows="20" placeholder="Define how the agent should behave when this persona is active..." style="min-height:400px;overflow-y:auto;resize:vertical;"></textarea>
+                                </div>
+                                <button class="btn btn-sm" id="btn-create-persona">Create Persona</button>
+                            </div>
+                        </details>
+                    </div>
+
                     <div id="settings-save-reminder" class="save-reminder">⚠ You have unsaved changes. Click <strong>Save Settings</strong> to apply.</div>
-                    <div style="margin-top: 1rem;">
+                    <div style="margin-top: 1.5rem;">
                         <button class="btn" id="btn-save-settings">Save Settings</button>
                         <button class="btn btn-outline" style="margin-left: 0.5rem;" id="btn-reset-settings">Reset Defaults</button>
                     </div>
@@ -1369,10 +1408,6 @@
                             <div style="font-size: 0.9rem;">Developed by <a href="https://www.enigmara.com" target="_blank" style="color: var(--accent); text-decoration: none;">Enigmara Technologies Corp.</a></div>
                         </div>
                         <div style="margin-bottom: 1rem;">
-                            <span style="color: var(--text-dim); font-size: 0.85rem;">Source Code</span>
-                            <div style="font-size: 0.9rem;"><a href="https://github.com/Enigmara-Technologies/bambooclaw-core" target="_blank" style="color: var(--accent); text-decoration: none;">github.com/Enigmara-Technologies/bambooclaw-core</a></div>
-                        </div>
-                        <div style="margin-bottom: 1rem;">
                             <span style="color: var(--text-dim); font-size: 0.85rem;">Support</span>
                             <div style="font-size: 0.9rem;"><a href="mailto:info@bamboosynergytec.com" style="color: var(--accent); text-decoration: none;">info@bamboosynergytec.com</a></div>
                         </div>
@@ -1384,9 +1419,9 @@
 
                 <!-- Tab: Logs -->
                 <div class="glass-card tab-panel hidden" id="tab-logs">
-                    <h1 style="font-size: 1.3rem; margin-bottom: 0.5rem;">📋 Session Log</h1>
-                    <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 0.75rem;">Unified continuous log for this session. All system, agent, and skill events are recorded here with timestamps.</p>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h1 style="font-size: 1.3rem; margin-bottom: 0.75rem;">📋 Session Log</h1>
+                    <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1.25rem;">Unified continuous log for this session. All system, agent, and skill events are recorded here with timestamps.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
                         <span style="font-size: 0.75rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace;">SESSION LOG — <span id="session-id-label">...</span></span>
                         <div style="display:flex;gap:0.5rem;">
                             <button class="btn btn-sm btn-outline" id="btn-copy-log" onclick="window.copyLog('unified-log')">📋 Copy Log</button>
@@ -1394,11 +1429,10 @@
                         </div>
                     </div>
                     <div class="log-body" id="unified-log" style="height:400px;background:#050507;border:1px solid var(--border);border-radius:6px;font-size:0.72rem;line-height:1.6;"></div>
-                    <div style="margin-top:0.75rem;padding:0.6rem 0.75rem;background:#050507;border:1px solid var(--border);border-radius:6px;">
+                    <div style="margin-top:1.25rem;padding:0.6rem 0.75rem;background:#050507;border:1px solid var(--border);border-radius:6px;">
                         <label style="font-size:0.7rem;color:var(--text-dim);margin-bottom:0.25rem;">Log Storage Path</label>
                         <input type="text" id="log-path-display" readonly value="~/.bambooclaw/logs/" style="font-size:0.75rem;font-family:'JetBrains Mono',monospace;background:transparent;border:none;color:var(--accent);padding:0.25rem 0;" />
                     </div>
-                    <p style="font-size:0.7rem;color:var(--text-dim);margin-top:0.5rem;">💡 To share logs for debugging, copy the log text above or navigate to the log folder and send us the session file.</p>
                     <div id="dash-log" style="display:none;"></div>
                     <div id="daemon-log" style="display:none;"></div>
                 </div>
@@ -2201,7 +2235,11 @@
             if (currentConfig.llm.model) {
                 setTimeout(function() { document.getElementById("llm-model").value = currentConfig.llm.model; }, 50);
             }
-            if (currentConfig.llm.system_prompt) document.getElementById("llm-system-prompt").value = currentConfig.llm.system_prompt;
+            if (currentConfig.llm.system_prompt) {
+                document.getElementById("llm-system-prompt").value = currentConfig.llm.system_prompt;
+                var sp = document.getElementById("settings-system-prompt");
+                if (sp) sp.value = currentConfig.llm.system_prompt;
+            }
         }
         if (currentConfig.channels) {
             if (currentConfig.channels.telegram) document.getElementById("tg-status").textContent = "Token: " + currentConfig.channels.telegram.token.substring(0, 8) + "...";
@@ -2807,11 +2845,21 @@
         systemPrompt += "For screenshots, use the take_screenshot tool or run: python -c \"import pyautogui; pyautogui.screenshot('screenshot.png')\"\n";
         systemPrompt += "Be proactive and action-oriented. Report results clearly.\n";
 
-        // Inject user's custom system prompt from LLM settings
+        // Inject user's custom system prompt from Settings tab
         var userSystemPrompt = (currentConfig.llm && currentConfig.llm.system_prompt) ? currentConfig.llm.system_prompt.trim() : "";
-        if (userSystemPrompt) {
+        // Also inject active persona
+        var personaPrompt = "";
+        if (activePersonaIndex >= 0 && activePersonaIndex < personas.length) {
+            personaPrompt = personas[activePersonaIndex].prompt.trim();
+        }
+        if (userSystemPrompt || personaPrompt) {
             systemPrompt += "\n--- OPERATOR INSTRUCTIONS (HIGHEST PRIORITY — follow these precisely) ---\n";
-            systemPrompt += userSystemPrompt + "\n";
+            if (userSystemPrompt) systemPrompt += userSystemPrompt + "\n";
+            if (personaPrompt) {
+                systemPrompt += "\n--- ACTIVE PERSONA ---\n";
+                systemPrompt += personaPrompt + "\n";
+                systemPrompt += "--- END PERSONA ---\n";
+            }
             systemPrompt += "--- END OPERATOR INSTRUCTIONS ---\n";
         }
 
@@ -3067,6 +3115,83 @@
         return s;
     }
 
+    // =========== PERSONA MANAGEMENT ===========
+    var personas = [];
+    var activePersonaIndex = -1;
+
+    function loadPersonas() {
+        try {
+            var saved = localStorage.getItem("bambooclaw-personas");
+            if (saved) personas = JSON.parse(saved);
+        } catch(e) {}
+        var activeIdx = localStorage.getItem("bambooclaw-active-persona");
+        activePersonaIndex = activeIdx !== null ? parseInt(activeIdx) : -1;
+        renderPersonas();
+    }
+
+    function savePersonas() {
+        localStorage.setItem("bambooclaw-personas", JSON.stringify(personas));
+        localStorage.setItem("bambooclaw-active-persona", String(activePersonaIndex));
+    }
+
+    function renderPersonas() {
+        var sel = document.getElementById("persona-selector");
+        if (!sel) return;
+        sel.innerHTML = '<option value="">— None (use System Prompt only) —</option>';
+        personas.forEach(function(p, i) {
+            var opt = document.createElement("option");
+            opt.value = i;
+            opt.textContent = p.name;
+            if (i === activePersonaIndex) opt.selected = true;
+            sel.appendChild(opt);
+        });
+
+        var listEl = document.getElementById("persona-list");
+        if (!listEl) return;
+        if (personas.length === 0) {
+            listEl.innerHTML = '<p style="font-size:0.8rem;color:var(--text-dim);padding:0.5rem 0;">No personas created yet.</p>';
+            return;
+        }
+        var html = '';
+        personas.forEach(function(p, i) {
+            var isActive = i === activePersonaIndex;
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0.75rem;border:1px solid ' + (isActive ? 'var(--accent)' : 'var(--border)') + ';border-radius:6px;margin-bottom:0.5rem;background:' + (isActive ? 'rgba(16,185,129,0.05)' : 'transparent') + ';">';
+            html += '<div style="flex:1;"><span style="font-weight:600;font-size:0.85rem;">' + escapeHtml(p.name) + '</span>';
+            html += '<div style="font-size:0.7rem;color:var(--text-dim);margin-top:0.2rem;max-height:40px;overflow:hidden;">' + escapeHtml(p.prompt).substring(0, 120) + (p.prompt.length > 120 ? '...' : '') + '</div></div>';
+            html += '<div style="display:flex;gap:0.5rem;margin-left:0.75rem;">';
+            html += '<button class="btn btn-sm btn-outline" onclick="window.deletePersona(' + i + ')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">✕</button>';
+            html += '</div></div>';
+        });
+        listEl.innerHTML = html;
+    }
+
+    function createPersona() {
+        var nameEl = document.getElementById("new-persona-name");
+        var promptEl = document.getElementById("new-persona-prompt");
+        var name = nameEl ? nameEl.value.trim() : "";
+        var prompt = promptEl ? promptEl.value.trim() : "";
+        if (!name) { showToast("Please enter a persona name", "error"); return; }
+        if (!prompt) { showToast("Please enter a persona prompt", "error"); return; }
+        personas.push({ name: name, prompt: prompt });
+        savePersonas();
+        renderPersonas();
+        if (nameEl) nameEl.value = "";
+        if (promptEl) promptEl.value = "";
+        showToast("Persona '" + name + "' created", "success");
+    }
+
+    function deletePersona(idx) {
+        if (idx < 0 || idx >= personas.length) return;
+        var name = personas[idx].name;
+        personas.splice(idx, 1);
+        if (activePersonaIndex === idx) activePersonaIndex = -1;
+        else if (activePersonaIndex > idx) activePersonaIndex--;
+        savePersonas();
+        renderPersonas();
+        showToast("Persona '" + name + "' deleted", "info");
+    }
+    window.deletePersona = deletePersona;
+
     // =========== SETTINGS ===========
     async function saveSettings() {
         appendLog("dash-log", "[SETTINGS] saveSettings() called");
@@ -3081,15 +3206,30 @@
             loglevel: document.getElementById("set-loglevel").value,
             maxToolIterations: iterVal,
         };
+        // Sync system prompt from Settings tab to hidden LLM field & config
+        var settingsPrompt = document.getElementById("settings-system-prompt");
+        var llmPrompt = document.getElementById("llm-system-prompt");
+        if (settingsPrompt && llmPrompt) {
+            llmPrompt.value = settingsPrompt.value;
+        }
+        if (currentConfig.llm) {
+            currentConfig.llm.system_prompt = settingsPrompt ? settingsPrompt.value : "";
+        }
         saveAllConfig();
+        savePersonas();
         showToast("Settings saved", "success");
         var sr = document.getElementById("settings-save-reminder"); if (sr) sr.classList.remove("visible");
     }
 
     // Show settings save reminder on any change
-    ["set-autonomy","set-port","set-tunnel","set-identity","set-runtime","set-loglevel","set-tool-iterations"].forEach(function(id) {
+    ["set-autonomy","set-port","set-tunnel","set-identity","set-runtime","set-loglevel","set-tool-iterations","settings-system-prompt","persona-selector"].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.addEventListener("change", function() {
+            if (id === "persona-selector") {
+                activePersonaIndex = el.value === "" ? -1 : parseInt(el.value);
+                savePersonas();
+                renderPersonas();
+            }
             var sr = document.getElementById("settings-save-reminder"); if (sr) sr.classList.add("visible");
         });
         if (el) el.addEventListener("input", function() {
@@ -3097,8 +3237,14 @@
         });
     });
 
+    // Create persona button
+    setTimeout(function() {
+        var btn = document.getElementById("btn-create-persona");
+        if (btn) btn.addEventListener("click", function() { createPersona(); });
+    }, 0);
+
     // Show LLM save reminder on any LLM field change
-    ["llm-provider","llm-api-key","llm-model","llm-system-prompt"].forEach(function(id) {
+    ["llm-provider","llm-api-key","llm-model"].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.addEventListener("change", function() {
             var r = document.getElementById("llm-save-reminder"); if (r) r.classList.add("visible");
@@ -3119,6 +3265,7 @@
         document.getElementById("set-tool-iterations").value = "10";
         document.getElementById("tool-iter-value").textContent = "10";
         MAX_TOOL_ITERATIONS = 10;
+        var sp = document.getElementById("settings-system-prompt"); if (sp) sp.value = "";
         showToast("Settings reset to defaults", "info");
     }
 
@@ -4634,6 +4781,8 @@
             if (installedFlag === "true") {
                 appendLog("boot-log", "[BOOT] boot(): entering dashboard (already installed)");
                 window.enterDashboard();
+                // Load personas
+                loadPersonas();
                 // Run image diagnostics (non-blocking)
                 testImageConnectivity();
                 // Auto-save default settings if not set
