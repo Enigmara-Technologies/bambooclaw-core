@@ -2872,12 +2872,13 @@
                 reqBody.tools = dedupedTools;
                 reqBody.tool_choice = "auto";
             }
-            var resp = await fetch(apiUrl, { method: "POST", headers: headers, body: JSON.stringify(reqBody) });
-            if (!resp.ok) {
-                var errText = await resp.text();
-                appendLog("dash-log", "[LLM-CALL] ERROR HTTP " + resp.status + ": " + errText.substring(0, 200));
-                throw new Error("LLM API error (HTTP " + resp.status + ")");
-            }
+        var resp = await fetch(apiUrl, { method: "POST", headers: headers, body: JSON.stringify(reqBody) });
+        if (!resp.ok) {
+            chatHistory.pop(); // FIX: Remove the failed message so it doesn't brick the chat session
+            var errText = await resp.text();
+            appendLog("dash-log", "[LLM-CALL] ERROR HTTP " + resp.status + ": " + errText.substring(0, 200));
+            throw new Error("LLM API error (HTTP " + resp.status + ") - " + errText.substring(0, 100));
+}
             var data = await resp.json();
             var choice = data.choices && data.choices[0];
             if (!choice) throw new Error("No response from LLM");
@@ -3168,6 +3169,10 @@
                 delete obj.oneOf;
                 Object.keys(first2).forEach(function(fk) { if (!obj[fk]) obj[fk] = first2[fk]; });
             }
+            // FIX: OpenAI strictly forbids array types. Grab the first non-null type.
+            if (Array.isArray(obj.type)) {
+                obj.type = obj.type.find(function(t) { return t !== "null"; }) || "string";
+    }
             return obj;
         }
 
@@ -3827,10 +3832,17 @@
                     cached.forEach(function(tool) {
                         var rawP = tool.input_parameters || tool.parameters || { type: "object", properties: {}, required: [] };
                         var params = sanitizeToolSchema(rawP);
+                        
+                        var realSlug = tool.slug || tool.name || "";
+                        var safeName = ("composio_" + realSlug.replace(/[^a-zA-Z0-9_-]/g, "_")).substring(0, 64);
+                        
+                        window.composioToolMap = window.composioToolMap || {};
+                        window.composioToolMap[safeName] = realSlug;
+
                         agentTools.push({
                             type: "function",
                             function: {
-                                name: "composio_" + (tool.slug || tool.name || "").replace(/[^a-zA-Z0-9_]/g, "_"),
+                                name: safeName,
                                 description: (tool.description || tool.name || skSlug + " tool").substring(0, 1024),
                                 parameters: params
                             }
@@ -3892,14 +3904,21 @@
                     cachedTools.forEach(function(tool) {
                         var rawParams = tool.input_parameters || tool.parameters || { type: "object", properties: {}, required: [] };
                         var params = sanitizeToolSchema(rawParams);
-                        agentTools.push({
-                            type: "function",
-                            function: {
-                                name: "composio_" + (tool.slug || tool.name || "").replace(/[^a-zA-Z0-9_]/g, "_"),
-                                description: (tool.description || tool.name || sk + " tool").substring(0, 1024) + " [via Composio " + sk + "]",
-                                parameters: params
-                            }
-                        });
+                        var realSlug = tool.slug || tool.name || "";
+                        var safeName = ("composio_" + realSlug.replace(/[^a-zA-Z0-9_-]/g, "_")).substring(0, 64);
+
+            // Map the safe name back to the real slug for execution
+            window.composioToolMap = window.composioToolMap || {};
+            window.composioToolMap[safeName] = realSlug;
+
+            agentTools.push({
+                type: "function",
+                function: {
+                    name: safeName,
+                    description: (tool.description || tool.name || sk + " tool").substring(0, 1024) + " [via Composio " + sk + "]",
+                    parameters: params
+                }
+            });
                     });
                 }
             });
@@ -4119,9 +4138,10 @@
                 // Real Composio tool execution via v3 API
                 var composioKey = currentConfig.composioApiKey;
                 if (!composioKey) return "Composio API key not configured. Go to Skills tab and enter your key.";
-
-                // Extract the tool slug from the function name
-                var toolSlug = toolName.replace("composio_", "");
+                // Extract the real tool slug from the mapping
+                var toolSlug = (window.composioToolMap && window.composioToolMap[toolName]) 
+                                ? window.composioToolMap[toolName] 
+                                : toolName.replace("composio_", "");
                 appendLog("unified-log", "[AGENT] [COMPOSIO] Executing tool: " + toolSlug);
 
                 var execBody = JSON.stringify(args);
