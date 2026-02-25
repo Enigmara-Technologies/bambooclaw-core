@@ -622,7 +622,6 @@
                     <div class="step-dot" id="dot-1"></div>
                     <div class="step-dot" id="dot-2"></div>
                     <div class="step-dot" id="dot-3"></div>
-                    <div class="step-dot" id="dot-4"></div>
                 </div>
 
                 <!-- Step 1: System Check -->
@@ -766,32 +765,9 @@
                     </div>
                 </div>
 
-                <!-- Step 4: Deploy BambooClaw -->
-                <div class="glass-card wizard-step hidden" id="step-3">
-                    <h1>Deploy BambooClaw™</h1>
-                    <div class="form-group">
-                        <label>Installation Method</label>
-                        <select id="install-method">
-                            <option value="binary" selected>Pre-built Binary (Fastest)</option>
-                            <option value="source">Build from Source</option>
-                        </select>
-                    </div>
-                    <div class="log-container">
-                        <div class="log-header">
-                            <span>DEPLOYMENT LOG</span>
-                            <button class="copy-btn" onclick="copyLog('unified-log')">&#128203;</button>
-                        </div>
-                        <div class="log-body" id="deploy-log"></div>
-                    </div>
-                    <div style="margin-top: 1.5rem; display: flex; justify-content: space-between;">
-                        <button class="btn btn-outline" onclick="wizardGo(2)">← Back</button>
-                        <button class="btn" id="btn-step3-deploy">Begin Deployment</button>
-                        <button class="btn hidden" id="btn-step3-next">Finalize →</button>
-                    </div>
-                </div>
 
-                <!-- Step 5: Done -->
-                <div class="glass-card wizard-step hidden" id="step-4">
+                <!-- Step 4: Done -->
+                <div class="glass-card wizard-step hidden" id="step-3">
                     <div style="text-align: center; padding: 2rem 0;">
                         <div style="font-size: 3rem; margin-bottom: 1rem;">✓</div>
                         <h1>Installation Complete</h1>
@@ -1333,7 +1309,7 @@
                                 <h4>"Daemon won't start"</h4>
                                 <ul>
                                     <li>Check the Dashboard Debug Log at the bottom of the screen for error messages.</li>
-                                    <li>Make sure the installation completed successfully (all 4 wizard steps were green).</li>
+                                    <li>Make sure the installation completed successfully (all wizard steps were green).</li>
                                     <li>Try restarting the Companion App.</li>
                                     <li>Ensure port 7331 (or your custom port) is not in use by another application.</li>
                                 </ul>
@@ -1765,7 +1741,80 @@
     document.getElementById("btn-step1-next").addEventListener("click", function() { wizardGo(2); });
 
     // Step 3: Agent Capabilities Install
-    document.getElementById("btn-step2-skip").addEventListener("click", function() { wizardGo(3); });
+    // Helper: deploy pre-built binary
+    async function deployBinary(log) {
+        appendLog(log, "[INFO] Deploying pre-built binary...");
+        try {
+            appendLog(log, "[INFO] Fetching release metadata...");
+            var metaRes = await fetch(PROXY_URL);
+            if (!metaRes.ok) throw new Error("Proxy returned " + metaRes.status);
+            var meta = await metaRes.json();
+            appendLog(log, "[INFO] Latest release: " + (meta.tag_name || "unknown"));
+
+            var assets = meta.assets || [];
+            var assetName = "";
+            if (detectedOS === "windows") {
+                var asset = assets.find(function(a) { return a.name.endsWith(".exe"); }) || assets.find(function(a) { return a.name.endsWith(".msi"); });
+                assetName = asset ? asset.name : "";
+            } else if (detectedOS === "macos") {
+                var asset = assets.find(function(a) { return a.name.endsWith(".dmg"); }) || assets.find(function(a) { return a.name.includes("macos"); });
+                assetName = asset ? asset.name : "";
+            } else {
+                var asset = assets.find(function(a) { return a.name.endsWith(".AppImage"); }) || assets.find(function(a) { return a.name.includes("linux"); });
+                assetName = asset ? asset.name : "";
+            }
+
+            if (!assetName) {
+                appendLog(log, "[WARN] No matching asset found. Available: " + assets.map(function(a){return a.name;}).join(", "));
+                appendLog(log, "[ERROR] Could not find a pre-built binary for your platform.");
+                return;
+            }
+
+            appendLog(log, "[INFO] Downloading asset: " + assetName);
+            var homePath = "~";
+            try {
+                if (detectedOS === "windows") {
+                    homePath = (await invokeShort("run_shell_command", { commandName: "cmd", args: ["/C", "echo %USERPROFILE%"] })).trim();
+                } else {
+                    homePath = (await invokeShort("run_shell_command", { commandName: "sh", args: ["-c", "echo $HOME"] })).trim();
+                }
+            } catch(e) {}
+
+            var sep = detectedOS === "windows" ? "\\" : "/";
+            var destDir = homePath + sep + ".bambooclaw";
+            var destFile = destDir + sep + (detectedOS === "windows" ? "bambooclaw.exe" : "bambooclaw");
+
+            try {
+                if (detectedOS === "windows") {
+                    await invokeShort("run_shell_command", { commandName: "cmd", args: ["/C", "mkdir \"" + destDir + "\" 2>nul || echo exists"] });
+                } else {
+                    await invokeShort("run_shell_command", { commandName: "mkdir", args: ["-p", destDir] });
+                }
+            } catch(e) {}
+
+            appendLog(log, "[INFO] Saving to: " + destFile);
+            var dlUrl = PROXY_URL + "?asset=" + encodeURIComponent(assetName);
+            await invokeLong("download_binary", { url: dlUrl, dest: destFile });
+            appendLog(log, "[OK] Binary downloaded successfully.");
+
+            if (detectedOS !== "windows") {
+                try { await invokeShort("run_shell_command", { commandName: "chmod", args: ["+x", destFile] }); } catch(e) {}
+            }
+
+            document.getElementById("install-path-display").value = destFile;
+            appendLog(log, "[DONE] BambooClaw deployed.");
+        } catch(e) {
+            appendLog(log, "[ERROR] Binary download failed: " + (e.message || e));
+        }
+    }
+
+    document.getElementById("btn-step2-skip").addEventListener("click", async function() {
+        var log = "capability-log";
+        document.getElementById(log).textContent = "";
+        appendLog(log, "[INFO] Skipping agent capabilities.");
+        await deployBinary(log);
+        wizardGo(3);
+    });
     document.getElementById("btn-step2-install").addEventListener("click", async function() {
         var log = "capability-log";
         document.getElementById(log).textContent = "";
@@ -1776,196 +1825,98 @@
         var wantBrowser = document.getElementById("cap-browser").checked;
         var wantNode = document.getElementById("cap-node").checked;
 
-        if (!wantPython && !wantBrowser && !wantNode) {
-            appendLog(log, "[INFO] No capabilities selected. Skipping.");
-            wizardGo(3);
-            return;
-        }
-
         var pipCmd = detectedOS === "windows" ? "pip" : "pip3";
         var pythonCmd = detectedOS === "windows" ? "python" : "python3";
 
-        // --- Python Ecosystem ---
-        if (wantPython) {
-            var pyBadge = document.getElementById("chk-python");
-            var pyInstalled = pyBadge && pyBadge.classList.contains("status-found");
+        if (wantPython || wantBrowser || wantNode) {
+            // --- Python Ecosystem ---
+            if (wantPython) {
+                var pyBadge = document.getElementById("chk-python");
+                var pyInstalled = pyBadge && pyBadge.classList.contains("status-found");
 
-            if (pyInstalled) {
-                appendLog(log, "[SKIP] Python already installed.");
-            } else {
-                appendLog(log, "[INFO] Installing Python 3.12...");
-                try {
-                    if (detectedOS === "windows") {
-                        var r = await invokeLong("run_shell_command", { commandName: "winget", args: ["install", "Python.Python.3.12", "--silent", "--accept-package-agreements", "--accept-source-agreements"] });
-                        appendLog(log, r);
-                    } else if (detectedOS === "macos") {
-                        var r = await invokeLong("run_shell_command", { commandName: "brew", args: ["install", "python3"] });
-                        appendLog(log, r);
-                    } else {
-                        var r = await invokeLong("run_shell_command", { commandName: "sh", args: ["-c", "sudo apt install -y python3 python3-pip"] });
-                        appendLog(log, r);
+                if (pyInstalled) {
+                    appendLog(log, "[SKIP] Python already installed.");
+                } else {
+                    appendLog(log, "[INFO] Installing Python 3.12...");
+                    try {
+                        if (detectedOS === "windows") {
+                            var r = await invokeLong("run_shell_command", { commandName: "winget", args: ["install", "Python.Python.3.12", "--silent", "--accept-package-agreements", "--accept-source-agreements"] });
+                            appendLog(log, r);
+                        } else if (detectedOS === "macos") {
+                            var r = await invokeLong("run_shell_command", { commandName: "brew", args: ["install", "python3"] });
+                            appendLog(log, r);
+                        } else {
+                            var r = await invokeLong("run_shell_command", { commandName: "sh", args: ["-c", "sudo apt install -y python3 python3-pip"] });
+                            appendLog(log, r);
+                        }
+                        appendLog(log, "[OK] Python installed.");
+                    } catch(e) {
+                        appendLog(log, "[ERROR] Python installation failed: " + (e.message || e));
                     }
-                    appendLog(log, "[OK] Python installed.");
+                }
+
+                appendLog(log, "[INFO] Installing Python packages (pyautogui, pillow, requests, beautifulsoup4, psutil, pandas, numpy)...");
+                try {
+                    var r = await invokeLong("run_shell_command", { commandName: pipCmd, args: ["install", "pyautogui", "pillow", "requests", "beautifulsoup4", "psutil", "pandas", "numpy"] });
+                    appendLog(log, r);
+                    appendLog(log, "[OK] Python packages installed.");
                 } catch(e) {
-                    appendLog(log, "[ERROR] Python installation failed: " + (e.message || e));
+                    appendLog(log, "[ERROR] pip install failed: " + (e.message || e));
                 }
             }
 
-            // Install pip packages
-            appendLog(log, "[INFO] Installing Python packages (pyautogui, pillow, requests, beautifulsoup4, psutil, pandas, numpy)...");
-            try {
-                var r = await invokeLong("run_shell_command", { commandName: pipCmd, args: ["install", "pyautogui", "pillow", "requests", "beautifulsoup4", "psutil", "pandas", "numpy"] });
-                appendLog(log, r);
-                appendLog(log, "[OK] Python packages installed.");
-            } catch(e) {
-                appendLog(log, "[ERROR] pip install failed: " + (e.message || e));
-            }
-        }
-
-        // --- Browser Automation ---
-        if (wantBrowser) {
-            appendLog(log, "[INFO] Installing Playwright...");
-            try {
-                var r = await invokeLong("run_shell_command", { commandName: pipCmd, args: ["install", "playwright"] });
-                appendLog(log, r);
-                appendLog(log, "[INFO] Installing Chromium browser for Playwright...");
-                var r2 = await invokeLong("run_shell_command", { commandName: pythonCmd, args: ["-m", "playwright", "install", "chromium"] });
-                appendLog(log, r2);
-                appendLog(log, "[OK] Playwright + Chromium installed.");
-            } catch(e) {
-                appendLog(log, "[ERROR] Playwright installation failed: " + (e.message || e));
-            }
-        }
-
-        // --- Developer Tools (Node.js) ---
-        if (wantNode) {
-            var nodeBadge = document.getElementById("chk-node");
-            var nodeInstalled = nodeBadge && nodeBadge.classList.contains("status-found");
-
-            if (nodeInstalled) {
-                appendLog(log, "[SKIP] Node.js already installed.");
-            } else {
-                appendLog(log, "[INFO] Installing Node.js LTS...");
+            // --- Browser Automation ---
+            if (wantBrowser) {
+                appendLog(log, "[INFO] Installing Playwright...");
                 try {
-                    if (detectedOS === "windows") {
-                        var r = await invokeLong("run_shell_command", { commandName: "winget", args: ["install", "OpenJS.NodeJS.LTS", "--silent", "--accept-package-agreements", "--accept-source-agreements"] });
-                        appendLog(log, r);
-                    } else if (detectedOS === "macos") {
-                        var r = await invokeLong("run_shell_command", { commandName: "brew", args: ["install", "node"] });
-                        appendLog(log, r);
-                    } else {
-                        var r = await invokeLong("run_shell_command", { commandName: "sh", args: ["-c", "sudo apt install -y nodejs npm"] });
-                        appendLog(log, r);
-                    }
-                    appendLog(log, "[OK] Node.js installed.");
+                    var r = await invokeLong("run_shell_command", { commandName: pipCmd, args: ["install", "playwright"] });
+                    appendLog(log, r);
+                    appendLog(log, "[INFO] Installing Chromium browser for Playwright...");
+                    var r2 = await invokeLong("run_shell_command", { commandName: pythonCmd, args: ["-m", "playwright", "install", "chromium"] });
+                    appendLog(log, r2);
+                    appendLog(log, "[OK] Playwright + Chromium installed.");
                 } catch(e) {
-                    appendLog(log, "[ERROR] Node.js installation failed: " + (e.message || e));
+                    appendLog(log, "[ERROR] Playwright installation failed: " + (e.message || e));
                 }
             }
+
+            // --- Developer Tools (Node.js) ---
+            if (wantNode) {
+                var nodeBadge = document.getElementById("chk-node");
+                var nodeInstalled = nodeBadge && nodeBadge.classList.contains("status-found");
+
+                if (nodeInstalled) {
+                    appendLog(log, "[SKIP] Node.js already installed.");
+                } else {
+                    appendLog(log, "[INFO] Installing Node.js LTS...");
+                    try {
+                        if (detectedOS === "windows") {
+                            var r = await invokeLong("run_shell_command", { commandName: "winget", args: ["install", "OpenJS.NodeJS.LTS", "--silent", "--accept-package-agreements", "--accept-source-agreements"] });
+                            appendLog(log, r);
+                        } else if (detectedOS === "macos") {
+                            var r = await invokeLong("run_shell_command", { commandName: "brew", args: ["install", "node"] });
+                            appendLog(log, r);
+                        } else {
+                            var r = await invokeLong("run_shell_command", { commandName: "sh", args: ["-c", "sudo apt install -y nodejs npm"] });
+                            appendLog(log, r);
+                        }
+                        appendLog(log, "[OK] Node.js installed.");
+                    } catch(e) {
+                        appendLog(log, "[ERROR] Node.js installation failed: " + (e.message || e));
+                    }
+                }
+            }
+
+            appendLog(log, "[DONE] Agent capability setup complete.");
         }
 
-        appendLog(log, "[DONE] Agent capability setup complete.");
+        // Auto-deploy binary
+        await deployBinary(log);
+
         this.disabled = false;
         document.getElementById("btn-step2-skip").disabled = false;
         wizardGo(3);
     });
-
-    // Step 4: Deploy BambooClaw
-    document.getElementById("btn-step3-deploy").addEventListener("click", async function() {
-        var log = "deploy-log";
-        var method = document.getElementById("install-method").value;
-        document.getElementById(log).textContent = "";
-        this.disabled = true;
-
-        if (method === "binary") {
-            appendLog(log, "[INFO] Downloading pre-built binary via release proxy...");
-            try {
-                // Get release metadata
-                appendLog(log, "[INFO] Fetching release metadata...");
-                var metaRes = await fetch(PROXY_URL);
-                if (!metaRes.ok) throw new Error("Proxy returned " + metaRes.status);
-                var meta = await metaRes.json();
-                appendLog(log, "[INFO] Latest release: " + (meta.tag_name || "unknown"));
-
-                // Find asset
-                var assets = meta.assets || [];
-                var assetName = "";
-                if (detectedOS === "windows") {
-                    var asset = assets.find(function(a) { return a.name.endsWith(".exe"); }) || assets.find(function(a) { return a.name.endsWith(".msi"); });
-                    assetName = asset ? asset.name : "";
-                } else if (detectedOS === "macos") {
-                    var asset = assets.find(function(a) { return a.name.endsWith(".dmg"); }) || assets.find(function(a) { return a.name.includes("macos"); });
-                    assetName = asset ? asset.name : "";
-                } else {
-                    var asset = assets.find(function(a) { return a.name.endsWith(".AppImage"); }) || assets.find(function(a) { return a.name.includes("linux"); });
-                    assetName = asset ? asset.name : "";
-                }
-
-                if (!assetName) {
-                    appendLog(log, "[WARN] No matching asset found. Available: " + assets.map(function(a){return a.name;}).join(", "));
-                    appendLog(log, "[INFO] Falling back to build from source...");
-                } else {
-                    appendLog(log, "[INFO] Downloading asset: " + assetName);
-                    var homePath = "~";
-                    try {
-                        if (detectedOS === "windows") {
-                            homePath = (await invokeShort("run_shell_command", { commandName: "cmd", args: ["/C", "echo %USERPROFILE%"] })).trim();
-                        } else {
-                            homePath = (await invokeShort("run_shell_command", { commandName: "sh", args: ["-c", "echo $HOME"] })).trim();
-                        }
-                    } catch(e) {}
-
-                    var sep = detectedOS === "windows" ? "\\" : "/";
-                    var destDir = homePath + sep + ".bambooclaw";
-                    var destFile = destDir + sep + (detectedOS === "windows" ? "bambooclaw.exe" : "bambooclaw");
-
-                    try {
-                        if (detectedOS === "windows") {
-                            await invokeShort("run_shell_command", { commandName: "cmd", args: ["/C", "mkdir \"" + destDir + "\" 2>nul || echo exists"] });
-                        } else {
-                            await invokeShort("run_shell_command", { commandName: "mkdir", args: ["-p", destDir] });
-                        }
-                    } catch(e) {}
-
-                    appendLog(log, "[INFO] Saving to: " + destFile);
-                    var dlUrl = PROXY_URL + "?asset=" + encodeURIComponent(assetName);
-                    await invokeLong("download_binary", { url: dlUrl, dest: destFile });
-                    appendLog(log, "[OK] Binary downloaded successfully.");
-
-                    if (detectedOS !== "windows") {
-                        try { await invokeShort("run_shell_command", { commandName: "chmod", args: ["+x", destFile] }); } catch(e) {}
-                    }
-
-                    document.getElementById("install-path-display").value = destFile;
-                    appendLog(log, "[DONE] BambooClaw deployed.");
-                    document.getElementById("btn-step3-next").classList.remove("hidden");
-                    return;
-                }
-            } catch(e) {
-                appendLog(log, "[ERROR] Binary download failed: " + (e.message || e));
-                appendLog(log, "[INFO] You can try 'Build from Source' instead.");
-                this.disabled = false;
-                return;
-            }
-        }
-
-        // Build from source
-        appendLog(log, "[INFO] Building from source (this may take several minutes)...");
-        try {
-            var cargoCmd = detectedOS === "windows"
-                ? { commandName: "cmd", args: ["/C", "%USERPROFILE%\\.cargo\\bin\\cargo install --git https://github.com/Enigmara-Technologies/bambooclaw-core BambooClawCore --force --locked"] }
-                : { commandName: "sh", args: ["-c", "$HOME/.cargo/bin/cargo install --git https://github.com/Enigmara-Technologies/bambooclaw-core BambooClawCore --force --locked"] };
-            var result = await invokeLong("run_shell_command", cargoCmd);
-            appendLog(log, result);
-            appendLog(log, "[DONE] BambooClaw built and installed.");
-            document.getElementById("btn-step3-next").classList.remove("hidden");
-        } catch(e) {
-            appendLog(log, "[ERROR] Build failed: " + (e.message || e));
-            this.disabled = false;
-        }
-    });
-
-    document.getElementById("btn-step3-next").addEventListener("click", function() { wizardGo(4); });
 
     window.enterDashboard = function() {
         try {

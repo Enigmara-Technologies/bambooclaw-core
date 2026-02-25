@@ -29,8 +29,22 @@ fn get_home_dir() -> Result<String, String> {
 // 3. Execute any shell command and return stdout or stderr (HEADLESS)
 #[tauri::command]
 fn run_shell_command(command_name: String, args: Vec<String>) -> Result<String, String> {
-    let mut cmd = std::process::Command::new(&command_name);
-    cmd.args(&args);
+    run_shell_command_sync(&command_name, &args)
+}
+
+// 3b. Async version — runs on a background thread so the UI stays responsive
+#[tauri::command]
+async fn run_shell_command_async(command_name: String, args: Vec<String>) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        run_shell_command_sync(&command_name, &args)
+    })
+    .await
+    .map_err(|e| format!("Task join error: {}", e))?
+}
+
+fn run_shell_command_sync(command_name: &str, args: &[String]) -> Result<String, String> {
+    let mut cmd = std::process::Command::new(command_name);
+    cmd.args(args);
 
     // This block specifically hides the CMD window on Windows
     #[cfg(target_os = "windows")]
@@ -188,6 +202,7 @@ fn main() {
             get_platform,
             get_home_dir,
             run_shell_command,
+            run_shell_command_async,
             check_prerequisite,
             read_config,
             write_config,
