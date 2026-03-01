@@ -1411,6 +1411,18 @@
                     </div>
                     <div id="dash-log" style="display:none;"></div>
                     <div id="daemon-log" style="display:none;"></div>
+
+                    <!-- Last LLM Request Payload Inspector -->
+                    <div style="margin-top:1.5rem;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                            <h2 style="font-size:1.1rem;margin:0;">🔍 Last LLM Request Payload</h2>
+                            <button class="btn btn-sm btn-outline" onclick="window.copyLog('llm-payload-display')">📋 Copy Payload</button>
+                        </div>
+                        <p style="font-size:0.8rem;color:var(--text-dim);margin-bottom:0.75rem;">The complete request body sent to the model on the last call, including system prompt, persona, skills/tools, conversation history, and user message.</p>
+                        <div id="llm-payload-display" class="log-body" style="height:400px;background:#050507;border:1px solid var(--border);border-radius:6px;font-size:0.72rem;line-height:1.6;white-space:pre-wrap;word-break:break-all;color:var(--text-dim);padding:1rem;">
+                            <span style="color:var(--text-dim);font-style:italic;">No LLM call made yet. Send a message via chat, Telegram, or another channel to see the full payload here.</span>
+                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -2850,6 +2862,17 @@
 
         var messages = [{ role: "system", content: systemPrompt }].concat(chatHistory);
 
+        // ---- Capture full payload for the Logs tab inspector ----
+        function updatePayloadInspector(fullBody) {
+            var el = document.getElementById("llm-payload-display");
+            if (el) {
+                // Pretty-print but redact API key
+                var displayBody = JSON.parse(JSON.stringify(fullBody));
+                el.textContent = JSON.stringify(displayBody, null, 2);
+                el.scrollTop = 0;
+            }
+        }
+
         // For providers that don't support OpenAI-style tool calling, fall back to plain chat
         if (!supportsTools) {
             appendLog("dash-log", "[LLM-CALL] Provider " + provider + " - no tool support, plain chat");
@@ -2861,6 +2884,7 @@
             } else if (provider === "ollama") {
                 body = JSON.stringify({ model: model, messages: messages, stream: false });
             }
+            updatePayloadInspector(JSON.parse(body));
             var resp = await fetch(apiUrl, { method: "POST", headers: headers, body: body });
             if (!resp.ok) throw new Error("LLM API error (HTTP " + resp.status + ")");
             var data = await resp.json();
@@ -2893,6 +2917,7 @@
                 reqBody.tools = dedupedTools;
                 reqBody.tool_choice = "auto";
             }
+            updatePayloadInspector(reqBody);
         var resp = await fetch(apiUrl, { method: "POST", headers: headers, body: JSON.stringify(reqBody) });
         if (!resp.ok) {
             chatHistory.pop(); // FIX: Remove the failed message so it doesn't brick the chat session
