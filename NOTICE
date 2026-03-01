@@ -1,27 +1,84 @@
 BambooClaw Core
-Copyright 2026 Enigmara Technologies / Bamboo Synergy Technologies Inc.
+Copyright 2025 BambooClaw Core Labs
 
-This product is a proprietary-configured derivative work maintained by 
-Enigmara Technologies (https://github.com/Enigmara-Technologies/bambooclaw-core).
+This product includes software developed at BambooClaw Core Labs (https://github.com/BambooClaw Core-labs).
 
-=========================================================================
-Original Upstream Attribution
-=========================================================================
-This product is based on the ZeroClaw project. 
-Copyright 2025 ZeroClaw Labs.
+Contributors
+============
 
-This product includes software originally developed at ZeroClaw Labs 
-(https://github.com/ZeroClaw-labs).
+The following individuals have contributed to BambooClaw Core:
 
-License
-=======
-This software is available under a dual-license model:
-  1. MIT License — see LICENSE
-  2. Apache License 2.0 — see LICENSE-APACHE
+- Abdzsam
+- adie
+- adisusilayasa
+- agorevski
+- beee003
+- beemaya003
+- cbigger
+- cd-slash
+- cdalar
+- chenmi319
+- chumyin
+- daniiiiekisde
+- darwin808
+- Death-Incarnate
+- dwillitzer
+- ecschoye
+- elonfeng
+- Enigmara-Technologies
+- Extreammouse
+- fettpl
+- FISHers6
+- ftonato
+- gh-xj
+- ghsmc
+- haeli05
+- hayoial
+- ibhagwan
+- ikunali
+- InuDial
+- jaysonsantos
+- jbradf0rd
+- jereanon
+- junbaor
+- KevinZhao
+- KNIGHTABDO
+- kumanday
+- kunwl123456
+- lawyered0
+- LiWeny16
+- Lumi-node
+- mai1015
+- Marlinski
+- Mgrsc
+- mikeboensel
+- mmacedoeu
+- Moeblack
+- nkhoit
+- radkrish
+- reidliu41
+- RinZ27
+- RocketRene
+- s04
+- sahajre
+- stakeswky
+- Syeda-Anshrah-Gillani
+- theonlyhennygod
+- v0l
+- valmy
+- vernonstinebaker
+- vrescobar
+- vyahhi
+- willsarg
+- youhanasheriff
+- YubinghanBai
+- zverozabr
+
 
 Third-Party Dependencies
-========================
-This project uses third-party libraries and components,
-each licensed under their respective terms.
+=========================
 
-See Cargo.lock for a complete dependency list.
+This project uses the following third-party libraries and components,
+each licensed under their respective terms:
+
+See Cargo.lock for a complete list of dependencies and their licenses.
