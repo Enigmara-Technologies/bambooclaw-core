@@ -1969,7 +1969,7 @@
         ollama: ["llama3.2", "mistral", "codellama", "phi3"],
         deepseek: ["deepseek-chat", "deepseek-coder", "deepseek-reasoner"],
         mistral: ["mistral-large-latest", "mistral-medium-latest", "mistral-small-latest", "codestral-latest"],
-        inception: ["mercury-coder-small-beta"]
+        inception: ["mercury-2"]
     };
 
     var orModels = [];
@@ -2918,7 +2918,7 @@
                     dedupedTools.push(t);
                 }
             });
-            var reqBody = { model: model, messages: messages };
+            var reqBody = { model: model, messages: messages, max_tokens: 10000 };
             if (dedupedTools.length > 0) {
                 reqBody.tools = dedupedTools;
                 reqBody.tool_choice = "auto";
