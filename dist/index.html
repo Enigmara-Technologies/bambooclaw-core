@@ -807,6 +807,7 @@
                             <option value="ollama">Ollama (Local)</option>
                             <option value="deepseek">DeepSeek</option>
                             <option value="mistral">Mistral</option>
+                            <option value="inception">Inception</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -1145,6 +1146,7 @@
                                     <li><strong>Ollama</strong> — Run models entirely on your own computer, no internet needed. Free but requires a powerful GPU.</li>
                                     <li><strong>DeepSeek</strong> — High-quality models at very low cost.</li>
                                     <li><strong>Mistral</strong> — European AI provider with fast, capable models.</li>
+                                    <li><strong>Inception</strong> — Mercury 2 model for ultra-fast code generation via api.inceptionlabs.ai.</li>
                                 </ul>
                             </div>
 
@@ -1966,7 +1968,8 @@
         groq: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"],
         ollama: ["llama3.2", "mistral", "codellama", "phi3"],
         deepseek: ["deepseek-chat", "deepseek-coder", "deepseek-reasoner"],
-        mistral: ["mistral-large-latest", "mistral-medium-latest", "mistral-small-latest", "codestral-latest"]
+        mistral: ["mistral-large-latest", "mistral-medium-latest", "mistral-small-latest", "codestral-latest"],
+        inception: ["mercury-coder-small-beta"]
     };
 
     var orModels = [];
