@@ -472,45 +472,172 @@
     var orSortDir = 1;
     var orSelectedModel = "";
 
-    document.getElementById("llm-provider").addEventListener("change", function() {
-        var isOR = this.value === "openrouter";
-        appendLog("dash-log", "[UI] Provider changed to: " + this.value + ", isOR=" + isOR);
-        document.getElementById("llm-model-group").style.display = isOR ? "none" : "block";
-        if (isOR) {
-            document.getElementById("or-models-area").classList.remove("hidden");
-            document.getElementById("or-models-area").style.display = "block";
-        } else {
-            document.getElementById("or-models-area").classList.add("hidden");
-            document.getElementById("or-models-area").style.display = "none";
+    // Universal Fetcher: Bypasses CORS using curl to pull live models from any provider
+    async function autoFetchModels(provider, apiKey) {
+        if (!apiKey && provider !== "ollama") return;
+        var sel = document.getElementById("llm-model");
+        if (!sel) return;
+
+        sel.innerHTML = '<option value="">⟳ Fetching active models...</option>';
+        var url = "";
+        var headers = [];
+
+        // Map API endpoints based on provider
+        if (provider === "google") {
+            url = "https://generativelanguage.googleapis.com/v1beta/models?key=" + apiKey;
+        } else if (["openai", "groq", "deepseek", "mistral", "inception"].includes(provider)) {
+            var bases = {
+                openai: "https://api.openai.com/v1/models",
+                groq: "https://api.groq.com/openai/v1/models",
+                deepseek: "https://api.deepseek.com/models",
+                mistral: "https://api.mistral.ai/v1/models",
+                inception: "https://api.inceptionlabs.ai/v1/models"
+            };
+            url = bases[provider];
+            headers.push("-H", "Authorization: Bearer " + apiKey);
+        } else if (provider === "anthropic") {
+            url = "https://api.anthropic.com/v1/models";
+            headers.push("-H", "x-api-key: " + apiKey, "-H", "anthropic-version: 2023-06-01");
+        } else if (provider === "ollama") {
+            url = "http://localhost:11434/api/tags";
         }
+
+        try {
+            var rawJson = "";
+            if (window.__TAURI__) {
+                var args = ["-s"];
+                headers.forEach(function(h) { args.push(h); });
+                args.push(url);
+                rawJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: args });
+            } else {
+                var fetchOpts = { headers: {} };
+                for(var i=0; i<headers.length; i+=2) {
+                    var key = headers[i+1].split(":")[0].replace("-H", "").trim();
+                    var val = headers[i+1].split(":").slice(1).join(":").trim();
+                    fetchOpts.headers[key] = val;
+                }
+                var resp = await fetch(url, fetchOpts);
+                rawJson = await resp.text();
+            }
+
+            var data = JSON.parse(rawJson);
+            var models = [];
+
+            // Parse the 3 different JSON formats used by the industry
+            if (provider === "google" && data.models) {
+                // Google lists everything; we only want text-generation models
+                models = data.models.filter(function(m) { 
+                    return m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent"); 
+                }).map(function(m) { 
+                    return m.name.replace("models/", ""); 
+                });
+            } else if (provider === "ollama" && data.models) {
+                models = data.models.map(function(m) { return m.name; });
+            } else if (data.data) {
+                // Standard OpenAI format
+                models = data.data.map(function(m) { return m.id; });
+            }
+
+            if (models.length > 0) {
+                sel.innerHTML = "";
+                models.sort().forEach(function(m) {
+                    var opt = document.createElement("option");
+                    opt.value = m; opt.textContent = m; sel.appendChild(opt);
+                });
+                // Re-select previously saved model if it exists
+                if (currentConfig.llm && currentConfig.llm.provider === provider && currentConfig.llm.model) {
+                    sel.value = currentConfig.llm.model;
+                }
+                return; // Success!
+            }
+        } catch(e) { } // Silent fail, drop down to hardcoded fallback
+
+        // Fallback if API key is invalid or offline
+        sel.innerHTML = "";
+        var fallbacks = providerModels[provider] || [];
+        fallbacks.forEach(function(m) {
+            var opt = document.createElement("option");
+            opt.value = m; opt.textContent = m; sel.appendChild(opt);
+        });
+        if (currentConfig.llm && currentConfig.llm.provider === provider && currentConfig.llm.model) {
+            sel.value = currentConfig.llm.model;
+        }
+    }
+
+    document.getElementById("llm-provider").addEventListener("change", function() {
+        var provider = this.value;
+        var isOR = provider === "openrouter";
+        appendLog("dash-log", "[UI] Provider changed to: " + provider + ", isOR=" + isOR);
+        
+        // Dynamic API Key Loading
+        var keyInput = document.getElementById("llm-api-key");
+        var activeKey = "";
+        if (keyInput) {
+            if (currentConfig.api_keys && currentConfig.api_keys[provider]) { 
+                keyInput.value = currentConfig.api_keys[provider]; 
+                activeKey = keyInput.value;
+            } else { 
+                keyInput.value = ""; 
+            }
+        }
+
+        var group = document.getElementById("llm-model-group");
+        if (group) group.style.display = isOR ? "none" : "block";
+        var orArea = document.getElementById("or-models-area");
+        
         if (isOR) {
-            if (orModels.length === 0) {
+            if (orArea) {
+                orArea.classList.remove("hidden");
+                orArea.style.display = "block";
+            }
+            if (orModels.length === 0 && activeKey.length > 10) {
                 appendLog("dash-log", "[UI] Auto-fetching OpenRouter models...");
                 window.fetchORModels();
             }
         } else {
-            var models = providerModels[this.value] || [];
-            var sel = document.getElementById("llm-model");
-            sel.innerHTML = "";
-            models.forEach(function(m) {
-                var opt = document.createElement("option");
-                opt.value = m;
-                opt.textContent = m;
-                sel.appendChild(opt);
-            });
+            if (orArea) {
+                orArea.classList.add("hidden");
+                orArea.style.display = "none";
+            }
+            if (activeKey.length > 5 || provider === "ollama") {
+                autoFetchModels(provider, activeKey);
+            } else {
+                // No key yet, load hardcoded fallbacks
+                var models = providerModels[provider] || [];
+                var sel = document.getElementById("llm-model");
+                if (sel) {
+                    sel.innerHTML = "";
+                    models.forEach(function(m) {
+                        var opt = document.createElement("option");
+                        opt.value = m;
+                        opt.textContent = m;
+                        sel.appendChild(opt);
+                    });
+                }
+            }
         }
     });
 
     document.getElementById("llm-api-key").addEventListener("input", function() {
         var provider = document.getElementById("llm-provider").value;
-        if (provider === "openrouter" && this.value.trim().length > 10 && orModels.length === 0) {
-            appendLog("dash-log", "[UI] API key entered, auto-fetching OpenRouter models...");
-            window.fetchORModels();
+        var val = this.value.trim();
+        
+        // Save to memory immediately so it remembers while typing
+        if (!currentConfig.api_keys) currentConfig.api_keys = {};
+        currentConfig.api_keys[provider] = val;
+
+        if (val.length > 5 || provider === "ollama") {
+            if (provider === "openrouter" && orModels.length === 0) {
+                appendLog("dash-log", "[UI] API key entered, auto-fetching OpenRouter models...");
+                window.fetchORModels();
+            } else if (provider !== "openrouter") {
+                autoFetchModels(provider, val);
+            }
         }
     });
 
     document.getElementById("llm-provider").dispatchEvent(new Event("change"));
-
+    
     // =========== LLM CONFIG ===========
     async function applyLLMConfig() {
         appendLog("dash-log", "[LLM] applyLLMConfig() called");
