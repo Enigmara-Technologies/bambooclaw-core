@@ -1916,7 +1916,7 @@
     async function applyLLMConfig() {
         appendLog("dash-log", "[LLM] applyLLMConfig() called");
         var provider = document.getElementById("llm-provider").value;
-        var apiKey = document.getElementById("llm-api-key").value;
+        var apiKey = document.getElementById("llm-api-key").value.trim(); // FIX: Trim invisible whitespace
         var model = provider === "openrouter" ? orSelectedModel : document.getElementById("llm-model").value;
         var spEl = document.getElementById("settings-system-prompt");
         var systemPrompt = spEl ? spEl.value : "";
@@ -2714,7 +2714,8 @@
                     dedupedTools.push(t);
                 }
             });
-            var reqBody = { model: model, messages: messages, max_tokens: 10000 };
+            // FIX: Lowered max_tokens to 4096 to prevent HTTP 400 Bad Request on strict models
+            var reqBody = { model: model, messages: messages, max_tokens: 4096 };
             if (dedupedTools.length > 0) {
                 reqBody.tools = dedupedTools;
                 reqBody.tool_choice = "auto";
@@ -2725,6 +2726,10 @@
             if (!resp.ok) {
                 chatHistory.pop();
                 var errText = await resp.text();
+                // FIX: Explicit 401 handling to diagnose wrong API keys
+                if (resp.status === 401) {
+                    throw new Error("HTTP 401: Invalid API Key. Make sure you entered a valid " + provider + " key.");
+                }
                 throw new Error("LLM API error (HTTP " + resp.status + ") - " + errText.substring(0, 100));
             }
             var data = await resp.json();
@@ -2965,9 +2970,13 @@
         };
         
         var settingsPrompt = document.getElementById("settings-system-prompt");
-        if (currentConfig.llm) {
-            currentConfig.llm.system_prompt = settingsPrompt ? settingsPrompt.value : "";
+        
+        // FIX: Ensure LLM object exists so the prompt always saves
+        if (!currentConfig.llm) {
+            currentConfig.llm = { provider: "openai", api_key: "", model: "", system_prompt: "" };
         }
+        currentConfig.llm.system_prompt = settingsPrompt ? settingsPrompt.value : "";
+        
         saveAllConfig();
         savePersonas();
         showToast("Settings saved", "success");
