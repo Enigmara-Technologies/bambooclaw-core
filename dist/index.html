@@ -1929,14 +1929,14 @@
         wizardGo(3);
     });
 
-    window.enterDashboard = function() {
+    window.enterDashboard = async function() {
         try {
             appendLog("boot-log", "[DASH] enterDashboard() called");
             localStorage.setItem("bambooclaw-installed", "true");
             document.getElementById("wizard-view").style.display = "none";
             document.getElementById("dashboard-view").style.display = "block";
             document.getElementById("dashboard-view").classList.remove("hidden");
-            loadConfig();
+            await loadConfig(); // Wait for config to load before proceeding
         } catch(e) {
             appendLog("boot-log", "[ERROR] enterDashboard failed: " + (e.message || e));
         }
@@ -2137,18 +2137,27 @@
     }
 
     async function loadConfig() {
+        appendLog("dash-log", "[CONFIG] loadConfig() started...");
         try {
             var raw = await invokeShort("read_config");
+            appendLog("dash-log", "[CONFIG] Loaded from disk successfully. Length: " + raw.length);
             showToast("Configuration loaded from disk", "info");
             parseAndApplyConfig(raw);
+            appendLog("dash-log", "[CONFIG] Parsed and applied successfully.");
         } catch(e) {
+            appendLog("dash-log", "[CONFIG] Failed to read from disk: " + (e.message || e));
             // Try localStorage fallback
             var saved = localStorage.getItem("bambooclaw-config");
             if (saved) {
+                appendLog("dash-log", "[CONFIG] Falling back to localStorage data.");
                 try {
                     currentConfig = JSON.parse(saved);
                     applyConfigToUI();
-                } catch(e2) {}
+                } catch(e2) {
+                    appendLog("dash-log", "[CONFIG] LocalStorage parse error.");
+                }
+            } else {
+                appendLog("dash-log", "[CONFIG] No fallback data found.");
             }
         }
     }
@@ -4782,7 +4791,7 @@
     }
 
     // =========== STARTUP ===========
-    function boot() {
+    async function boot() {
         try {
         // Splash screen timer is self-contained in inline script above.
         // Using local logo.png bundled directly by Tauri.
@@ -4793,7 +4802,7 @@
             fetchVersion();
             if (installedFlag === "true") {
                 appendLog("boot-log", "[BOOT] boot(): entering dashboard (already installed)");
-                window.enterDashboard();
+                await window.enterDashboard(); // Critical wait added here
                 // Load personas
                 loadPersonas();
                 // Run image diagnostics (non-blocking)
