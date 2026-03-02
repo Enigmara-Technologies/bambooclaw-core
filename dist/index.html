@@ -1579,7 +1579,7 @@
 
             // Always write to unified log (respect log level)
             var unified = document.getElementById("unified-log");
-            if (unified && shouldShow) {
+            if (unified && shouldShow && logId !== "unified-log") {
                 unified.textContent += taggedLine + "\n";
                 unified.scrollTop = unified.scrollHeight;
             }
@@ -1711,7 +1711,7 @@
             appendLog(log, "[INFO] Installing Rust toolchain...");
             try {
                 if (detectedOS === "windows") {
-                    var result = await invokeLong("run_shell_command", { commandName: "winget", args: ["install", "--id", "Rustlang.Rustup", "-e", "--silent"] });
+                    var result = await invokeLong("run_shell_command", { commandName: "winget", args: ["install", "--id", "Rustlang.Rustup", "-e", "--silent", "--accept-package-agreements", "--accept-source-agreements"] });
                     appendLog(log, result);
                 } else {
                     var result = await invokeLong("run_shell_command", { commandName: "sh", args: ["-c", "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y"] });
@@ -1731,7 +1731,7 @@
             try {
                 var result = await invokeLong("run_shell_command", {
                     commandName: "winget",
-                    args: ["install", "--id", "Microsoft.VisualStudio.2022.BuildTools", "-e", "--silent", "--override", "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"]
+                    args: ["install", "--id", "Microsoft.VisualStudio.2022.BuildTools", "-e", "--silent", "--override", "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended", "--accept-package-agreements", "--accept-source-agreements"]
                 });
                 appendLog(log, result);
                 appendLog(log, "[OK] Build Tools installation completed.");
@@ -2975,11 +2975,11 @@
     }
 
     // =========== TELEGRAM POLLING ===========
-    var tgPollingInterval = null;
-    var tgLastUpdateId = 0;
+        var tgPollingTimeout = null;
+        var tgLastUpdateId = 0;
 
     function startTelegramPolling() {
-        if (tgPollingInterval) return; // already polling
+        if (tgPollingTimeout) return; // already polling
         var token = currentConfig.channels && currentConfig.channels.telegram && currentConfig.channels.telegram.token;
         if (!token) {
             appendLog("dash-log", "[TG-POLL] No Telegram token configured, skipping polling");
@@ -2987,15 +2987,19 @@
         }
         appendLog("dash-log", "[TG-POLL] Starting Telegram polling...");
         appendLog("unified-log", "[AGENT] Telegram polling started for incoming messages.");
-        tgPollingInterval = setInterval(function() { pollTelegram(); }, 3000);
-        // Poll immediately
-        pollTelegram();
+        pollTelegramLoop();
+    }
+
+    async function pollTelegramLoop() {
+        if (!daemonRunning) return;
+        await pollTelegram(); // Wait for the entire LLM processing to finish
+        tgPollingTimeout = setTimeout(pollTelegramLoop, 3000); // Only queue the next check after finishing
     }
 
     function stopTelegramPolling() {
-        if (tgPollingInterval) {
-            clearInterval(tgPollingInterval);
-            tgPollingInterval = null;
+        if (tgPollingTimeout) {
+            clearTimeout(tgPollingTimeout);
+            tgPollingTimeout = null;
             appendLog("dash-log", "[TG-POLL] Telegram polling stopped");
         }
     }
