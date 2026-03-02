@@ -615,7 +615,6 @@
             <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent);"><span id="app-version">loading...</span></div>
         </header>
         <main>
-            <!-- ========== WIZARD ========== -->
             <div id="wizard-view" class="container">
                 <div class="steps">
                     <div class="step-dot active" id="dot-0"></div>
@@ -624,7 +623,6 @@
                     <div class="step-dot" id="dot-3"></div>
                 </div>
 
-                <!-- Step 1: System Check -->
                 <div class="glass-card wizard-step" id="step-0">
                     <h1>Environment Audit</h1>
                     <p class="subtitle">Ensuring your system is prepared for BambooClaw™ edge deployment.</p>
@@ -657,7 +655,7 @@
                     <div class="log-container">
                         <div class="log-header">
                             <span>BOOT TRACE LOG</span>
-                            <button class="copy-btn" onclick="copyLog('unified-log')">&#128203;</button>
+                            <button class="btn btn-sm btn-outline" id="btn-copy-boot-log" style="padding: 2px 6px; font-size: 0.7rem;">📋 Copy</button>
                         </div>
                         <div class="log-body" id="boot-log"></div>
                     </div>
@@ -666,7 +664,6 @@
                     </div>
                 </div>
 
-    <!-- SCRIPT 1: CANARY + ERROR BOUNDARY — catches Script 2 parse errors -->
     <script>
     (function() {
         try {
@@ -677,7 +674,7 @@
             if (ul && !ul.textContent) ul.textContent = "";
         } catch(e) {}
     })();
-    // Global error boundary — MUST be here (outside Script 2) to catch Script 2 parse errors
+    // Global error boundary
     window.onerror = function(msg, src, line, col, err) {
         try {
             var el = document.getElementById("boot-log");
@@ -693,24 +690,22 @@
     });
     </script>
 
-                <!-- Step 2: Install Prerequisites -->
                 <div class="glass-card wizard-step hidden" id="step-1">
                     <h1>Readying Prereqs</h1>
                     <p class="subtitle">Applying required system dependencies and development toolchains.</p>
                     <div class="log-container">
                         <div class="log-header">
                             <span>SYSTEM INSTALLATION LOG</span>
-                            <button class="copy-btn" onclick="copyLog('unified-log')">&#128203;</button>
+                            <button class="btn btn-sm btn-outline" id="btn-copy-install-log" style="padding: 2px 6px; font-size: 0.7rem;">📋 Copy</button>
                         </div>
                         <div class="log-body" id="install-log"></div>
                     </div>
                     <div style="margin-top: 1.5rem; display: flex; justify-content: space-between;">
-                        <button class="btn btn-outline" onclick="wizardGo(0)">← Back</button>
+                        <button class="btn btn-outline" id="btn-back-step1">← Back</button>
                         <button class="btn" id="btn-step1-next" disabled>Agent Capabilities →</button>
                     </div>
                 </div>
 
-                <!-- Step 3: Agent Capabilities (NEW) -->
                 <div class="glass-card wizard-step hidden" id="step-2">
                     <h1>Agent Capabilities</h1>
                     <p class="subtitle">Select additional tools to maximize your agent's autonomous power.</p>
@@ -751,13 +746,13 @@
                     <div class="log-container">
                         <div class="log-header">
                             <span>CAPABILITY INSTALL LOG</span>
-                            <button class="copy-btn" onclick="copyLog('unified-log')">&#128203;</button>
+                            <button class="btn btn-sm btn-outline" id="btn-copy-cap-log" style="padding: 2px 6px; font-size: 0.7rem;">📋 Copy</button>
                         </div>
                         <div class="log-body" id="capability-log"></div>
                     </div>
 
                     <div style="margin-top: 1.5rem; display: flex; justify-content: space-between;">
-                        <button class="btn btn-outline" onclick="wizardGo(1)">← Back</button>
+                        <button class="btn btn-outline" id="btn-back-step2">← Back</button>
                         <div style="display:flex;gap:0.75rem;">
                             <button class="btn btn-outline" id="btn-step2-skip">Skip for Now →</button>
                             <button class="btn" id="btn-step2-install">Install Selected</button>
@@ -765,8 +760,6 @@
                     </div>
                 </div>
 
-
-                <!-- Step 4: Done -->
                 <div class="glass-card wizard-step hidden" id="step-3">
                     <div style="text-align: center; padding: 2rem 0;">
                         <div style="font-size: 3rem; margin-bottom: 1rem;">✓</div>
@@ -781,7 +774,6 @@
                 </div>
             </div>
 
-            <!-- ========== DASHBOARD ========== -->
             <div id="dashboard-view" class="container hidden">
                 <div class="tabs">
                     <div class="tab active" data-tab="tab-llm">LLM Settings</div>
@@ -794,7 +786,6 @@
                     <div class="tab" data-tab="tab-about">About</div>
                 </div>
 
-                <!-- Tab: LLM Settings -->
                 <div class="glass-card tab-panel" id="tab-llm">
                     <div class="form-group">
                         <label>AI Provider</label>
@@ -836,12 +827,12 @@
                         </div>
                         <div id="or-model-list" style="height:420px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;background:#050507;"></div>
                     </div>
+                    
                     <div id="llm-save-reminder" class="save-reminder">⚠ You have unsaved changes. Click <strong>Apply Configuration</strong> to save.</div>
                     <button class="btn" id="btn-apply-llm">Apply Configuration</button>
                     <button class="btn btn-outline" style="margin-left: 0.5rem;" id="btn-test-llm">Test Connection</button>
                 </div>
 
-                <!-- Tab: Channels -->
                 <div class="glass-card tab-panel hidden" id="tab-channels">
                     <h1 style="font-size: 1.3rem; margin-bottom: 0.5rem;">Active Channels</h1>
                     <p class="subtitle">Connect your agent to external messaging platforms.</p>
@@ -878,17 +869,15 @@
                         <button class="btn btn-sm btn-outline" id="btn-setup-sl">Setup</button>
                     </div>
 
-                    <!-- Channel setup modal area -->
                     <div id="channel-setup-area" class="hidden" style="margin-top: 1.5rem; padding: 1.5rem; border: 1px solid var(--border); border-radius: 8px; background: #050507;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                             <h2 style="font-size: 1.1rem;" id="channel-setup-title">Setup</h2>
-                            <button class="copy-btn" id="btn-close-channel" style="font-size: 1.2rem;">✕</button>
+                            <button class="btn btn-sm btn-outline" id="btn-close-channel" style="font-size: 1.2rem; padding: 2px 8px;">✕</button>
                         </div>
                         <div id="channel-setup-body"></div>
                     </div>
                 </div>
 
-                <!-- Tab: Agent Control -->
                 <div class="glass-card tab-panel hidden" id="tab-agent">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
                         <div>
@@ -917,33 +906,28 @@
 
                 </div>
 
-                <!-- Tab: Skills -->
                 <div class="glass-card tab-panel hidden" id="tab-skills">
                     <h1 style="font-size: 1.3rem; margin-bottom: 0.5rem;">🧩 Skills</h1>
                     <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Extend your agent with real integrations. Toggle skills to inject their tools into the agent.</p>
 
-                    <!-- Active Agent Tools Summary -->
                     <div class="active-tools-panel" id="active-tools-summary">
-                        <div class="active-tools-header" onclick="window.toggleActiveToolsList()">
-            <span class="active-tools-count">Active Toolkits</span>
+                        <div class="active-tools-header" id="btn-toggle-tools-list">
+                            <span class="active-tools-count">Active Toolkits</span>
                             <span class="active-tools-badge" id="active-tools-count-badge">0</span>
                         </div>
                         <div class="active-tools-list" id="active-tools-list"></div>
                     </div>
 
-                    <!-- Built-in Tools (always available) -->
                     <div style="margin-bottom: 1.5rem;">
                         <h2 style="font-size: 1rem; color: var(--text-dim); margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">⚡ Built-in Tools (always available)</h2>
                         <div class="skill-grid" id="skills-builtin"></div>
                     </div>
 
-                    <!-- Enabled Integrations (dynamic) -->
                     <div id="enabled-integrations-section" style="margin-bottom: 1.5rem; display: none;">
                         <h2 style="font-size: 1rem; color: var(--text-dim); margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">🔗 Enabled Integrations</h2>
                         <div class="skill-grid" id="skills-enabled-integrations"></div>
                     </div>
 
-                    <!-- Composio Section -->
                     <div style="margin-bottom: 1rem; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; background: #050507;">
                         <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
                             <div class="form-group" style="flex:1; margin-bottom: 0;">
@@ -953,7 +937,7 @@
                             <button class="btn btn-sm" id="btn-save-composio" style="height: 38px;">Connect</button>
                         </div>
                         <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0.5rem;">
-                            Get a free API key at <span style="color: var(--accent); cursor: pointer;" onclick="window.open && window.open('https://app.composio.dev/settings', '_blank')">app.composio.dev/settings</span>
+                            Get a free API key at <span style="color: var(--accent); cursor: pointer;" id="btn-open-composio">app.composio.dev/settings</span>
                         </p>
                         <div id="composio-status" style="font-size: 0.8rem; margin-top: 0.5rem; display: none;"></div>
                     </div>
@@ -963,7 +947,6 @@
                             Enter your Composio API key and click Connect to load available integrations.
                         </div>
 
-                        <!-- Dynamic content after connection -->
                         <div id="composio-connected-area" class="hidden">
                             <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center;">
                                 <input type="text" id="skill-search" placeholder="Search toolkits..." style="flex: 1;" />
@@ -976,7 +959,6 @@
 
                 </div>
 
-                <!-- Tab: Settings -->
                 <div class="glass-card tab-panel hidden" id="tab-settings">
                     <h1 style="font-size: 1.3rem; margin-bottom: 0.5rem;">Agent Settings</h1>
                     <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1.5rem;">These settings are pre-configured with optimal defaults. No changes are needed unless you have specific requirements.</p>
@@ -1039,7 +1021,6 @@
                         </div>
                     </div>
 
-                    <!-- System Prompt (moved from LLM Settings) -->
                     <div class="form-group" style="margin-top: 1.5rem;">
                         <label>System Prompt</label>
                         <textarea id="settings-system-prompt" rows="20" placeholder="Custom instructions for the agent. These are injected as highest-priority operator instructions..." style="min-height:400px;overflow-y:auto;resize:vertical;"></textarea>
@@ -1048,7 +1029,6 @@
                         </p>
                     </div>
 
-                    <!-- Persona Management -->
                     <div style="margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1.5rem;">
                         <h2 style="font-size: 1.1rem; margin-bottom: 0.5rem;">🎭 Personas</h2>
                         <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Create reusable personas. The selected persona is combined with the System Prompt above and applied to every agent conversation.</p>
@@ -1085,16 +1065,14 @@
                     </div>
                 </div>
 
-                <!-- Tab: Help -->
                 <div class="glass-card tab-panel hidden" id="tab-help">
                     <h1 style="font-size: 1.3rem; margin-bottom: 0.25rem;">📖 BambooClaw™ Help Center</h1>
                     <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1.25rem;">Everything you need to know, explained in plain English. Click any section to expand it.</p>
 
                     <div class="help-search-wrap">
-                        <input type="text" class="help-search" id="help-search" placeholder="Search help topics..." oninput="window.filterHelp(this.value)" />
+                        <input type="text" class="help-search" id="help-search" placeholder="Search help topics..." />
                     </div>
 
-                    <!-- 1. Welcome -->
                     <details class="help-section" open>
                         <summary>👋 What is BambooClaw™?</summary>
                         <div class="help-body">
@@ -1111,7 +1089,6 @@
                         </div>
                     </details>
 
-                    <!-- 2. Getting Started -->
                     <details class="help-section">
                         <summary>🚀 Getting Started (First-Time Setup)</summary>
                         <div class="help-body">
@@ -1125,7 +1102,6 @@
                         </div>
                     </details>
 
-                    <!-- 3. LLM Settings -->
                     <details class="help-section">
                         <summary>🧠 LLM Settings (Your AI Brain)</summary>
                         <div class="help-body">
@@ -1165,7 +1141,6 @@
                         </div>
                     </details>
 
-                    <!-- 4. Channels -->
                     <details class="help-section">
                         <summary>📡 Channels (Where You Talk to Your Agent)</summary>
                         <div class="help-body">
@@ -1202,7 +1177,6 @@
                         </div>
                     </details>
 
-                    <!-- 5. Agent Control -->
                     <details class="help-section">
                         <summary>🎮 Agent Control (Running Your Assistant)</summary>
                         <div class="help-body">
@@ -1233,7 +1207,6 @@
                         </div>
                     </details>
 
-                    <!-- 6. Skills -->
                     <details class="help-section">
                         <summary>🧩 Skills (Extending What Your Agent Can Do)</summary>
                         <div class="help-body">
@@ -1269,7 +1242,6 @@
                         </div>
                     </details>
 
-                    <!-- 7. Settings -->
                     <details class="help-section">
                         <summary>⚙️ Settings (Fine-Tuning Behavior)</summary>
                         <div class="help-body">
@@ -1300,7 +1272,6 @@
                         </div>
                     </details>
 
-                    <!-- 8. Troubleshooting -->
                     <details class="help-section">
                         <summary>🔧 Troubleshooting / FAQ</summary>
                         <div class="help-body">
@@ -1366,7 +1337,6 @@
                     </details>
                 </div>
 
-                <!-- Tab: About -->
                 <div class="glass-card tab-panel hidden" id="tab-about">
                     <h1 style="font-size: 1.3rem; margin-bottom: 1rem;">About BambooClaw™</h1>
                     <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 8px; background: #050507; margin-bottom: 1rem;">
@@ -1392,14 +1362,13 @@
                     </div>
                 </div>
 
-                <!-- Tab: Logs -->
                 <div class="glass-card tab-panel hidden" id="tab-logs">
                     <h1 style="font-size: 1.3rem; margin-bottom: 0.75rem;">📋 Session Log</h1>
                     <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1.25rem;">Unified continuous log for this session. All system, agent, and skill events are recorded here with timestamps.</p>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
                         <span style="font-size: 0.75rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace;">SESSION LOG — <span id="session-id-label">...</span></span>
                         <div style="display:flex;gap:0.5rem;">
-                            <button class="btn btn-sm btn-outline" id="btn-copy-log" onclick="window.copyLog('unified-log')">📋 Copy Log</button>
+                            <button class="btn btn-sm btn-outline" id="btn-copy-log">📋 Copy Log</button>
                             <button class="btn btn-sm btn-outline" id="btn-open-log-folder">📂 Open Folder</button>
                         </div>
                     </div>
@@ -1411,11 +1380,10 @@
                     <div id="dash-log" style="display:none;"></div>
                     <div id="daemon-log" style="display:none;"></div>
 
-                    <!-- Last LLM Request Payload Inspector -->
                     <div style="margin-top:1.5rem;">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
                             <h2 style="font-size:1.1rem;margin:0;">🔍 Last LLM Request Payload</h2>
-                            <button class="btn btn-sm btn-outline" onclick="window.copyLog('llm-payload-display')">📋 Copy Payload</button>
+                            <button class="btn btn-sm btn-outline" id="btn-copy-payload">📋 Copy Payload</button>
                         </div>
                         <p style="font-size:0.8rem;color:var(--text-dim);margin-bottom:0.75rem;">The complete request body sent to the model on the last call, including system prompt, persona, skills/tools, conversation history, and user message.</p>
                         <div id="llm-payload-display" class="log-body" style="height:400px;background:#050507;border:1px solid var(--border);border-radius:6px;font-size:0.72rem;line-height:1.6;white-space:pre-wrap;word-break:break-all;color:var(--text-dim);padding:1rem;">
@@ -1428,10 +1396,8 @@
         </main>
     </div>
 
-    <!-- Toast container -->
     <div class="toast-container" id="toast-container"></div>
 
-    <!-- SCRIPT 2: MAIN — wrapped with global error boundary -->
     <script>
     // Error boundary is in Script 1 (canary) to catch parse errors in this script block.
 
@@ -1464,20 +1430,6 @@
         if (copyrightEl) copyrightEl.textContent = "© " + new Date().getFullYear() + " Bamboo Synergy Technologies, Inc.";
     }, 0);
 
-    // =========== HELP FILTER ===========
-    window.filterHelp = function(query) {
-        var sections = document.querySelectorAll('#tab-help .help-section');
-        var q = (query || '').toLowerCase().trim();
-        for (var i = 0; i < sections.length; i++) {
-            var text = sections[i].textContent.toLowerCase();
-            if (!q || text.indexOf(q) !== -1) {
-                sections[i].style.display = '';
-            } else {
-                sections[i].style.display = 'none';
-            }
-        }
-    };
-
     // =========== TOAST ===========
     function showToast(message, type) {
         type = type || "info";
@@ -1495,12 +1447,10 @@
     // =========== TAURI HELPERS ===========
     function tauriInvoke(cmd, args) {
         if (!window.__TAURI__) return Promise.reject(new Error("Tauri not available (running in browser)"));
-        // Try known invoke locations first
         var inv = (window.__TAURI__.core && window.__TAURI__.core.invoke)
                || (window.__TAURI__.tauri && window.__TAURI__.tauri.invoke)
                || window.__TAURI__.invoke;
         if (typeof inv === "function") return inv(cmd, args || {});
-        // Fallback: construct invoke from Tauri v1 primitives (transformCallback + __TAURI_IPC__)
         if (typeof window.__TAURI__.transformCallback === "function" && typeof window.__TAURI_IPC__ === "function") {
             return new Promise(function(resolve, reject) {
                 var cbId = window.__TAURI__.transformCallback(function(r) { resolve(r); }, true);
@@ -1509,9 +1459,7 @@
                 window.__TAURI_IPC__(payload);
             });
         }
-        var keys = Object.keys(window.__TAURI__).join(", ");
-        var ipc = typeof window.__TAURI_IPC__;
-        return Promise.reject(new Error("Tauri invoke not found. Keys: " + keys + ", __TAURI_IPC__: " + ipc));
+        return Promise.reject(new Error("Tauri invoke not found."));
     }
     function invokeShort(cmd, args) {
         return Promise.race([
@@ -1534,7 +1482,6 @@
                 navigator.clipboard.writeText(el.textContent).then(function() {
                     showToast("Log copied to clipboard", "success");
                 }).catch(function() {
-                    // Fallback for environments without clipboard API
                     var ta = document.createElement("textarea");
                     ta.value = el.textContent;
                     document.body.appendChild(ta);
@@ -1550,12 +1497,10 @@
     }
     function appendLog(logId, line) {
         try {
-            // Add timestamp
             var now = new Date();
             var ts = "[" + ("0"+now.getHours()).slice(-2) + ":" + ("0"+now.getMinutes()).slice(-2) + ":" + ("0"+now.getSeconds()).slice(-2) + "." + ("00"+now.getMilliseconds()).slice(-3) + "]";
             var taggedLine = ts + " " + line;
 
-            // --- Log level filtering ---
             var logLevel = (currentConfig.settings && currentConfig.settings.loglevel) || "info";
             var shouldShow = true;
             if (logLevel === "error") {
@@ -1565,23 +1510,19 @@
             } else if (logLevel === "info") {
                 shouldShow = !/^\[DEBUG\]/i.test(line);
             }
-            // "debug" shows everything
 
-            // Always write to the specific panel if it exists (for wizard inline logs)
             var el = document.getElementById(logId);
             if (el && el.style.display !== "none" && shouldShow) {
                 el.textContent += taggedLine + "\n";
                 el.scrollTop = el.scrollHeight;
             }
 
-            // Always write to unified log (respect log level)
             var unified = document.getElementById("unified-log");
             if (unified && shouldShow && logId !== "unified-log") {
                 unified.textContent += taggedLine + "\n";
                 unified.scrollTop = unified.scrollHeight;
             }
 
-            // Persist to disk via Tauri
             if (window.__TAURI__) {
                 try {
                     tauriInvoke("run_shell_command", {
@@ -1611,7 +1552,6 @@
         if (step === 1) runPrereqInstall();
     }
 
-    // Step 1: System Checks — all run in PARALLEL to avoid sequential timeout hangs
     function updateBadge(id, text, cls) {
         var el = document.getElementById(id);
         if (el) { el.textContent = text; el.className = "status-badge " + cls; }
@@ -1620,79 +1560,53 @@
     async function runSystemChecks() {
         appendLog("boot-log", "[CHECK] runSystemChecks() called");
 
-        appendLog("boot-log", "[CHECK] get_platform: invoking...");
         var checkOS = invokeShort("get_platform").then(function(os) {
             detectedOS = os || "unknown";
             var osLabel = detectedOS === "windows" ? "Windows" : detectedOS === "macos" ? "macOS" : detectedOS === "linux" ? "Linux" : detectedOS;
             updateBadge("chk-os", osLabel, "status-found");
-            appendLog("boot-log", "[CHECK] get_platform: resolved -> \"" + osLabel + "\"");
         }).catch(function(e) {
             detectedOS = "windows";
             updateBadge("chk-os", "Windows (assumed)", "status-not-installed");
-            appendLog("boot-log", "[CHECK] get_platform: ERROR -> " + (e.message || e));
         });
 
-        appendLog("boot-log", "[CHECK] check_prerequisite(rustc): invoking...");
         var checkRust = invokeShort("check_prerequisite", { name: "rustc" }).then(function(rv) {
             updateBadge("chk-rust", rv.trim().split("\n")[0], "status-found");
-            appendLog("boot-log", "[CHECK] check_prerequisite(rustc): resolved -> \"" + rv.trim().split("\n")[0] + "\"");
         }).catch(function(e) {
             updateBadge("chk-rust", "Not Installed", "status-not-installed");
-            appendLog("boot-log", "[CHECK] check_prerequisite(rustc): ERROR -> " + (e.message || e));
         });
 
-        appendLog("boot-log", "[CHECK] run_shell_command(git --version): invoking...");
         var checkGit = invokeShort("run_shell_command", { commandName: "git", args: ["--version"] }).then(function(gv) {
             updateBadge("chk-git", gv.trim().split("\n")[0], "status-found");
-            appendLog("boot-log", "[CHECK] run_shell_command(git): resolved -> \"" + gv.trim().split("\n")[0] + "\"");
         }).catch(function(e) {
             updateBadge("chk-git", "Not Installed", "status-not-installed");
-            appendLog("boot-log", "[CHECK] run_shell_command(git): ERROR -> " + (e.message || e));
         });
 
-        appendLog("boot-log", "[CHECK] check_prerequisite(vs_build_tools): invoking...");
         var checkBuild = invokeShort("check_prerequisite", { name: "vs_build_tools" }).then(function(bv) {
             updateBadge("chk-build", bv.trim() || "Found", "status-found");
-            appendLog("boot-log", "[CHECK] check_prerequisite(vs_build_tools): resolved -> \"" + (bv.trim() || "Found") + "\"");
         }).catch(function(e) {
             updateBadge("chk-build", detectedOS === "windows" ? "Not Installed" : "N/A", detectedOS === "windows" ? "status-not-installed" : "status-found");
-            appendLog("boot-log", "[CHECK] check_prerequisite(vs_build_tools): ERROR -> " + (e.message || e));
         });
 
-        // Python check
-        appendLog("boot-log", "[CHECK] python --version: invoking...");
         var checkPython = invokeShort("run_shell_command", { commandName: "python", args: ["--version"] }).then(function(pv) {
             updateBadge("chk-python", pv.trim().split("\n")[0], "status-found");
-            appendLog("boot-log", "[CHECK] python: resolved -> \"" + pv.trim().split("\n")[0] + "\"");
         }).catch(function() {
-            // Fallback to python3
             return invokeShort("run_shell_command", { commandName: "python3", args: ["--version"] }).then(function(pv) {
                 updateBadge("chk-python", pv.trim().split("\n")[0], "status-found");
-                appendLog("boot-log", "[CHECK] python3: resolved -> \"" + pv.trim().split("\n")[0] + "\"");
             }).catch(function(e) {
                 updateBadge("chk-python", "Not Installed", "status-not-installed");
-                appendLog("boot-log", "[CHECK] python: ERROR -> " + (e.message || e));
             });
         });
 
-        // Node.js check
-        appendLog("boot-log", "[CHECK] node --version: invoking...");
         var checkNode = invokeShort("run_shell_command", { commandName: "node", args: ["--version"] }).then(function(nv) {
             updateBadge("chk-node", nv.trim().split("\n")[0], "status-found");
-            appendLog("boot-log", "[CHECK] node: resolved -> \"" + nv.trim().split("\n")[0] + "\"");
         }).catch(function(e) {
             updateBadge("chk-node", "Not Installed", "status-not-installed");
-            appendLog("boot-log", "[CHECK] node: ERROR -> " + (e.message || e));
         });
 
         await Promise.allSettled([checkOS, checkRust, checkGit, checkBuild, checkPython, checkNode]);
-        appendLog("boot-log", "[BOOT] All checks settled. Enabling Next button.");
         document.getElementById("btn-step0-next").disabled = false;
     }
 
-    document.getElementById("btn-step0-next").addEventListener("click", function() { wizardGo(1); });
-
-    // Step 2: Install Prerequisites
     async function runPrereqInstall() {
         var log = "install-log";
         document.getElementById(log).textContent = "";
@@ -1749,19 +1663,13 @@
         document.getElementById("btn-step1-next").disabled = false;
     }
 
-    document.getElementById("btn-step1-next").addEventListener("click", function() { wizardGo(2); });
-
-    // Step 3: Agent Capabilities Install
-    // Helper: deploy pre-built binary
     async function deployBinary(log) {
         appendLog(log, "[INFO] Deploying pre-built binary...");
         try {
-            appendLog(log, "[INFO] Fetching release metadata...");
             var metaRes = await fetch(PROXY_URL);
             if (!metaRes.ok) throw new Error("Proxy returned " + metaRes.status);
             var meta = await metaRes.json();
-            appendLog(log, "[INFO] Latest release: " + (meta.tag_name || "unknown"));
-
+            
             var assets = meta.assets || [];
             var assetName = "";
             if (detectedOS === "windows") {
@@ -1776,12 +1684,10 @@
             }
 
             if (!assetName) {
-                appendLog(log, "[WARN] No matching asset found. Available: " + assets.map(function(a){return a.name;}).join(", "));
                 appendLog(log, "[ERROR] Could not find a pre-built binary for your platform.");
                 return;
             }
 
-            appendLog(log, "[INFO] Downloading asset: " + assetName);
             var homePath = "~";
             try {
                 if (detectedOS === "windows") {
@@ -1803,7 +1709,6 @@
                 }
             } catch(e) {}
 
-            appendLog(log, "[INFO] Saving to: " + destFile);
             var dlUrl = PROXY_URL + "?asset=" + encodeURIComponent(assetName);
             await invokeLong("download_binary", { url: dlUrl, dest: destFile });
             appendLog(log, "[OK] Binary downloaded successfully.");
@@ -1921,9 +1826,7 @@
             appendLog(log, "[DONE] Agent capability setup complete.");
         }
 
-        // Auto-deploy binary
         await deployBinary(log);
-
         this.disabled = false;
         document.getElementById("btn-step2-skip").disabled = false;
         wizardGo(3);
@@ -1936,15 +1839,11 @@
             document.getElementById("wizard-view").style.display = "none";
             document.getElementById("dashboard-view").style.display = "block";
             document.getElementById("dashboard-view").classList.remove("hidden");
-            await loadConfig(); // Wait for config to load before proceeding
+            await loadConfig();
         } catch(e) {
             appendLog("boot-log", "[ERROR] enterDashboard failed: " + (e.message || e));
         }
     };
-
-    document.getElementById("btn-enter-dashboard").addEventListener("click", function() {
-        window.enterDashboard();
-    });
 
     // =========== TAB SWITCHING ===========
     document.querySelectorAll(".tab").forEach(function(tab) {
@@ -1986,7 +1885,6 @@
             document.getElementById("or-models-area").style.display = "none";
         }
         if (isOR) {
-            // Auto-fetch if we have an API key or even without (public endpoint)
             if (orModels.length === 0) {
                 appendLog("dash-log", "[UI] Auto-fetching OpenRouter models...");
                 window.fetchORModels();
@@ -2004,7 +1902,6 @@
         }
     });
 
-    // Auto-fetch models when API key is pasted while OpenRouter is selected
     document.getElementById("llm-api-key").addEventListener("input", function() {
         var provider = document.getElementById("llm-provider").value;
         if (provider === "openrouter" && this.value.trim().length > 10 && orModels.length === 0) {
@@ -2013,7 +1910,6 @@
         }
     });
 
-    // Trigger initial population
     document.getElementById("llm-provider").dispatchEvent(new Event("change"));
 
     // =========== LLM CONFIG ===========
@@ -2049,7 +1945,6 @@
             showToast("Configuration saved successfully", "success");
             appendLog("dash-log", "[LLM] Config saved to localStorage (Tauri unavailable)");
         }
-        // Hide save reminders
         var r1 = document.getElementById("or-save-reminder"); if (r1) r1.classList.remove("visible");
         var r2 = document.getElementById("llm-save-reminder"); if (r2) r2.classList.remove("visible");
     }
@@ -2060,26 +1955,21 @@
         var apiKey = document.getElementById("llm-api-key").value.trim();
         if (!apiKey && provider !== "ollama") {
             showToast("Enter an API key first", "error");
-            appendLog("dash-log", "[TEST] REJECTED: no API key");
             return;
         }
         showToast("Testing connection...", "info");
 
-        // Direct API validation — no CLI needed
         try {
             if (provider === "openrouter") {
-                appendLog("dash-log", "[TEST] Calling openrouter.ai/api/v1/models...");
                 var resp = await fetch("https://openrouter.ai/api/v1/models", {
                     headers: { "Authorization": "Bearer " + apiKey }
                 });
-                appendLog("dash-log", "[TEST] OpenRouter response: HTTP " + resp.status);
                 if (resp.ok) {
                     showToast("OpenRouter API key is valid!", "success");
                 } else {
                     showToast("Invalid API key (HTTP " + resp.status + ")", "error");
                 }
             } else if (provider === "ollama") {
-                appendLog("dash-log", "[TEST] Calling localhost:11434/api/tags...");
                 var resp2 = await fetch("http://localhost:11434/api/tags");
                 if (resp2.ok) {
                     showToast("Ollama is running locally!", "success");
@@ -2088,15 +1978,13 @@
                 }
             } else {
                 showToast("Key saved. Full connection test available when agent daemon is running.", "info");
-                appendLog("dash-log", "[TEST] No direct test for provider: " + provider);
             }
         } catch(e) {
             showToast("Connection test error: " + (e.message || e), "error");
-            appendLog("dash-log", "[TEST] ERROR: " + (e.message || e));
         }
     }
 
-// =========== CONFIG SERIALIZATION ===========
+    // =========== CONFIG SERIALIZATION ===========
     function buildConfigToml() {
         var lines = ["# BambooClaw Agent Configuration", "# Auto-generated by BambooClaw Companion", ""];
 
@@ -2146,7 +2034,6 @@
             appendLog("dash-log", "[CONFIG] Parsed and applied successfully.");
         } catch(e) {
             appendLog("dash-log", "[CONFIG] Failed to read from disk: " + (e.message || e));
-            // Try localStorage fallback
             var saved = localStorage.getItem("bambooclaw-config");
             if (saved) {
                 appendLog("dash-log", "[CONFIG] Falling back to localStorage data.");
@@ -2265,10 +2152,8 @@
         document.getElementById("channel-setup-area").classList.remove("hidden");
         document.getElementById("btn-save-tg").addEventListener("click", function() { window.saveTelegramToken(); });
         document.getElementById("btn-test-tg").addEventListener("click", function() { window.testChannel("telegram"); });
-        // Try to open BotFather in Telegram
         try {
             if (window.__TAURI__) {
-                // Tauri v2: shell.open moved to opener plugin or core
                 var opener = (window.__TAURI__.opener && window.__TAURI__.opener.openUrl) || (window.__TAURI__.shell && window.__TAURI__.shell.open);
                 if (opener) opener("https://t.me/BotFather");
             }
@@ -2276,7 +2161,6 @@
     }
 
     function saveTelegramToken() {
-        appendLog("dash-log", "[CH] saveTelegramToken() called");
         var token = document.getElementById("tg-token").value.trim();
         if (!token) { showToast("Please enter a bot token", "error"); return; }
         if (!currentConfig.channels) currentConfig.channels = {};
@@ -2288,7 +2172,6 @@
     }
 
     function setupDiscord() {
-        appendLog("dash-log", "[CH] setupDiscord() called");
         var savedToken = (currentConfig.channels && currentConfig.channels.discord && currentConfig.channels.discord.token) || "";
         var savedGuild = (currentConfig.channels && currentConfig.channels.discord && currentConfig.channels.discord.guild_id) || "";
         document.getElementById("channel-setup-title").textContent = "Discord App Setup";
@@ -2304,7 +2187,6 @@
     }
 
     function saveDiscordToken() {
-        appendLog("dash-log", "[CH] saveDiscordToken() called");
         var token = document.getElementById("dc-token").value.trim();
         if (!token) { showToast("Please enter a bot token", "error"); return; }
         if (!currentConfig.channels) currentConfig.channels = {};
@@ -2316,7 +2198,6 @@
     }
 
     function setupWhatsApp() {
-        appendLog("dash-log", "[CH] setupWhatsApp() called");
         document.getElementById("channel-setup-title").textContent = "WhatsApp Business Setup";
         document.getElementById("channel-setup-body").innerHTML =
             '<p style="margin-bottom:1rem;color:var(--text-dim);">WhatsApp Business Cloud API requires a Meta Business account and approved app.</p>' +
@@ -2331,7 +2212,6 @@
     }
 
     function saveWhatsApp() {
-        appendLog("dash-log", "[CH] saveWhatsApp() called");
         var phoneId = document.getElementById("wa-phone-id").value.trim();
         var token = document.getElementById("wa-token").value.trim();
         var verify = document.getElementById("wa-verify").value.trim();
@@ -2345,7 +2225,6 @@
     }
 
     function setupSlack() {
-        appendLog("dash-log", "[CH] setupSlack() called");
         document.getElementById("channel-setup-title").textContent = "Slack App Setup";
         document.getElementById("channel-setup-body").innerHTML =
             '<p style="margin-bottom:1rem;color:var(--text-dim);">1. Go to <strong>api.slack.com/apps</strong> and create a new app<br>2. Enable Socket Mode and Event Subscriptions<br>3. Add bot scopes: chat:write, app_mentions:read, channels:history</p>' +
@@ -2359,7 +2238,6 @@
     }
 
     function saveSlack() {
-        appendLog("dash-log", "[CH] saveSlack() called");
         var botToken = document.getElementById("sl-bot-token").value.trim();
         var appToken = document.getElementById("sl-app-token").value.trim();
         if (!botToken) { showToast("Bot token is required", "error"); return; }
@@ -2372,27 +2250,21 @@
     }
 
     async function testChannel(channel) {
-        appendLog("dash-log", "[CH] testChannel(" + channel + ") called");
         showToast("Testing " + channel + " connection...", "info");
-
-        // Direct API validation per channel — no CLI needed
         try {
             if (channel === "telegram") {
                 var token = currentConfig.channels && currentConfig.channels.telegram && currentConfig.channels.telegram.token;
                 if (!token) {
-                    // Also try reading directly from the input field if setup panel is open
                     var tgInput = document.getElementById("tg-token");
                     if (tgInput) token = tgInput.value.trim();
                 }
-                if (!token) { showToast("No Telegram bot token configured. Save a token first.", "error"); return; }
+                if (!token) { showToast("No Telegram bot token configured.", "error"); return; }
                 var resp = await fetch("https://api.telegram.org/bot" + token + "/getMe");
                 var data = await resp.json();
                 if (data.ok) {
                     showToast("Telegram bot @" + data.result.username + " is valid!", "success");
-                    appendLog("dash-log", "[CH] Telegram OK: @" + data.result.username);
                 } else {
                     showToast("Invalid Telegram token: " + (data.description || "unknown error"), "error");
-                    appendLog("dash-log", "[CH] Telegram FAIL: " + JSON.stringify(data));
                 }
             } else if (channel === "discord") {
                 var dToken = currentConfig.channels && currentConfig.channels.discord && currentConfig.channels.discord.token;
@@ -2407,41 +2279,30 @@
                 if (dresp.ok) {
                     var ddata = await dresp.json();
                     showToast("Discord bot " + ddata.username + " is valid!", "success");
-                    appendLog("dash-log", "[CH] Discord OK: " + ddata.username);
                 } else {
                     showToast("Invalid Discord token (HTTP " + dresp.status + ")", "error");
                 }
             } else {
                 showToast("Configuration saved. Full " + channel + " test available when agent is running.", "info");
-                appendLog("dash-log", "[CH] No direct API test for: " + channel);
             }
         } catch(e) {
             showToast(channel + " test error: " + (e.message || e), "error");
-            appendLog("dash-log", "[CH] testChannel ERROR: " + (e.message || e));
         }
     }
 
     // =========== AGENT CONTROL ===========
     async function toggleDaemon() {
-        appendLog("dash-log", "[DAEMON] toggleDaemon() called, daemonRunning=" + daemonRunning);
-
         var btn = document.getElementById("btn-daemon-toggle");
         if (daemonRunning) {
             try {
-                appendLog("dash-log", "[DAEMON] Invoking stop_daemon...");
                 stopTelegramPolling();
                 await invokeShort("stop_daemon");
                 daemonRunning = false;
                 updateDaemonUI();
-                // Update chat area
                 var chatEl = document.getElementById("agent-chat-messages");
                 if (chatEl) chatEl.innerHTML += '<div class="chat-msg assistant"><span class="role">Agent:</span> Daemon stopped.</div>';
-        appendLog("unified-log", "[AGENT] Daemon stopped.");
-                appendLog("unified-log", "[SYSTEM] Daemon stopped OK");
                 showToast("Agent daemon stopped", "info");
             } catch(e) {
-                // Process may have already exited — treat as stopped
-                appendLog("dash-log", "[DAEMON] stop_daemon ERROR: " + (e.message || e));
                 stopTelegramPolling();
                 daemonRunning = false;
                 updateDaemonUI();
@@ -2449,20 +2310,14 @@
             }
         } else {
             try {
-                appendLog("dash-log", "[DAEMON] Invoking start_daemon...");
                 await invokeShort("start_daemon");
                 daemonRunning = true;
                 updateDaemonUI();
-                // Update chat area to show daemon is online
                 var chatEl = document.getElementById("agent-chat-messages");
                 if (chatEl) chatEl.innerHTML = '<div class="chat-msg assistant"><span class="role">Agent:</span> Daemon is online. How can I help you?</div>';
-                appendLog("unified-log", "[AGENT] Daemon started.");
-                appendLog("unified-log", "[SYSTEM] Daemon started OK");
                 showToast("Agent daemon started", "success");
-                // Start Telegram polling if configured
                 startTelegramPolling();
             } catch(e) {
-                appendLog("dash-log", "[DAEMON] start_daemon ERROR: " + (e.message || e));
                 showToast("Failed to start daemon: " + (e.message || e), "error");
             }
         }
@@ -2487,10 +2342,8 @@
 
     async function emergencyFlush() {
         showToast("Flushing system processes...", "info");
-        appendLog("unified-log", "[SYSTEM] Emergency flush initiated...");
         stopTelegramPolling();
         try { await invokeShort("emergency_flush"); } catch(e) {
-            appendLog("dash-log", "[FLUSH] emergency_flush backend: " + (e.message||e));
             try { await invokeShort("stop_daemon"); } catch(e2) {}
         }
         daemonRunning = false;
@@ -2498,16 +2351,14 @@
         chatHistory = [];
         var chatEl = document.getElementById("agent-chat-messages");
         if (chatEl) chatEl.innerHTML = '<div class="chat-msg assistant"><span class="role">Agent:</span> System flushed. All processes stopped and memory cleared.</div>';
-        appendLog("unified-log", "[SYSTEM] Emergency flush complete.");
         showToast("System flushed successfully", "success");
     }
 
     async function sendAgentMessage(e) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
-        appendLog("dash-log", "[CHAT] sendAgentMessage() called");
         var input = document.getElementById("agent-chat-input");
         var msg = input.value.trim();
-        if (!msg) { appendLog("dash-log", "[CHAT] Empty message, ignoring"); return; }
+        if (!msg) return;
         input.value = "";
 
         var chatEl = document.getElementById("agent-chat-messages");
@@ -2520,24 +2371,18 @@
             return;
         }
 
-        // Show typing indicator
         chatEl.innerHTML += '<div class="chat-msg assistant" id="typing-indicator"><span class="role">Agent:</span> <span class="spinner">⟳</span> Thinking...</div>';
         chatEl.scrollTop = chatEl.scrollHeight;
 
-        // Call LLM directly — NO Tauri invoke, NO process spawn
         try {
-            appendLog("dash-log", "[CHAT] Calling callLLM...");
             var reply = await callLLM(msg);
             var typing = document.getElementById("typing-indicator");
             if (typing) typing.remove();
             chatEl.innerHTML += '<div class="chat-msg assistant"><span class="role">Agent:</span> ' + formatMarkdownToHtml(reply || "(no response)") + '</div>';
-            appendLog("unified-log", "[AGENT] Chat: " + msg.substring(0, 50) + " → Reply: " + (reply || "").substring(0, 80));
         } catch(err) {
             var typing = document.getElementById("typing-indicator");
             if (typing) typing.remove();
             chatEl.innerHTML += '<div class="chat-msg assistant"><span class="role">Agent:</span> Error: ' + escapeHtml(err.message || String(err)) + '</div>';
-            appendLog("dash-log", "[CHAT] LLM error: " + (err.message || err));
-            appendLog("unified-log", "[AGENT] Chat LLM error: " + (err.message || err));
         }
         chatEl.scrollTop = chatEl.scrollHeight;
         return false;
@@ -2547,18 +2392,17 @@
     var chatHistory = [];
     var MAX_TOOL_ITERATIONS = 10;
 
-    // ZeroClaw-compatible tools the LLM can call
     var agentTools = [
         {
             type: "function",
             function: {
                 name: "run_shell",
-                description: "Execute a shell command on the user's computer. Returns stdout+stderr. Use this for ANY system task: listing files, opening apps, checking system info, installing software, running scripts, etc.",
+                description: "Execute a shell command on the user's computer. Returns stdout+stderr.",
                 parameters: {
                     type: "object",
                     properties: {
-                        command: { type: "string", description: "The command to run (e.g. 'ls', 'dir', 'cat', 'python', 'pip', etc.)" },
-                        args: { type: "array", items: { type: "string" }, description: "Command arguments as separate strings" }
+                        command: { type: "string" },
+                        args: { type: "array", items: { type: "string" } }
                     },
                     required: ["command"],
                     additionalProperties: false
@@ -2572,9 +2416,7 @@
                 description: "Read the contents of a file on the user's computer.",
                 parameters: {
                     type: "object",
-                    properties: {
-                        path: { type: "string", description: "Absolute or relative file path to read" }
-                    },
+                    properties: { path: { type: "string" } },
                     required: ["path"],
                     additionalProperties: false
                 }
@@ -2584,13 +2426,10 @@
             type: "function",
             function: {
                 name: "write_file",
-                description: "Write content to a file on the user's computer. Creates the file if it doesn't exist.",
+                description: "Write content to a file on the user's computer.",
                 parameters: {
                     type: "object",
-                    properties: {
-                        path: { type: "string", description: "Absolute or relative file path to write" },
-                        content: { type: "string", description: "Content to write to the file" }
-                    },
+                    properties: { path: { type: "string" }, content: { type: "string" } },
                     required: ["path", "content"],
                     additionalProperties: false
                 }
@@ -2600,15 +2439,10 @@
             type: "function",
             function: {
                 name: "http_request",
-                description: "Make an HTTP request to any URL. Useful for fetching web pages, APIs, downloading data, etc.",
+                description: "Make an HTTP request.",
                 parameters: {
                     type: "object",
-                    properties: {
-                        url: { type: "string", description: "The URL to request" },
-                        method: { type: "string", description: "HTTP method (GET, POST, PUT, DELETE). Default: GET" },
-                        headers: { type: "object", description: "Optional HTTP headers as key-value pairs" },
-                        body: { type: "string", description: "Optional request body for POST/PUT" }
-                    },
+                    properties: { url: { type: "string" }, method: { type: "string" }, headers: { type: "object" }, body: { type: "string" } },
                     required: ["url"],
                     additionalProperties: false
                 }
@@ -2618,12 +2452,10 @@
             type: "function",
             function: {
                 name: "list_directory",
-                description: "List files and folders in a directory on the user's computer.",
+                description: "List files and folders.",
                 parameters: {
                     type: "object",
-                    properties: {
-                        path: { type: "string", description: "Directory path to list. Default: current directory" }
-                    },
+                    properties: { path: { type: "string" } },
                     required: ["path"],
                     additionalProperties: false
                 }
@@ -2633,19 +2465,16 @@
             type: "function",
             function: {
                 name: "take_screenshot",
-                description: "Take a screenshot of the user's screen. Returns the file path to the saved screenshot image. Use this to see what is currently on screen before performing GUI automation with pyautogui.",
+                description: "Take a screenshot of the user's screen.",
                 parameters: {
                     type: "object",
-                    properties: {
-                        filename: { type: "string", description: "Optional filename for the screenshot. Default: screenshot.png" }
-                    },
+                    properties: { filename: { type: "string" } },
                     additionalProperties: false
                 }
             }
         }
     ];
 
-    // ---------- User Approval for Collaborative Mode ----------
     var pendingApprovalId = 0;
     async function awaitUserApproval(toolName, args) {
         return new Promise(function(resolve, reject) {
@@ -2668,45 +2497,25 @@
             chatArea.appendChild(card);
             chatArea.scrollTop = chatArea.scrollHeight;
             var timeout = setTimeout(function() {
-                appendLog("unified-log", "[AUTONOMY] Auto-denied: " + toolName + " (timeout)");
                 cleanup();
                 reject(new Error("User approval timed out for: " + toolName));
             }, 120000);
-            function cleanup() {
-                var el = document.getElementById(aid);
-                if (el) el.remove();
-            }
-            card.querySelector(".btn-approve").addEventListener("click", function() {
-                clearTimeout(timeout);
-                appendLog("unified-log", "[AUTONOMY] User APPROVED: " + toolName);
-                cleanup();
-                resolve(true);
-            });
-            card.querySelector(".btn-deny").addEventListener("click", function() {
-                clearTimeout(timeout);
-                appendLog("unified-log", "[AUTONOMY] User DENIED: " + toolName);
-                cleanup();
-                reject(new Error("User denied tool execution: " + toolName));
-            });
+            function cleanup() { var el = document.getElementById(aid); if (el) el.remove(); }
+            card.querySelector(".btn-approve").addEventListener("click", function() { clearTimeout(timeout); cleanup(); resolve(true); });
+            card.querySelector(".btn-deny").addEventListener("click", function() { clearTimeout(timeout); cleanup(); reject(new Error("User denied tool execution")); });
         });
     }
 
-    // Dangerous tools that need user approval in collaborative mode
     var DANGEROUS_TOOLS = ["run_shell", "write_file", "docker_command", "ssh_execute", "mqtt_publish"];
 
-    // Execute a tool call via Tauri backend
     async function executeTool(toolName, args) {
         appendLog("unified-log", "[AGENT] [TOOL] Executing: " + toolName + "(" + JSON.stringify(args).substring(0, 100) + ")");
 
-        // ---------- AUTONOMY GATE ----------
         var autonomy = (currentConfig.settings && currentConfig.settings.autonomy) || "collaborative";
-        // Fallback: read from DOM
         try { var sel = document.getElementById("setting-autonomy"); if (sel) autonomy = sel.value; } catch(e) {}
 
         if (autonomy === "observe") {
-            var msg = "[BLOCKED] Observation Only mode is active. Tool execution is disabled. Change to Collaborative or Full Autonomy in Settings.";
-            appendLog("unified-log", "[AUTONOMY] " + msg);
-            return msg;
+            return "[BLOCKED] Observation Only mode is active.";
         }
 
         if (autonomy === "collaborative") {
@@ -2719,14 +2528,12 @@
                 }
             }
         }
-        // "autonomous" mode: proceed immediately (no gate)
 
         try {
             if (toolName === "run_shell") {
                 var cmd = args.command || "";
                 var cmdArgs = args.args || [];
                 var result = await invokeShort("run_shell_command", { commandName: cmd, args: cmdArgs });
-                appendLog("unified-log", "[AGENT] [TOOL] run_shell result: " + (result || "").substring(0, 200));
                 return result || "(no output)";
             } else if (toolName === "read_file") {
                 var platform = await invokeShort("get_platform");
@@ -2736,18 +2543,15 @@
                 } else {
                     result = await invokeShort("run_shell_command", { commandName: "cat", args: [args.path] });
                 }
-                appendLog("unified-log", "[AGENT] [TOOL] read_file result: " + (result || "").substring(0, 200));
                 return result || "(empty file)";
             } else if (toolName === "write_file") {
                 var platform = await invokeShort("get_platform");
                 if (platform === "windows") {
-                    // Use PowerShell to write file
                     var psCmd = "Set-Content -Path '" + args.path.replace(/'/g, "''") + "' -Value '" + (args.content || "").replace(/'/g, "''") + "'";
                     var result = await invokeShort("run_shell_command", { commandName: "powershell", args: ["-Command", psCmd] });
                 } else {
                     var result = await invokeShort("run_shell_command", { commandName: "bash", args: ["-c", "cat > '" + args.path.replace(/'/g, "'\''") + "' << 'BCEOF'\n" + (args.content || "") + "\nBCEOF"] });
                 }
-                appendLog("unified-log", "[AGENT] [TOOL] write_file done: " + args.path);
                 return "File written successfully: " + args.path;
             } else if (toolName === "http_request") {
                 var method = (args.method || "GET").toUpperCase();
@@ -2757,14 +2561,12 @@
                 }
                 var resp = await fetch(args.url, fetchOpts);
                 var text = await resp.text();
-                appendLog("unified-log", "[AGENT] [TOOL] http_request " + method + " " + args.url + " -> HTTP " + resp.status);
                 return "HTTP " + resp.status + "\n" + text.substring(0, 5000);
             } else if (toolName === "list_directory") {
                 var platform = await invokeShort("get_platform");
                 var cmd = platform === "windows" ? "dir" : "ls";
                 var cmdArgs = platform === "windows" ? ["/B", args.path] : ["-la", args.path];
                 var result = await invokeShort("run_shell_command", { commandName: cmd, args: cmdArgs });
-                appendLog("unified-log", "[AGENT] [TOOL] list_directory result: " + (result || "").substring(0, 200));
                 return result || "(empty directory)";
             } else if (toolName === "take_screenshot") {
                 var fname = args.filename || "screenshot.png";
@@ -2772,7 +2574,6 @@
                 var screenshotPath = platform === "windows" ? "C:\\tmp\\" + fname : "/tmp/" + fname;
                 var pyCmd = "import pyautogui; pyautogui.screenshot('" + screenshotPath.replace(/\\/g, "\\\\") + "'); print('" + screenshotPath + "')";
                 var result = await invokeShort("run_shell_command", { commandName: "python", args: ["-c", pyCmd] });
-                appendLog("unified-log", "[AGENT] [TOOL] take_screenshot saved to: " + screenshotPath);
                 return "Screenshot saved to: " + screenshotPath + "\n" + (result || "");
             } else if (["web_browse","web_search","docker_command","ssh_execute","mqtt_publish"].indexOf(toolName) >= 0 || toolName.startsWith("composio_")) {
                 return await executeSkillTool(toolName, args);
@@ -2780,80 +2581,55 @@
                 return "Unknown tool: " + toolName;
             }
         } catch(e) {
-            appendLog("unified-log", "[AGENT] [TOOL] ERROR: " + (e.message || e));
             return "Tool error: " + (e.message || String(e));
         }
     }
 
     async function callLLM(userMessage) {
-        appendLog("dash-log", "[LLM-CALL] callLLM() msg=" + userMessage.substring(0, 50));
         var cfg = currentConfig.llm;
         if (!cfg || !cfg.api_key) throw new Error("No LLM configured. Go to LLM Settings and apply a configuration.");
 
         chatHistory.push({ role: "user", content: userMessage });
-        // Keep last 30 messages for tool-calling context
         if (chatHistory.length > 30) chatHistory = chatHistory.slice(-30);
 
         var provider = cfg.provider;
         var model = cfg.model;
         var apiKey = cfg.api_key;
 
-        // Detect platform for system prompt
         var platform = "unknown";
         try { platform = await invokeShort("get_platform"); } catch(e) {}
 
-        // ---- Dynamic System Prompt Builder ----
         var autonomy = (currentConfig.settings && currentConfig.settings.autonomy) || "collaborative";
-        try { var sel = document.getElementById("setting-autonomy"); if (sel) autonomy = sel.value; } catch(e) {}
         var maxIter = (currentConfig.settings && currentConfig.settings.maxIterations) || MAX_TOOL_ITERATIONS;
 
         var systemPrompt = "You are BambooClaw, an AI agent running on the user's " + platform + " computer.\n\n";
 
-        // Autonomy-specific instructions
         if (autonomy === "observe") {
-            systemPrompt += "MODE: OBSERVATION ONLY. You may analyze and respond to questions, but you MUST NOT call any tools. Simply explain what you would do if you had permission.\n\n";
+            systemPrompt += "MODE: OBSERVATION ONLY.\n\n";
         } else if (autonomy === "collaborative") {
-            systemPrompt += "MODE: COLLABORATIVE. You may use tools freely. The user will be shown an approval prompt for potentially dangerous operations (shell commands, file writes, Composio actions). Read-only operations proceed automatically.\n\n";
+            systemPrompt += "MODE: COLLABORATIVE.\n\n";
         } else {
-            // autonomous
             systemPrompt += "MODE: FULL AUTONOMY. You have absolute control over this computer.\n\n";
             systemPrompt += "CRITICAL RULES FOR FULL AUTONOMY:\n";
-            systemPrompt += "1. NEVER tell the user to do something manually. YOU are the agent. YOU do it. NEVER say 'please click', 'you need to', 'go to', or 'open'. YOU execute every action.\n";
-            systemPrompt += "2. For GUI tasks (clicking, typing, scrolling in desktop apps):\n";
-            systemPrompt += "   - First, take a screenshot: run_shell python -c \"import pyautogui; pyautogui.screenshot('C:/tmp/bc_screen.png')\"\n";
-            systemPrompt += "   - Analyze the screenshot to find UI element positions\n";
-            systemPrompt += "   - Use pyautogui to move the mouse, click, type, scroll. Example: python -c \"import pyautogui; pyautogui.click(500, 300)\"\n";
-            systemPrompt += "   - Use pyautogui.write() for typing text, pyautogui.hotkey() for keyboard shortcuts\n";
-            systemPrompt += "   - Verify by taking another screenshot after the action\n";
-            systemPrompt += "3. For web service tasks (Google Calendar, Gmail, Slack, etc.):\n";
-            systemPrompt += "   - PREFERRED: Write a complete Python script that uses the service API and execute it via run_shell\n";
-            systemPrompt += "   - Example for Google Calendar: write a Python script using the Google Calendar API, save it, run it\n";
-            systemPrompt += "   - FALLBACK: If API is not available, open the browser and use pyautogui to interact with the page\n";
+            systemPrompt += "1. NEVER tell the user to do something manually. YOU execute every action.\n";
+            systemPrompt += "2. For GUI tasks: Take screenshot -> Analyze -> pyautogui -> Verify screenshot.\n";
+            systemPrompt += "3. For web service tasks: Use API scripts preferred. Fallback to browser automation.\n";
             systemPrompt += "4. Chain as many tool calls as needed. Do not stop halfway. Your max iterations: " + maxIter + "\n";
-            systemPrompt += "5. If a task requires multiple steps, complete ALL steps before responding.\n";
-            systemPrompt += "6. For file operations: just do them. For installs: just run the package manager. For searches: use curl or python requests.\n\n";
+            systemPrompt += "5. Complete ALL steps before responding.\n";
+            systemPrompt += "6. For file operations: just do them.\n";
+            systemPrompt += "7. ENCODING RULE: NEVER output raw Unicode characters (like German umlauts ä, ö, ü, or the Euro symbol €) inside Python scripts. ALWAYS use standard ASCII equivalents (e.g. 'ae', 'oe', 'ue', 'EUR') to prevent Windows encoding crashes.\n\n";
         }
 
-        // Available capabilities
-        systemPrompt += "AVAILABLE TOOLS: shell commands (run_shell), file read/write (read_file, write_file), HTTP requests (http_request), directory listing (list_directory), screenshot (take_screenshot).\n";
-        systemPrompt += "Python 3 is available. For ANY GUI interaction, write a Python script using pyautogui and execute it via run_shell. pyautogui, pillow, and requests are installed.\n";
-        systemPrompt += "For screenshots, use the take_screenshot tool or run: python -c \"import pyautogui; pyautogui.screenshot('screenshot.png')\"\n";
-        systemPrompt += "Be proactive and action-oriented. Report results clearly.\n";
-
-        // Inject user's custom system prompt from Settings tab
         var userSystemPrompt = (currentConfig.llm && currentConfig.llm.system_prompt) ? currentConfig.llm.system_prompt.trim() : "";
-        // Also inject active persona
         var personaPrompt = "";
         if (activePersonaIndex >= 0 && activePersonaIndex < personas.length) {
             personaPrompt = personas[activePersonaIndex].prompt.trim();
         }
         if (userSystemPrompt || personaPrompt) {
-            systemPrompt += "\n--- OPERATOR INSTRUCTIONS (HIGHEST PRIORITY — follow these precisely) ---\n";
+            systemPrompt += "\n--- OPERATOR INSTRUCTIONS ---\n";
             if (userSystemPrompt) systemPrompt += userSystemPrompt + "\n";
             if (personaPrompt) {
-                systemPrompt += "\n--- ACTIVE PERSONA ---\n";
-                systemPrompt += personaPrompt + "\n";
-                systemPrompt += "--- END PERSONA ---\n";
+                systemPrompt += "\n--- ACTIVE PERSONA ---\n" + personaPrompt + "\n--- END PERSONA ---\n";
             }
             systemPrompt += "--- END OPERATOR INSTRUCTIONS ---\n";
         }
@@ -2879,7 +2655,7 @@
         } else if (provider === "anthropic") {
             apiUrl = "https://api.anthropic.com/v1/messages";
             headers = { "x-api-key": apiKey, "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" };
-            supportsTools = false; // Different tool format, fallback to plain
+            supportsTools = false; 
         } else if (provider === "google") {
             apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey;
             headers = { "Content-Type": "application/json" };
@@ -2897,20 +2673,16 @@
 
         var messages = [{ role: "system", content: systemPrompt }].concat(chatHistory);
 
-        // ---- Capture full payload for the Logs tab inspector ----
         function updatePayloadInspector(fullBody) {
             var el = document.getElementById("llm-payload-display");
             if (el) {
-                // Pretty-print but redact API key
                 var displayBody = JSON.parse(JSON.stringify(fullBody));
                 el.textContent = JSON.stringify(displayBody, null, 2);
                 el.scrollTop = 0;
             }
         }
 
-        // For providers that don't support OpenAI-style tool calling, fall back to plain chat
         if (!supportsTools) {
-            appendLog("dash-log", "[LLM-CALL] Provider " + provider + " - no tool support, plain chat");
             var body;
             if (provider === "anthropic") {
                 body = JSON.stringify({ model: model, max_tokens: 2048, system: systemPrompt, messages: chatHistory });
@@ -2928,15 +2700,10 @@
             else if (provider === "google") reply = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text || "(empty)";
             else if (provider === "ollama") reply = data.message && data.message.content || "(empty)";
             chatHistory.push({ role: "assistant", content: reply });
-            appendLog("dash-log", "[LLM-CALL] Got reply: " + reply.substring(0, 80) + "...");
             return reply;
         }
 
-        // ========= AGENTIC TOOL-CALLING LOOP =========
-        appendLog("dash-log", "[LLM-CALL] Calling " + provider + " / " + model + " (with tools)");
-
         for (var iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
-            // Deduplicate tools, ensure descriptions, omit if empty
             var dedupedTools = [];
             var seenToolNames = {};
             agentTools.forEach(function(t) {
@@ -2953,13 +2720,13 @@
                 reqBody.tool_choice = "auto";
             }
             updatePayloadInspector(reqBody);
-        var resp = await fetch(apiUrl, { method: "POST", headers: headers, body: JSON.stringify(reqBody) });
-        if (!resp.ok) {
-            chatHistory.pop(); // FIX: Remove the failed message so it doesn't brick the chat session
-            var errText = await resp.text();
-            appendLog("dash-log", "[LLM-CALL] ERROR HTTP " + resp.status + ": " + errText.substring(0, 200));
-            throw new Error("LLM API error (HTTP " + resp.status + ") - " + errText.substring(0, 100));
-}
+            
+            var resp = await fetch(apiUrl, { method: "POST", headers: headers, body: JSON.stringify(reqBody) });
+            if (!resp.ok) {
+                chatHistory.pop();
+                var errText = await resp.text();
+                throw new Error("LLM API error (HTTP " + resp.status + ") - " + errText.substring(0, 100));
+            }
             var data = await resp.json();
             var choice = data.choices && data.choices[0];
             if (!choice) throw new Error("No response from LLM");
@@ -2967,15 +2734,12 @@
             var assistantMsg = choice.message;
             messages.push(assistantMsg);
 
-            // Check if the model wants to call tools
             if (assistantMsg.tool_calls && assistantMsg.tool_calls.length > 0) {
-                appendLog("dash-log", "[LLM-CALL] Tool calls requested: " + assistantMsg.tool_calls.length);
                 for (var t = 0; t < assistantMsg.tool_calls.length; t++) {
                     var tc = assistantMsg.tool_calls[t];
                     var toolName = tc.function.name;
                     var toolArgs = {};
                     try { toolArgs = JSON.parse(tc.function.arguments); } catch(e) {}
-                    appendLog("dash-log", "[TOOL] " + toolName + "(" + JSON.stringify(toolArgs).substring(0, 80) + ")");
 
                     var toolResult = await executeTool(toolName, toolArgs);
 
@@ -2985,18 +2749,14 @@
                         content: toolResult
                     });
                 }
-                // Continue the loop to let the LLM process tool results
                 continue;
             }
 
-            // No tool calls — we have a final text response
             var reply = assistantMsg.content || "(no response)";
             chatHistory.push({ role: "assistant", content: reply });
-            appendLog("dash-log", "[LLM-CALL] Got reply (after " + iteration + " tool iterations): " + reply.substring(0, 300) + (reply.length > 300 ? "..." : ""));
             return reply;
         }
 
-        // Exceeded max iterations
         var lastMsg = messages[messages.length - 1];
         var reply = (lastMsg && lastMsg.content) || "(max tool iterations reached)";
         chatHistory.push({ role: "assistant", content: reply });
@@ -3008,21 +2768,20 @@
     var tgLastUpdateId = 0;
 
     function startTelegramPolling() {
-        if (tgPollingTimeout) return; // already polling
+        if (tgPollingTimeout) return; 
         var token = currentConfig.channels && currentConfig.channels.telegram && currentConfig.channels.telegram.token;
         if (!token) {
             appendLog("dash-log", "[TG-POLL] No Telegram token configured, skipping polling");
             return;
         }
         appendLog("dash-log", "[TG-POLL] Starting Telegram polling...");
-        appendLog("unified-log", "[AGENT] Telegram polling started for incoming messages.");
         pollTelegramLoop();
     }
 
     async function pollTelegramLoop() {
         if (!daemonRunning) return;
-        await pollTelegram(); // Wait for the entire LLM processing to finish
-        tgPollingTimeout = setTimeout(pollTelegramLoop, 3000); // Only queue the next check after finishing
+        await pollTelegram(); 
+        tgPollingTimeout = setTimeout(pollTelegramLoop, 3000); 
     }
 
     function stopTelegramPolling() {
@@ -3052,33 +2811,25 @@
                     var text = update.message.text;
                     var from = update.message.from && update.message.from.first_name || "User";
                     appendLog("unified-log", "[AGENT] [TELEGRAM] Message from " + from + ": " + text);
-                    appendLog("dash-log", "[TG-POLL] Received: " + text.substring(0, 50));
 
-                    // Append user message to Agent Chat UI
                     var chatEl = document.getElementById("agent-chat-messages");
                     if (chatEl) {
                         chatEl.innerHTML += '<div class="chat-msg"><span class="role">You (Telegram):</span> ' + escapeHtml(text) + '</div>';
                         chatEl.scrollTop = chatEl.scrollHeight;
                     }
 
-                    // Get LLM reply
                     try {
                         var reply = await callLLM(text);
-                        // Send reply back to Telegram
                         await fetch("https://api.telegram.org/bot" + token + "/sendMessage", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ chat_id: chatId, text: stripMarkdownForTelegram(reply), parse_mode: "Markdown" })
                         });
-                        appendLog("unified-log", "[AGENT] [TELEGRAM] Replied to " + from + ": " + reply.substring(0, 500) + (reply.length > 500 ? "..." : ""));
-                        // Append agent reply to Agent Chat UI
                         if (chatEl) {
                             chatEl.innerHTML += '<div class="chat-msg assistant"><span class="role">Agent:</span> ' + formatMarkdownToHtml(reply || "(no response)") + '</div>';
                             chatEl.scrollTop = chatEl.scrollHeight;
                         }
                     } catch(e) {
-                        appendLog("unified-log", "[AGENT] [TELEGRAM] LLM error: " + (e.message || e));
-                        // Send error message to user
                         await fetch("https://api.telegram.org/bot" + token + "/sendMessage", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
@@ -3087,9 +2838,7 @@
                     }
                 }
             }
-        } catch(e) {
-            appendLog("dash-log", "[TG-POLL] Error: " + (e.message || e));
-        }
+        } catch(e) {}
     }
 
     function escapeHtml(str) {
@@ -3099,35 +2848,24 @@
     function formatMarkdownToHtml(str) {
         var s = escapeHtml(str);
         var BT = String.fromCharCode(96);
-        // Headers: ### then ## then #
         s = s.replace(/^### (.+)$/gm, '<h4 style="margin:0.6em 0 0.3em;font-size:0.95em;color:var(--accent);">$1</h4>');
         s = s.replace(/^## (.+)$/gm, '<h3 style="margin:0.7em 0 0.3em;font-size:1.05em;color:var(--accent);">$1</h3>');
         s = s.replace(/^# (.+)$/gm, '<h2 style="margin:0.8em 0 0.4em;font-size:1.15em;color:var(--accent);">$1</h2>');
-        // Bold: **text**
         s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-        // Italic: single *text* (simple version, after bold is handled)
         s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
-        // Inline code: backtick
         var codeRe = new RegExp(BT + '([^' + BT + ']+)' + BT, 'g');
         s = s.replace(codeRe, '<code style="background:rgba(0,255,136,0.1);padding:0.1em 0.4em;border-radius:3px;font-size:0.9em;">$1</code>');
-        // Unordered list items: * item or - item
         s = s.replace(/^[\*\-] (.+)$/gm, '<li style="margin-left:1.2em;list-style:disc;">$1</li>');
-        // Numbered list items: 1. item
         s = s.replace(/^\d+\. (.+)$/gm, '<li style="margin-left:1.2em;list-style:decimal;">$1</li>');
-        // Wrap consecutive li in ul
         s = s.replace(/((<li[^>]*>.*<\/li>\s*)+)/g, '<ul style="margin:0.3em 0;padding-left:0.5em;">$1</ul>');
-        // Line breaks
         s = s.replace(/\n/g, '<br>');
-        // Clean up br before/after block elements
         s = s.replace(/<br>\s*(<h[234]|<ul|<\/ul>)/g, '$1');
         s = s.replace(/(<\/h[234]>|<\/ul>)\s*<br>/g, '$1');
         return s;
     }
 
     function stripMarkdownForTelegram(str) {
-        // Convert ### headers to bullet markers for cleaner Telegram display
-        var s = str.replace(/^###+ (.+)$/gm, '\u25b8 $1');
-        return s;
+        return str.replace(/^###+ (.+)$/gm, '\u25b8 $1');
     }
 
     // =========== PERSONA MANAGEMENT ===========
@@ -3174,10 +2912,15 @@
             html += '<div style="flex:1;"><span style="font-weight:600;font-size:0.85rem;">' + escapeHtml(p.name) + '</span>';
             html += '<div style="font-size:0.7rem;color:var(--text-dim);margin-top:0.2rem;max-height:40px;overflow:hidden;">' + escapeHtml(p.prompt).substring(0, 120) + (p.prompt.length > 120 ? '...' : '') + '</div></div>';
             html += '<div style="display:flex;gap:0.5rem;margin-left:0.75rem;">';
-            html += '<button class="btn btn-sm btn-outline" onclick="window.deletePersona(' + i + ')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">✕</button>';
+            html += '<button class="btn btn-sm btn-outline" id="btn-del-persona-' + i + '" style="padding:0.3rem 0.6rem;font-size:0.75rem;">✕</button>';
             html += '</div></div>';
         });
         listEl.innerHTML = html;
+        
+        personas.forEach(function(p, i) {
+            var btn = document.getElementById('btn-del-persona-' + i);
+            if (btn) btn.addEventListener("click", function() { deletePersona(i); });
+        });
     }
 
     function createPersona() {
@@ -3205,7 +2948,6 @@
         renderPersonas();
         showToast("Persona '" + name + "' deleted", "info");
     }
-    window.deletePersona = deletePersona;
 
     // =========== SETTINGS ===========
     async function saveSettings() {
@@ -3221,12 +2963,8 @@
             loglevel: document.getElementById("set-loglevel").value,
             maxToolIterations: iterVal,
         };
-        // Sync system prompt from Settings tab to hidden LLM field & config
+        
         var settingsPrompt = document.getElementById("settings-system-prompt");
-        var llmPrompt = document.getElementById("llm-system-prompt");
-        if (settingsPrompt && llmPrompt) {
-            llmPrompt.value = settingsPrompt.value;
-        }
         if (currentConfig.llm) {
             currentConfig.llm.system_prompt = settingsPrompt ? settingsPrompt.value : "";
         }
@@ -3236,7 +2974,6 @@
         var sr = document.getElementById("settings-save-reminder"); if (sr) sr.classList.remove("visible");
     }
 
-    // Show settings save reminder on any change
     ["set-autonomy","set-port","set-tunnel","set-identity","set-runtime","set-loglevel","set-tool-iterations","settings-system-prompt","persona-selector"].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.addEventListener("change", function() {
@@ -3252,22 +2989,10 @@
         });
     });
 
-    // Create persona button
     setTimeout(function() {
         var btn = document.getElementById("btn-create-persona");
         if (btn) btn.addEventListener("click", function() { createPersona(); });
     }, 0);
-
-    // Show LLM save reminder on any LLM field change
-    ["llm-provider","llm-api-key","llm-model"].forEach(function(id) {
-        var el = document.getElementById(id);
-        if (el) el.addEventListener("change", function() {
-            var r = document.getElementById("llm-save-reminder"); if (r) r.classList.add("visible");
-        });
-        if (el) el.addEventListener("input", function() {
-            var r = document.getElementById("llm-save-reminder"); if (r) r.classList.add("visible");
-        });
-    });
 
     function resetSettings() {
         appendLog("dash-log", "[SETTINGS] resetSettings() called");
@@ -3292,14 +3017,10 @@
     var composioCategories = ["All"];
     var composioActiveCategory = "All";
 
-    // =========== SCHEMA SANITIZER ===========
-    // OpenAI function-calling only allows: type, properties, required, enum, items, description, additionalProperties, anyOf/oneOf (limited).
-    // Composio schemas often include $ref, default, examples, allOf, title, etc. which cause HTTP 400.
     function sanitizeToolSchema(rawParams) {
         if (!rawParams || typeof rawParams !== "object") {
             return { type: "object", properties: {}, required: [], additionalProperties: false };
         }
-        // Deep-clone to avoid mutating cached data
         var p;
         try { p = JSON.parse(JSON.stringify(rawParams)); } catch(e) {
             return { type: "object", properties: {}, required: [], additionalProperties: false };
@@ -3308,20 +3029,17 @@
         function cleanProp(obj) {
             if (!obj || typeof obj !== "object") return obj;
             if (Array.isArray(obj)) return obj.map(cleanProp);
-            // Remove unsupported keys
             var badKeys = ["$ref", "$defs", "$schema", "$id", "default", "examples", "example", "title", "format",
                            "readOnly", "writeOnly", "deprecated", "externalDocs", "xml", "discriminator",
                            "minLength", "maxLength", "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum",
                            "multipleOf", "pattern", "minItems", "maxItems", "uniqueItems", "minProperties", "maxProperties",
                            "const", "contentMediaType", "contentEncoding", "if", "then", "else", "not"];
             badKeys.forEach(function(k) { delete obj[k]; });
-            // Flatten allOf with single item
             if (obj.allOf && Array.isArray(obj.allOf) && obj.allOf.length === 1) {
                 var inner = cleanProp(obj.allOf[0]);
                 delete obj.allOf;
                 Object.keys(inner).forEach(function(k) { if (!obj[k]) obj[k] = inner[k]; });
             } else if (obj.allOf) {
-                // Merge all allOf items into the object
                 obj.allOf.forEach(function(item) {
                     var cleaned = cleanProp(item);
                     if (cleaned.properties) {
@@ -3335,14 +3053,12 @@
                 });
                 delete obj.allOf;
             }
-            // Recursively clean nested objects
             if (obj.properties && typeof obj.properties === "object") {
                 Object.keys(obj.properties).forEach(function(k) {
                     obj.properties[k] = cleanProp(obj.properties[k]);
                 });
             }
             if (obj.items) obj.items = cleanProp(obj.items);
-            // Flatten anyOf/oneOf to first option (many LLM APIs reject these)
             if (obj.anyOf && Array.isArray(obj.anyOf) && obj.anyOf.length > 0) {
                 var first = cleanProp(obj.anyOf[0]);
                 delete obj.anyOf;
@@ -3353,10 +3069,9 @@
                 delete obj.oneOf;
                 Object.keys(first2).forEach(function(fk) { if (!obj[fk]) obj[fk] = first2[fk]; });
             }
-            // FIX: OpenAI strictly forbids array types. Grab the first non-null type.
             if (Array.isArray(obj.type)) {
                 obj.type = obj.type.find(function(t) { return t !== "null"; }) || "string";
-    }
+            }
             return obj;
         }
 
@@ -3365,17 +3080,14 @@
         if (!p.properties) p.properties = {};
         if (!p.required) p.required = [];
         p.additionalProperties = false;
-        // Ensure required only references existing properties
         p.required = p.required.filter(function(r) { return p.properties.hasOwnProperty(r); });
         return p;
     }
 
-    // =========== ACTIVE TOOLS SUMMARY ===========
     function renderActiveToolsSummary() {
         var badge = document.getElementById("active-tools-count-badge");
         var listEl = document.getElementById("active-tools-list");
         if (!badge || !listEl) return;
-        // Count enabled toolkits/skills, not individual tool functions
         var enabledCount = 0;
         var html = "";
         var allKeys = Object.keys(enabledSkills);
@@ -3385,7 +3097,6 @@
                 var isComposio = k.startsWith("composio_");
                 var dotClass = isComposio ? "composio" : "builtin";
                 var label = isComposio ? k.replace("composio_", "") : k;
-                // Find tool count for this toolkit
                 var toolCount = 0;
                 agentTools.forEach(function(t) {
                     if (isComposio) {
@@ -3398,17 +3109,11 @@
                 html += '<div class="active-tool-entry"><span class="tool-dot ' + dotClass + '"></span>' + escapeHtml(label) + '<span style="color:var(--text-dim);font-size:0.7rem;margin-left:0.3rem;">' + suffix + '</span></div>';
             }
         });
-        console.log("[SKILLS] renderActiveToolsSummary: " + enabledCount + " toolkits enabled (from " + allKeys.length + " keys), agentTools.length=" + agentTools.length);
         badge.textContent = enabledCount;
         if (!html) html = '<div style="color:var(--text-dim);font-size:0.75rem;padding:0.25rem 0;">No tools loaded</div>';
         listEl.innerHTML = html;
     }
-    window.toggleActiveToolsList = function() {
-        var el = document.getElementById("active-tools-list");
-        if (el) el.classList.toggle("visible");
-    };
 
-    // =========== COMPOSIO CONNECTED ACCOUNT CHECK ===========
     async function checkComposioConnection(slug) {
         var composioKey = currentConfig.composioApiKey;
         if (!composioKey) return;
@@ -3434,20 +3139,11 @@
                     break;
                 }
             }
-            if (!hasConnection) {
-                appendLog("dash-log", "[COMPOSIO] ⚠ No connected account for " + slug + " — tools will fail until user links their account at composio.dev");
-            } else {
-                appendLog("dash-log", "[COMPOSIO] ✓ " + slug + " has " + accounts.length + " connected account(s)");
-            }
             renderComposioToolkits();
-        } catch(e) {
-            appendLog("dash-log", "[COMPOSIO] Connected account check failed for " + slug + ": " + (e.message || e));
-        }
+        } catch(e) {}
     }
 
-    // =========== CONNECTION MODAL ===========
     function showConnectionModal(slug) {
-        // Remove existing modal if any
         var existing = document.getElementById("conn-modal-overlay");
         if (existing) existing.remove();
 
@@ -3477,11 +3173,9 @@
 
         document.body.appendChild(overlay);
 
-        // Close on overlay click
         overlay.addEventListener("click", function(e) { if (e.target === overlay) overlay.remove(); });
         document.getElementById("conn-btn-cancel").addEventListener("click", function() { overlay.remove(); });
 
-        // Save API key connection
         document.getElementById("conn-btn-save-key").addEventListener("click", async function() {
             var apiKeyInput = document.getElementById("conn-api-key");
             var key = apiKeyInput ? apiKeyInput.value.trim() : "";
@@ -3490,11 +3184,9 @@
             var composioKey = currentConfig.composioApiKey;
             if (!composioKey) { showToast("Set your Composio API key first", "error"); return; }
 
-            appendLog("dash-log", "[COMPOSIO] Connecting " + slug + " with API key...");
             showToast("Connecting " + slug + "...", "info");
 
             try {
-                // Find integration ID
                 var intEndpoint = COMPOSIO_API_URL + "/integrations?appName=" + encodeURIComponent(slug);
                 var intJson = "";
                 if (window.__TAURI__) {
@@ -3511,7 +3203,6 @@
                 }
                 var integrationId = integrations[0].id;
 
-                // Create connected account with API key
                 var connEndpoint = COMPOSIO_API_URL + "/connectedAccounts";
                 var connBody = JSON.stringify({
                     integrationId: integrationId,
@@ -3528,7 +3219,6 @@
                 var connData = JSON.parse(connJson);
                 if (connData.connectionStatus === "ACTIVE" || connData.status === "ACTIVE" || connData.id) {
                     showToast(slug + " connected successfully!", "success");
-                    appendLog("dash-log", "[COMPOSIO] ✓ " + slug + " connected with API key");
                     for (var i = 0; i < composioToolkits.length; i++) {
                         if (composioToolkits[i].slug === slug) { composioToolkits[i].auth_warning = false; break; }
                     }
@@ -3536,7 +3226,6 @@
                     renderEnabledIntegrations();
                     overlay.remove();
                 } else if (connData.redirectUrl) {
-                    // Service requires OAuth instead
                     showToast("This service requires OAuth. Opening authorization page...", "info");
                     if (window.__TAURI__ && window.__TAURI__.shell && window.__TAURI__.shell.open) {
                         window.__TAURI__.shell.open(connData.redirectUrl);
@@ -3546,34 +3235,27 @@
                     setTimeout(function() { checkComposioConnection(slug); }, 15000);
                     overlay.remove();
                 } else {
-                    appendLog("dash-log", "[COMPOSIO] Connection response: " + connJson);
-                    showToast("Connection attempt returned unexpected response. Check logs.", "error");
+                    showToast("Connection attempt returned unexpected response.", "error");
                 }
             } catch(e) {
-                appendLog("dash-log", "[COMPOSIO] API key connection error: " + (e.message || e));
                 showToast("Connection error: " + (e.message || e), "error");
             }
         });
 
-        // OAuth button
         document.getElementById("conn-btn-oauth").addEventListener("click", function() {
             overlay.remove();
             performComposioOAuth(slug);
         });
     }
-    window.showConnectionModal = showConnectionModal;
 
-    // =========== COMPOSIO OAUTH INITIATION ===========
     async function performComposioOAuth(slug) {
         var composioKey = currentConfig.composioApiKey;
         if (!composioKey) {
             showToast("Set your Composio API key first", "error");
             return;
         }
-        appendLog("dash-log", "[COMPOSIO] Initiating OAuth for " + slug + "...");
         showToast("Connecting " + slug + "...", "info");
         try {
-            // Step 1: Get integration ID for this app
             var intEndpoint = COMPOSIO_API_URL + "/integrations?appName=" + encodeURIComponent(slug);
             var intJson = "";
             if (window.__TAURI__) {
@@ -3598,9 +3280,7 @@
                 return;
             }
             var integrationId = integrations[0].id;
-            appendLog("dash-log", "[COMPOSIO] Found integration: " + integrationId);
 
-            // Step 2: Initiate connected account (OAuth redirect)
             var connEndpoint = COMPOSIO_API_URL + "/connectedAccounts";
             var connBody = JSON.stringify({ integrationId: integrationId, entityId: "default" });
             var connJson = "";
@@ -3619,27 +3299,22 @@
             }
             var connData = JSON.parse(connJson);
             if (connData.redirectUrl) {
-                appendLog("dash-log", "[COMPOSIO] Opening OAuth: " + connData.redirectUrl);
                 showToast("Opening authorization page for " + slug + "...", "success");
                 if (window.__TAURI__ && window.__TAURI__.shell && window.__TAURI__.shell.open) {
                     window.__TAURI__.shell.open(connData.redirectUrl);
                 } else {
                     window.open(connData.redirectUrl, "_blank");
                 }
-                // Poll for connection status after a delay
                 setTimeout(function() { checkComposioConnection(slug); }, 15000);
                 setTimeout(function() { checkComposioConnection(slug); }, 30000);
             } else if (connData.connectionStatus === "ACTIVE") {
                 showToast(slug + " already connected!", "success");
-                // Update auth warning
                 for (var i = 0; i < composioToolkits.length; i++) {
                     if (composioToolkits[i].slug === slug) { composioToolkits[i].auth_warning = false; break; }
                 }
                 renderComposioToolkits();
             } else {
-                appendLog("dash-log", "[COMPOSIO] Unexpected response: " + connJson);
-                showToast("Could not initiate connection. Check logs.", "error");
-                // Fallback
+                showToast("Could not initiate connection.", "error");
                 var fallbackUrl2 = "https://app.composio.dev/apps/" + slug;
                 if (window.__TAURI__ && window.__TAURI__.shell && window.__TAURI__.shell.open) {
                     window.__TAURI__.shell.open(fallbackUrl2);
@@ -3648,14 +3323,9 @@
                 }
             }
         } catch(e) {
-            appendLog("dash-log", "[COMPOSIO] OAuth initiation error: " + (e.message || e));
             showToast("Connection error: " + (e.message || e), "error");
         }
     }
-    // initiateComposioOAuth now opens the connection modal
-    function initiateComposioOAuth(slug) { showConnectionModal(slug); }
-    window.initiateComposioOAuth = initiateComposioOAuth;
-
 
     async function fetchToolkitTriggers(slug) {
         var composioKey = currentConfig.composioApiKey;
@@ -3675,11 +3345,8 @@
             var data = JSON.parse(resultJson);
             var triggers = data.items || [];
             composioToolkitDetails[slug + "_triggers"] = triggers;
-            appendLog("dash-log", "[COMPOSIO] " + slug + " has " + triggers.length + " triggers");
             renderToolkitTriggers(slug);
-        } catch(e) {
-            appendLog("dash-log", "[COMPOSIO] Failed to fetch triggers for " + slug + ": " + (e.message || e));
-        }
+        } catch(e) {}
     }
 
     function renderToolkitTriggers(slug) {
@@ -3701,7 +3368,6 @@
         el.innerHTML = html;
     }
 
-    // Built-in tools that work via shell commands (no Composio needed)
     var builtinSkills = [
         { id: "web_browser", icon: "🌐", name: "Web Browser", desc: "Navigate and scrape websites via Playwright" },
         { id: "web_search", icon: "🔍", name: "Web Search", desc: "Search Google, DuckDuckGo, or Bing" },
@@ -3752,7 +3418,6 @@
             var descDisplay = desc || "No description available";
             html += '<div class="skill-card ' + (isEnabled ? 'enabled' : '') + '" data-skill-id="composio_' + tk.slug + '" data-skill-type="composio" data-toolkit-slug="' + tk.slug + '">';
             html += '<button class="skill-toggle" title="' + (isEnabled ? 'Disable' : 'Enable') + '"></button>';
-            // Logo: prefer local cached version via convertFileSrc, fallback to HTTPS, fallback to emoji
             var imgSrc = "";
             if (tk.local_logo && window.__TAURI__) {
                 var convertFn = (window.__TAURI__.core && window.__TAURI__.core.convertFileSrc)
@@ -3762,7 +3427,7 @@
             }
             if (!imgSrc && tk.logo) imgSrc = tk.logo;
             if (imgSrc) {
-                html += '<div class="skill-icon"><img src="' + escapeHtml(imgSrc) + '" data-slug="' + escapeHtml(tk.slug) + '" onerror="appendLog(\'dash-log\',\'[IMG] Failed: \' + this.src + \' | Toolkit: \' + this.dataset.slug); this.outerHTML=\'<span class=skill-icon>🧩</span>\'" /></div>';
+                html += '<div class="skill-icon"><img src="' + escapeHtml(imgSrc) + '" data-slug="' + escapeHtml(tk.slug) + '" onerror="this.outerHTML=\'<span class=skill-icon>🧩</span>\'" /></div>';
             } else {
                 html += '<div class="skill-icon">🧩</div>';
             }
@@ -3776,7 +3441,6 @@
             }
             html += '<button class="skill-info-btn" title="Show details">i</button>';
             html += '</div>';
-            // Auth warning badge
             if (tk.auth_warning) {
                 html += '<div class="auth-warning-badge">⚠ Not connected — <span style="cursor:pointer;text-decoration:underline;" data-connect-slug="' + escapeHtml(tk.slug) + '">link account</span></div>';
             }
@@ -3789,7 +3453,6 @@
         });
         if (!html) html = '<div style="color:var(--text-dim);font-size:0.85rem;padding:0.5rem;">No matching toolkits</div>';
         el.innerHTML = html;
-        // Attach event delegation for connection links
         el.querySelectorAll("span[data-connect-slug]").forEach(function(span) {
             span.addEventListener("click", function(e) {
                 e.stopPropagation();
@@ -3826,13 +3489,11 @@
             if (!enabledSkills[k] || !k.startsWith("composio_")) return;
             count++;
             var slug = k.replace("composio_", "");
-            // Find toolkit info
             var tk = null;
             for (var i = 0; i < composioToolkits.length; i++) {
                 if (composioToolkits[i].slug === slug) { tk = composioToolkits[i]; break; }
             }
             var name = tk ? (tk.meta_name || tk.name || slug) : slug;
-            // Build logo using same .skill-icon pattern as marketplace cards
             var imgSrc = "";
             if (tk && tk.local_logo && window.__TAURI__) {
                 var convertFn = (window.__TAURI__.core && window.__TAURI__.core.convertFileSrc)
@@ -3850,13 +3511,12 @@
             var toolCount = 0;
             agentTools.forEach(function(t) { if (t.function.name.indexOf(slug) > -1) toolCount++; });
             var countLabel = toolCount > 0 ? '<span style="font-size:0.7rem;color:var(--text-dim);">' + toolCount + ' tools</span>' : '';
-            html += '<div class="skill-card" style="cursor:pointer;" onclick="toggleSkill(\'' + k + '\')">';
+            html += '<div class="skill-card" style="cursor:pointer;" onclick="window.toggleSkill(\'' + k + '\')">';
             html += '<div style="display:flex;align-items:center;gap:0.5rem;">';
             html += logoHtml;
             html += '<div style="flex:1;"><div style="font-size:0.85rem;font-weight:600;">' + escapeHtml(name) + '</div>' + countLabel + '</div>';
             html += '<span style="color:#ef4444;font-size:0.7rem;cursor:pointer;" title="Click to disable">✕</span>';
             html += '</div>';
-            // Auth warning badge with OAuth link (same as marketplace cards)
             if (tk && tk.auth_warning) {
                 html += '<div class="auth-warning-badge">⚠ Not connected — <span style="cursor:pointer;text-decoration:underline;" data-connect-slug="' + escapeHtml(slug) + '">link account</span></div>';
             }
@@ -3865,7 +3525,6 @@
         if (count > 0) {
             section.style.display = "";
             grid.innerHTML = html;
-            // Attach event delegation for connection links
             grid.querySelectorAll("span[data-connect-slug]").forEach(function(span) {
                 span.addEventListener("click", function(e) {
                     e.stopPropagation();
@@ -3878,7 +3537,6 @@
         }
     }
 
-    // =========== LOCAL LOGO CACHING ===========
     var logosDir = "";
 
     async function ensureLogosDir() {
@@ -3889,30 +3547,21 @@
             if (!home) return "";
             var sep = (detectedOS === "windows") ? "\\" : "/";
             logosDir = home.replace(/[\\/]+$/, "") + sep + "bambooclaw" + sep + "logos";
-            var mkdirCmd = (detectedOS === "windows")
-                ? "cmd /c mkdir \"" + logosDir + "\" 2>nul"
-                : "mkdir -p \"" + logosDir + "\"";
             await tauriInvoke("run_shell_command", {
                 commandName: (detectedOS === "windows") ? "cmd" : "sh",
                 args: (detectedOS === "windows") ? ["/c", "mkdir", logosDir, "2>nul"] : ["-c", "mkdir -p \"" + logosDir + "\""]
             }).catch(function() {});
-            appendLog("dash-log", "[LOGOS] Directory ensured: " + logosDir);
             return logosDir;
         } catch(e) {
-            appendLog("dash-log", "[LOGOS] ensureLogosDir error: " + (e.message || e));
             return "";
         }
     }
 
     async function cacheToolkitLogos() {
         var dir = await ensureLogosDir();
-        if (!dir) {
-            appendLog("dash-log", "[LOGOS] Skipping logo cache (no Tauri or no home dir)");
-            return;
-        }
+        if (!dir) return;
         var sep = (detectedOS === "windows") ? "\\" : "/";
         var toDownload = [];
-        // Check which logos need downloading
         for (var i = 0; i < composioToolkits.length; i++) {
             var tk = composioToolkits[i];
             if (!tk.logo) continue;
@@ -3921,68 +3570,34 @@
             tk.local_logo_path = localPath;
             toDownload.push({ idx: i, slug: tk.slug, url: tk.logo, path: localPath });
         }
-        appendLog("dash-log", "[LOGOS] Checking " + toDownload.length + " logos...");
-        var cached = 0;
-        var downloaded = 0;
-        var failed = 0;
         var batchSize = 15;
         for (var b = 0; b < toDownload.length; b += batchSize) {
             var batch = toDownload.slice(b, b + batchSize);
             var promises = batch.map(function(item) {
-                // Check if file exists first
-                var checkCmd = (detectedOS === "windows")
-                    ? "if exist \"" + item.path + "\" (echo EXISTS) else (echo MISSING)"
-                    : "test -f \"" + item.path + "\" && echo EXISTS || echo MISSING";
                 return invokeShort("run_shell_command", {
                     commandName: (detectedOS === "windows") ? "cmd" : "sh",
                     args: (detectedOS === "windows") ? ["/c", "if", "exist", item.path, "(echo", "EXISTS)", "else", "(echo", "MISSING)"] : ["-c", "test -f \"" + item.path + "\" && echo EXISTS || echo MISSING"]
                 }).then(function(result) {
                     if (result && result.indexOf("EXISTS") > -1) {
                         composioToolkits[item.idx].local_logo = item.path;
-                        cached++;
                         return;
                     }
-                    // Download with curl
                     return invokeShort("run_shell_command", {
                         commandName: "curl",
                         args: ["-sL", "-o", item.path, item.url]
                     }).then(function() {
                         composioToolkits[item.idx].local_logo = item.path;
-                        downloaded++;
-                    }).catch(function(e) {
-                        failed++;
-                        appendLog("dash-log", "[LOGOS] Download failed for " + item.slug + ": " + (e.message || e));
-                    });
-                }).catch(function(e) {
-                    failed++;
-                });
+                    }).catch(function(e) {});
+                }).catch(function(e) {});
             });
             await Promise.allSettled(promises);
-            // Update progress
-            var total = cached + downloaded + failed;
-            if (toDownload.length > 20 && total % 50 === 0) {
-                appendLog("dash-log", "[LOGOS] Progress: " + total + "/" + toDownload.length);
-            }
         }
-        appendLog("dash-log", "[LOGOS] Complete: " + cached + " cached, " + downloaded + " downloaded, " + failed + " failed");
-        // Re-render with local logos
         renderComposioToolkits();
     }
 
-    // Boot-time image connectivity test
     async function testImageConnectivity() {
         if (!window.__TAURI__) return;
-        appendLog("dash-log", "[IMG-DIAG] Testing image connectivity...");
-        try {
-            var resp = await fetch("https://assets.composio.dev/logos/slack.png", { method: "HEAD", mode: "no-cors" });
-            appendLog("dash-log", "[IMG-DIAG] Image fetch test completed (no-cors mode, may be opaque)");
-        } catch(e) {
-            appendLog("dash-log", "[IMG-DIAG] Image fetch FAILED: " + (e.message || e));
-        }
-        // Test via Image object
         var img = new Image();
-        img.onload = function() { appendLog("dash-log", "[IMG-DIAG] Image() load: SUCCESS (" + img.width + "x" + img.height + ")"); };
-        img.onerror = function(ev) { appendLog("dash-log", "[IMG-DIAG] Image() load: FAILED - Tauri webview likely blocks cross-origin images"); };
         img.src = "https://assets.composio.dev/logos/slack.png";
     }
 
@@ -3993,7 +3608,6 @@
         renderAllSkills();
 
         if (enabledSkills[skillId]) {
-            // If it's a Composio toolkit, fetch its real tool definitions
             if (skillId.startsWith("composio_")) {
                 var slug = skillId.replace("composio_", "");
                 fetchToolkitTools(slug);
@@ -4001,10 +3615,8 @@
                 rebuildBuiltinTools();
             }
             var name = skillId.startsWith("composio_") ? skillId.replace("composio_", "") : skillId;
-            appendLog("unified-log", "[SKILLS] Enabled: " + name);
             showToast(name + " enabled", "success");
         } else {
-            // Full rebuild: remove ALL composio tools then re-add only enabled ones
             agentTools = agentTools.filter(function(t) {
                 return !t.function.name.startsWith("composio_");
             });
@@ -4016,13 +3628,10 @@
                     cached.forEach(function(tool) {
                         var rawP = tool.input_parameters || tool.parameters || { type: "object", properties: {}, required: [] };
                         var params = sanitizeToolSchema(rawP);
-                        
                         var realSlug = tool.slug || tool.name || "";
                         var safeName = ("composio_" + realSlug.replace(/[^a-zA-Z0-9_-]/g, "_")).substring(0, 64);
-                        
                         window.composioToolMap = window.composioToolMap || {};
                         window.composioToolMap[safeName] = realSlug;
-
                         agentTools.push({
                             type: "function",
                             function: {
@@ -4036,50 +3645,34 @@
             });
             rebuildBuiltinTools();
             var name = skillId.startsWith("composio_") ? skillId.replace("composio_", "") : skillId;
-            appendLog("unified-log", "[SKILLS] Disabled: " + name);
             showToast(name + " disabled", "info");
         }
         renderActiveToolsSummary();
         renderEnabledIntegrations();
     }
+    window.toggleSkill = toggleSkill;
 
-    // Cache for per-toolkit tool lists
     var composioToolkitDetails = {};
 
-    // Fetch real tool definitions for a Composio toolkit from /api/v3/tools?toolkit=slug
     async function fetchToolkitTools(slug) {
-        appendLog("dash-log", "[COMPOSIO] Fetching tools for toolkit: " + slug);
         var composioKey = currentConfig.composioApiKey;
         if (!composioKey) return;
-
         try {
             var toolsJson = "";
             var endpoint = COMPOSIO_API_URL + "/tools?toolkit=" + encodeURIComponent(slug) + "&limit=200";
             if (window.__TAURI__) {
-                toolsJson = await tauriInvoke("run_shell_command", {
-                    commandName: "curl",
-                    args: ["-s", "-H", "x-api-key: " + composioKey, endpoint]
-                });
+                toolsJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, endpoint] });
             } else {
-                var resp = await fetch(endpoint, {
-                    headers: { "x-api-key": composioKey }
-                });
+                var resp = await fetch(endpoint, { headers: { "x-api-key": composioKey } });
                 toolsJson = await resp.text();
             }
 
             var data = JSON.parse(toolsJson);
             var tools = data.items || [];
-            appendLog("dash-log", "[COMPOSIO] Toolkit " + slug + " has " + tools.length + " tools");
-
-            // Cache for UI display
             composioToolkitDetails[slug] = tools;
 
-            // Remove old tools for this toolkit
-            agentTools = agentTools.filter(function(t) {
-                return !t.function.name.startsWith("composio_");
-            });
+            agentTools = agentTools.filter(function(t) { return !t.function.name.startsWith("composio_"); });
 
-            // Re-add all enabled toolkit tools
             Object.keys(enabledSkills).forEach(function(skillId) {
                 if (!enabledSkills[skillId] || !skillId.startsWith("composio_")) return;
                 var sk = skillId.replace("composio_", "");
@@ -4090,39 +3683,23 @@
                         var params = sanitizeToolSchema(rawParams);
                         var realSlug = tool.slug || tool.name || "";
                         var safeName = ("composio_" + realSlug.replace(/[^a-zA-Z0-9_-]/g, "_")).substring(0, 64);
-
-            // Map the safe name back to the real slug for execution
-            window.composioToolMap = window.composioToolMap || {};
-            window.composioToolMap[safeName] = realSlug;
-
-            agentTools.push({
-                type: "function",
-                function: {
-                    name: safeName,
-                    description: (tool.description || tool.name || sk + " tool").substring(0, 1024) + " [via Composio " + sk + "]",
-                    parameters: params
-                }
-            });
+                        window.composioToolMap = window.composioToolMap || {};
+                        window.composioToolMap[safeName] = realSlug;
+                        agentTools.push({
+                            type: "function",
+                            function: { name: safeName, description: (tool.description || tool.name || sk + " tool").substring(0, 1024) + " [via Composio " + sk + "]", parameters: params }
+                        });
                     });
                 }
             });
 
-            appendLog("dash-log", "[SKILLS] Injected " + tools.length + " real tool definitions for " + slug + ". Total agent tools: " + agentTools.length);
             showToast(slug + ": " + tools.length + " tools added to agent", "success");
             renderActiveToolsSummary();
             renderEnabledIntegrations();
-
-            // Check if user has a connected account for this toolkit
             checkComposioConnection(slug);
-
-            // Fetch triggers for this toolkit (display-only)
             fetchToolkitTriggers(slug);
-
-            // Update UI if the detail panel is open
             renderToolkitToolsList(slug);
         } catch(e) {
-            appendLog("dash-log", "[COMPOSIO] Failed to fetch tools for " + slug + ": " + (e.message || e));
-            // Fallback: add a generic natural-language tool
             agentTools.push({
                 type: "function",
                 function: {
@@ -4131,11 +3708,9 @@
                     parameters: { type: "object", properties: { action: { type: "string", description: "What to do (natural language)" } }, required: ["action"], additionalProperties: false }
                 }
             });
-            showToast(slug + " added (generic mode — could not fetch tool schemas)", "info");
         }
     }
 
-    // Render expandable tools list inside toolkit detail panel
     function renderToolkitToolsList(slug) {
         var el = document.getElementById("toolkit-tools-" + slug);
         if (!el) return;
@@ -4160,7 +3735,6 @@
             html += '<div class="tool-slug">' + escapeHtml(toolSlug) + '</div>';
             if (toolDesc) html += '<div class="tool-desc">' + escapeHtml(toolDesc.substring(0, 120)) + (toolDesc.length > 120 ? "…" : "") + '</div>';
 
-            // Parameters panel (hidden by default)
             html += '<div class="toolkit-tool-params" id="tool-params-' + slug + '-' + idx + '">';
             var propKeys = Object.keys(props);
             if (propKeys.length > 0) {
@@ -4168,9 +3742,7 @@
                 propKeys.forEach(function(pName) {
                     var p = props[pName];
                     var isReq = reqList.indexOf(pName) >= 0;
-                    html += '<div class="param-row">';
-                    html += '<span class="param-name">' + escapeHtml(pName) + '</span>';
-                    html += '<span class="param-type">' + escapeHtml(p.type || "any") + '</span>';
+                    html += '<div class="param-row"><span class="param-name">' + escapeHtml(pName) + '</span><span class="param-type">' + escapeHtml(p.type || "any") + '</span>';
                     if (isReq) html += '<span class="param-req">required</span>';
                     html += '</div>';
                     if (p.description) html += '<div style="color:var(--text-dim);font-size:0.55rem;padding-left:0.5rem;margin-bottom:0.15rem;">' + escapeHtml(p.description.substring(0, 100)) + '</div>';
@@ -4180,23 +3752,17 @@
             if (outKeys.length > 0) {
                 html += '<div style="color:var(--warning);margin-top:0.3rem;margin-bottom:0.2rem;">Output Parameters:</div>';
                 outKeys.forEach(function(pName) {
-                    var p = outProps[pName];
-                    html += '<div class="param-row">';
-                    html += '<span class="param-name">' + escapeHtml(pName) + '</span>';
-                    html += '<span class="param-type">' + escapeHtml(p.type || "any") + '</span>';
-                    html += '</div>';
+                    html += '<div class="param-row"><span class="param-name">' + escapeHtml(pName) + '</span><span class="param-type">' + escapeHtml(outProps[pName].type || "any") + '</span></div>';
                 });
             }
             if (propKeys.length === 0 && outKeys.length === 0) {
                 html += '<div style="color:var(--text-dim);">No parameters defined</div>';
             }
-            html += '</div>'; // end params
-            html += '</div>'; // end tool-row
+            html += '</div></div>';
         });
         el.innerHTML = html;
     }
 
-    // Load toolkit tools on demand when info panel is expanded
     async function loadToolkitToolsOnDemand(slug) {
         if (composioToolkitDetails[slug]) {
             renderToolkitToolsList(slug);
@@ -4210,10 +3776,7 @@
             var toolsJson = "";
             var endpoint = COMPOSIO_API_URL + "/tools?toolkit=" + encodeURIComponent(slug) + "&limit=200";
             if (window.__TAURI__) {
-                toolsJson = await tauriInvoke("run_shell_command", {
-                    commandName: "curl",
-                    args: ["-s", "-H", "x-api-key: " + composioKey, endpoint]
-                });
+                toolsJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, endpoint] });
             } else {
                 var resp = await fetch(endpoint, { headers: { "x-api-key": composioKey } });
                 toolsJson = await resp.text();
@@ -4221,142 +3784,27 @@
             var data = JSON.parse(toolsJson);
             composioToolkitDetails[slug] = data.items || [];
             renderToolkitToolsList(slug);
-            // Also load triggers on demand
-            if (!composioToolkitDetails[slug + "_triggers"]) {
-                fetchToolkitTriggers(slug);
-            } else {
-                renderToolkitTriggers(slug);
-            }
+            if (!composioToolkitDetails[slug + "_triggers"]) fetchToolkitTriggers(slug);
+            else renderToolkitTriggers(slug);
         } catch(e) {
-            if (el) el.innerHTML = '<div style="color:var(--error);font-size:0.65rem;">Failed to load tools: ' + escapeHtml(e.message || String(e)) + '</div>';
+            if (el) el.innerHTML = '<div style="color:var(--error);font-size:0.65rem;">Failed to load tools</div>';
         }
     }
 
-    // Build tool definitions for built-in (non-Composio) skills
     function rebuildBuiltinTools() {
-        // Remove old built-in skill tools
         agentTools = agentTools.filter(function(t) {
             return !["web_browse","web_search","docker_command","ssh_execute","mqtt_publish"].includes(t.function.name);
         });
-
         builtinSkills.forEach(function(s) {
             if (!enabledSkills[s.id]) return;
-
-            if (s.id === "web_browser") {
-                agentTools.push({
-                    type: "function",
-                    function: {
-                        name: "web_browse",
-                        description: "Open a URL in a headless browser and return the page content as text.",
-                        parameters: { type: "object", properties: { url: { type: "string", description: "URL to open" } }, required: ["url"], additionalProperties: false }
-                    }
-                });
-            } else if (s.id === "web_search") {
-                agentTools.push({
-                    type: "function",
-                    function: {
-                        name: "web_search",
-                        description: "Search the web using a search engine and return results.",
-                        parameters: { type: "object", properties: { query: { type: "string", description: "Search query" }, engine: { type: "string", description: "Search engine: google, duckduckgo, bing. Default: google" } }, required: ["query"], additionalProperties: false }
-                    }
-                });
-            } else if (s.id === "docker") {
-                agentTools.push({
-                    type: "function",
-                    function: {
-                        name: "docker_command",
-                        description: "Execute a Docker command (ps, images, run, stop, rm, build, logs, exec, etc.)",
-                        parameters: { type: "object", properties: { args: { type: "array", items: { type: "string" }, description: "Docker command arguments" } }, required: ["args"], additionalProperties: false }
-                    }
-                });
-            } else if (s.id === "ssh_remote") {
-                agentTools.push({
-                    type: "function",
-                    function: {
-                        name: "ssh_execute",
-                        description: "Execute a command on a remote server via SSH.",
-                        parameters: { type: "object", properties: { host: { type: "string" }, user: { type: "string" }, command: { type: "string" }, port: { type: "number", description: "SSH port, default 22" } }, required: ["host", "user", "command"], additionalProperties: false }
-                    }
-                });
-            } else if (s.id === "mqtt_bridge") {
-                agentTools.push({
-                    type: "function",
-                    function: {
-                        name: "mqtt_publish",
-                        description: "Publish a message to an MQTT topic.",
-                        parameters: { type: "object", properties: { broker: { type: "string" }, topic: { type: "string" }, message: { type: "string" } }, required: ["broker", "topic", "message"], additionalProperties: false }
-                    }
-                });
-            }
+            if (s.id === "web_browser") agentTools.push({ type: "function", function: { name: "web_browse", description: "Open URL in headless browser", parameters: { type: "object", properties: { url: { type: "string" } }, required: ["url"], additionalProperties: false } }});
+            else if (s.id === "web_search") agentTools.push({ type: "function", function: { name: "web_search", description: "Search the web", parameters: { type: "object", properties: { query: { type: "string" }, engine: { type: "string" } }, required: ["query"], additionalProperties: false } }});
+            else if (s.id === "docker") agentTools.push({ type: "function", function: { name: "docker_command", description: "Docker commands", parameters: { type: "object", properties: { args: { type: "array", items: { type: "string" } } }, required: ["args"], additionalProperties: false } }});
+            else if (s.id === "ssh_remote") agentTools.push({ type: "function", function: { name: "ssh_execute", description: "SSH commands", parameters: { type: "object", properties: { host: { type: "string" }, user: { type: "string" }, command: { type: "string" }, port: { type: "number" } }, required: ["host", "user", "command"], additionalProperties: false } }});
+            else if (s.id === "mqtt_bridge") agentTools.push({ type: "function", function: { name: "mqtt_publish", description: "MQTT publish", parameters: { type: "object", properties: { broker: { type: "string" }, topic: { type: "string" }, message: { type: "string" } }, required: ["broker", "topic", "message"], additionalProperties: false } }});
         });
-
-        appendLog("dash-log", "[SKILLS] Rebuilt built-in tools. Total agent tools: " + agentTools.length);
         renderActiveToolsSummary();
         renderEnabledIntegrations();
-    }
-
-    // Kept for backward compatibility — now just calls rebuildBuiltinTools
-    function rebuildComposioTools() {
-        rebuildBuiltinTools();
-    }
-
-    // Execute skill-specific tools
-    async function executeSkillTool(toolName, args) {
-        appendLog("unified-log", "[AGENT] [SKILL] " + toolName + "(" + JSON.stringify(args).substring(0, 100) + ")");
-        try {
-            if (toolName === "web_browse") {
-                return await executeTool("http_request", { url: args.url, method: "GET" });
-            } else if (toolName === "web_search") {
-                var engine = args.engine || "google";
-                var q = encodeURIComponent(args.query);
-                var url = engine === "duckduckgo" ? "https://html.duckduckgo.com/html/?q=" + q : "https://www.google.com/search?q=" + q;
-                return await executeTool("http_request", { url: url, method: "GET" });
-            } else if (toolName === "docker_command") {
-                return await executeTool("run_shell", { command: "docker", args: args.args || [] });
-            } else if (toolName === "ssh_execute") {
-                var sshArgs = ["-o", "StrictHostKeyChecking=no", "-p", String(args.port || 22), args.user + "@" + args.host, args.command];
-                return await executeTool("run_shell", { command: "ssh", args: sshArgs });
-            } else if (toolName === "mqtt_publish") {
-                return await executeTool("run_shell", { command: "mosquitto_pub", args: ["-h", args.broker, "-t", args.topic, "-m", args.message] });
-            } else if (toolName.startsWith("composio_")) {
-                // Real Composio tool execution via v3 API
-                var composioKey = currentConfig.composioApiKey;
-                if (!composioKey) return "Composio API key not configured. Go to Skills tab and enter your key.";
-                // Extract the real tool slug from the mapping
-                var toolSlug = (window.composioToolMap && window.composioToolMap[toolName]) 
-                                ? window.composioToolMap[toolName] 
-                                : toolName.replace("composio_", "");
-                appendLog("unified-log", "[AGENT] [COMPOSIO] Executing tool: " + toolSlug);
-
-                var execBody = JSON.stringify(args);
-                var result = "";
-
-                if (window.__TAURI__) {
-                    result = await tauriInvoke("run_shell_command", {
-                        commandName: "curl",
-                        args: ["-s", "-X", "POST",
-                            "-H", "Content-Type: application/json",
-                            "-H", "x-api-key: " + composioKey,
-                            "-d", execBody,
-                            COMPOSIO_API_URL + "/tools/execute/" + toolSlug]
-                    });
-                } else {
-                    var resp = await fetch(COMPOSIO_API_URL + "/tools/execute/" + toolSlug, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json", "x-api-key": composioKey },
-                        body: execBody
-                    });
-                    result = await resp.text();
-                    if (!resp.ok) return "Composio error (HTTP " + resp.status + "): " + result.substring(0, 500);
-                }
-
-                appendLog("unified-log", "[AGENT] [COMPOSIO] Result: " + (result || "").substring(0, 200));
-                return result.substring(0, 5000) || "(no output)";
-            }
-            return "Unknown skill tool: " + toolName;
-        } catch(e) {
-            return "Skill tool error: " + (e.message || String(e));
-        }
     }
 
     async function saveComposioKey() {
@@ -4368,71 +3816,47 @@
         var statusEl = document.getElementById("composio-status");
         statusEl.style.display = "block";
         statusEl.innerHTML = '<span style="color:var(--text-dim);">⟳ Validating key and fetching toolkits...</span>';
-        appendLog("dash-log", "[COMPOSIO] Validating key via " + COMPOSIO_API_URL + "/toolkits...");
 
         var validated = false;
         var toolkitsData = null;
 
-        // Use Tauri curl to bypass CORS
         if (window.__TAURI__) {
             try {
-                appendLog("dash-log", "[COMPOSIO] Tauri detected, using curl...");
-                var curlResult = await tauriInvoke("run_shell_command", {
-                    commandName: "curl",
-                    args: ["-s", "-H", "x-api-key: " + key, COMPOSIO_API_URL + "/toolkits?limit=500"]
-                });
-                appendLog("dash-log", "[COMPOSIO] curl response length: " + (curlResult || "").length);
+                var curlResult = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + key, COMPOSIO_API_URL + "/toolkits?limit=500"] });
                 try {
                     toolkitsData = JSON.parse(curlResult);
-                    if (toolkitsData.items) {
-                        validated = true;
-                    } else if (toolkitsData.error || toolkitsData.status === 401) {
-                        statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key — check your key at app.composio.dev/settings</span>';
-                        showToast("Invalid Composio API key", "error");
+                    if (toolkitsData.items) validated = true;
+                    else if (toolkitsData.error || toolkitsData.status === 401) {
+                        statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key</span>';
                         return;
                     }
                 } catch(parseErr) {
-                    // Check if it's an HTTP error code
-                    if ((curlResult || "").indexOf("401") >= 0 || (curlResult || "").indexOf("Unauthorized") >= 0) {
+                    if ((curlResult || "").indexOf("401") >= 0) {
                         statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key</span>';
-                        showToast("Invalid Composio API key", "error");
                         return;
                     }
-                    appendLog("dash-log", "[COMPOSIO] curl parse error: " + parseErr.message);
                 }
-            } catch(e) {
-                appendLog("dash-log", "[COMPOSIO] curl failed: " + (e.message || e));
-            }
+            } catch(e) {}
         }
 
-        // Browser fallback
         if (!validated) {
             try {
-                var resp = await fetch(COMPOSIO_API_URL + "/toolkits?limit=500", {
-                    headers: { "x-api-key": key }
-                });
-                appendLog("dash-log", "[COMPOSIO] fetch response: HTTP " + resp.status);
+                var resp = await fetch(COMPOSIO_API_URL + "/toolkits?limit=500", { headers: { "x-api-key": key } });
                 if (resp.ok) {
                     toolkitsData = await resp.json();
                     if (toolkitsData.items) validated = true;
                 } else if (resp.status === 401 || resp.status === 403) {
-                    statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key — check your key at app.composio.dev/settings</span>';
-                    showToast("Invalid Composio API key", "error");
+                    statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key</span>';
                     return;
                 }
-            } catch(e) {
-                appendLog("dash-log", "[COMPOSIO] fetch error (CORS?): " + (e.message || e));
-            }
+            } catch(e) {}
         }
 
         if (!validated || !toolkitsData) {
-            statusEl.innerHTML = '<span style="color:var(--warning);">⚠ Cannot validate from browser (CORS). Key saved — it will work in the desktop app.</span>';
-            showToast("Key saved — Composio integration requires the desktop app", "info");
-            appendLog("unified-log", "[COMPOSIO] CORS blocked in browser. Key saved for desktop use.");
+            statusEl.innerHTML = '<span style="color:var(--warning);">⚠ Cannot validate from browser (CORS). Key saved for desktop use.</span>';
             return;
         }
 
-        // Success — populate toolkit list and normalize meta fields
         var rawToolkits = toolkitsData.items || [];
         composioToolkits = rawToolkits.map(function(tk) {
             var m = tk.meta || {};
@@ -4446,28 +3870,19 @@
                 triggers_count: m.triggers_count || tk.triggers_count || 0
             };
         });
-        var totalItems = toolkitsData.total_items || composioToolkits.length;
-        statusEl.innerHTML = '<span style="color:var(--accent);">✓ Connected to Composio (' + totalItems + ' toolkits available)</span>';
-        showToast("Composio connected! " + totalItems + " toolkits loaded.", "success");
-        appendLog("dash-log", "[COMPOSIO] Connected. " + composioToolkits.length + " toolkits loaded.");
-        appendLog("unified-log", "[COMPOSIO] Connected with " + totalItems + " toolkits available.");
-
-        // Extract categories from normalized data
+        
+        statusEl.innerHTML = '<span style="color:var(--accent);">✓ Connected to Composio</span>';
+        
         var catSet = {};
-        composioToolkits.forEach(function(tk) {
-            (tk.categories || []).forEach(function(c) { catSet[c] = true; });
-        });
+        composioToolkits.forEach(function(tk) { (tk.categories || []).forEach(function(c) { catSet[c] = true; }); });
         composioCategories = ["All"].concat(Object.keys(catSet).sort());
 
-        // Show connected area, hide placeholder
         document.getElementById("composio-placeholder").classList.add("hidden");
         document.getElementById("composio-connected-area").classList.remove("hidden");
         renderAllSkills();
-        // Start async logo caching (non-blocking)
         cacheToolkitLogos();
     }
 
-    // Click delegation for skill cards — built-in tools (info toggle only, no enable/disable)
     document.getElementById("skills-builtin").addEventListener("click", function(e) {
         var infoBtn = e.target.closest ? e.target.closest(".skill-info-btn") : null;
         if (!infoBtn && e.target.classList && e.target.classList.contains("skill-info-btn")) infoBtn = e.target;
@@ -4481,9 +3896,7 @@
         }
     });
 
-    // Click delegation for Composio toolkit cards
     document.getElementById("skills-composio").addEventListener("click", function(e) {
-        // Handle tool row clicks - toggle parameter visibility
         var toolRow = e.target.closest ? e.target.closest(".toolkit-tool-row") : null;
         if (toolRow) {
             e.stopPropagation();
@@ -4494,7 +3907,6 @@
             return;
         }
 
-        // Handle info button clicks - toggle description visibility + load tools
         var infoBtn = e.target.closest ? e.target.closest(".skill-info-btn") : null;
         if (!infoBtn && e.target.classList && e.target.classList.contains("skill-info-btn")) infoBtn = e.target;
         if (infoBtn) {
@@ -4505,32 +3917,29 @@
                 if (descEl) {
                     var wasVisible = descEl.classList.contains("visible");
                     descEl.classList.toggle("visible");
-                    // Load tools on demand when expanding
                     if (!wasVisible) {
-                        var tkSlug = descEl.getAttribute("data-toolkit-slug");
-                        if (tkSlug) loadToolkitToolsOnDemand(tkSlug);
+                        var tkSlug2 = descEl.getAttribute("data-toolkit-slug");
+                        if (tkSlug2) loadToolkitToolsOnDemand(tkSlug2);
                     }
                 }
             }
             return;
         }
 
-        // Handle toggle clicks on the card itself
-        var card = e.target.closest ? e.target.closest(".skill-card") : null;
-        if (!card) {
+        var card2 = e.target.closest ? e.target.closest(".skill-card") : null;
+        if (!card2) {
             var el = e.target;
             while (el && el !== this) {
-                if (el.classList && el.classList.contains("skill-card")) { card = el; break; }
+                if (el.classList && el.classList.contains("skill-card")) { card2 = el; break; }
                 el = el.parentElement;
             }
         }
-        if (card) {
-            var skillId = card.getAttribute("data-skill-id");
+        if (card2) {
+            var skillId = card2.getAttribute("data-skill-id");
             if (skillId) toggleSkill(skillId);
         }
     });
 
-    // Click delegation for category tabs
     document.getElementById("composio-category-tabs").addEventListener("click", function(e) {
         var btn = e.target.closest ? e.target.closest("[data-composio-cat]") : null;
         if (!btn) {
@@ -4546,14 +3955,46 @@
         }
     });
 
-    // Search filter for skills
-    document.addEventListener("input", function(e) {
-        if (e.target && e.target.id === "skill-search") renderComposioToolkits();
-    });
-    document.getElementById("btn-save-composio").addEventListener("click", function() { saveComposioKey(); });
+    // Replace inline onclick bindings with addEventListener
+    document.getElementById("btn-copy-boot-log").addEventListener("click", function() { copyLog('boot-log'); });
+    document.getElementById("btn-copy-install-log").addEventListener("click", function() { copyLog('install-log'); });
+    document.getElementById("btn-copy-cap-log").addEventListener("click", function() { copyLog('capability-log'); });
+    document.getElementById("btn-copy-log").addEventListener("click", function() { copyLog('unified-log'); });
+    document.getElementById("btn-copy-payload").addEventListener("click", function() { copyLog('llm-payload-display'); });
+    document.getElementById("btn-back-step1").addEventListener("click", function() { wizardGo(0); });
+    document.getElementById("btn-back-step2").addEventListener("click", function() { wizardGo(1); });
+    
+    var toggleBtn = document.getElementById("btn-toggle-tools-list");
+    if (toggleBtn) toggleBtn.addEventListener("click", function() { window.toggleActiveToolsList(); });
 
-    // Render built-in skills on load
-    renderBuiltinSkills();
+    var openComp = document.getElementById("btn-open-composio");
+    if (openComp) {
+        openComp.addEventListener("click", function() {
+            if (window.__TAURI__) {
+                try {
+                    var opener = (window.__TAURI__.opener && window.__TAURI__.opener.openUrl) || (window.__TAURI__.shell && window.__TAURI__.shell.open);
+                    if (opener) opener("https://app.composio.dev/settings");
+                } catch(e) {}
+            } else {
+                window.open("https://app.composio.dev/settings", "_blank");
+            }
+        });
+    }
+
+    document.getElementById("btn-apply-llm").addEventListener("click", applyLLMConfig);
+    document.getElementById("btn-test-llm").addEventListener("click", testLLMConfig);
+    document.getElementById("btn-setup-tg").addEventListener("click", setupTelegram);
+    document.getElementById("btn-setup-dc").addEventListener("click", setupDiscord);
+    document.getElementById("btn-setup-wa").addEventListener("click", setupWhatsApp);
+    document.getElementById("btn-setup-sl").addEventListener("click", setupSlack);
+    document.getElementById("btn-close-channel").addEventListener("click", closeChannelSetup);
+    document.getElementById("btn-daemon-toggle").addEventListener("click", toggleDaemon);
+    document.getElementById("btn-emergency-flush").addEventListener("click", emergencyFlush);
+    document.getElementById("btn-send-chat").addEventListener("click", sendAgentMessage);
+    document.getElementById("agent-chat-input").addEventListener("keydown", function(e) { if (e.key === "Enter") { sendAgentMessage(e); } });
+    document.getElementById("btn-save-settings").addEventListener("click", saveSettings);
+    document.getElementById("btn-reset-settings").addEventListener("click", resetSettings);
+    document.getElementById("btn-save-composio").addEventListener("click", saveComposioKey);
 
     async function saveAllConfig() {
         var toml = buildConfigToml();
@@ -4564,39 +4005,18 @@
         }
     }
 
-    // =========== OPENROUTER MODEL FETCHING ===========
-    function formatPrice(perToken) {
-        var val = perToken * 1000000;
-        if (val === 0) return "Free";
-        if (val < 0.01) return "<$0.01";
-        return "$" + val.toFixed(2);
-    }
-
     window.fetchORModels = function() {
-        appendLog("dash-log", "[OR] fetchORModels() called");
         var listEl = document.getElementById("or-model-list");
-        if (!listEl) { appendLog("dash-log", "[OR] ERROR: or-model-list element not found!"); return; }
-        listEl.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--text-dim);"><span class="spinner">⟳</span> Loading models from OpenRouter...</div>';
-        var fetchBtn = document.getElementById("btn-fetch-models");
-        if (fetchBtn) fetchBtn.disabled = true;
-
-        appendLog("dash-log", "[OR] Fetching https://openrouter.ai/api/v1/models ...");
-        fetch("https://openrouter.ai/api/v1/models", {
-            headers: { "Content-Type": "application/json" }
-        })
-        .then(function(r) {
-            appendLog("dash-log", "[OR] Response status: " + r.status);
-            if (!r.ok) throw new Error("HTTP " + r.status);
-            return r.json();
-        })
+        if (!listEl) return;
+        listEl.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--text-dim);"><span class="spinner">⟳</span> Loading models...</div>';
+        
+        fetch("https://openrouter.ai/api/v1/models")
+        .then(function(r) { return r.json(); })
         .then(function(data) {
-            appendLog("dash-log", "[OR] Raw models count: " + (data.data ? data.data.length : 0));
             var seen = {};
             orModels = (data.data || []).filter(function(m) {
                 if (!m.name || !m.pricing || !m.id) return false;
-                // Skip duplicates: keep only the first entry per model id
                 if (seen[m.id]) return false;
-                // Skip entries where the name is just the id (lowercase slug duplicate)
                 if (m.name === m.id) return false;
                 seen[m.id] = true;
                 return true;
@@ -4605,21 +4025,14 @@
                     id: m.id,
                     name: m.name,
                     input: parseFloat(m.pricing.prompt || "0"),
-                    output: parseFloat(m.pricing.completion || "0"),
-                    context: m.context_length || 0
+                    output: parseFloat(m.pricing.completion || "0")
                 };
             });
-            appendLog("dash-log", "[OR] Filtered models: " + orModels.length);
             document.getElementById("or-model-count").textContent = "(" + orModels.length + " available)";
             renderORModels();
-            showToast("Loaded " + orModels.length + " models from OpenRouter", "success");
-            if (fetchBtn) fetchBtn.disabled = false;
         })
         .catch(function(e) {
-            appendLog("dash-log", "[OR] FETCH ERROR: " + (e.message || String(e)));
-            listEl.innerHTML = '<div style="padding:1rem;color:var(--error);text-align:center;">Failed to load models: ' + escapeHtml(e.message || String(e)) + '</div>';
-            showToast("Failed to fetch models", "error");
-            if (fetchBtn) fetchBtn.disabled = false;
+            listEl.innerHTML = '<div style="padding:1rem;color:var(--error);text-align:center;">Failed to load models</div>';
         });
     };
 
@@ -4633,12 +4046,8 @@
         var m = orModels.find(function(x) { return x.id === id; });
         var nameEl = document.getElementById("or-active-model-name");
         if (nameEl) nameEl.textContent = m ? m.name + " (" + m.id + ")" : id;
-        // Show save reminder
         var reminder = document.getElementById("or-save-reminder");
         if (reminder) reminder.classList.add("visible");
-        var llmReminder = document.getElementById("llm-save-reminder");
-        if (llmReminder) llmReminder.classList.add("visible");
-        // Also set the hidden select so config builder picks it up
         var sel = document.getElementById("llm-model");
         sel.innerHTML = "";
         var opt = document.createElement("option");
@@ -4664,116 +4073,53 @@
 
         var html = '<table style="width:100%;border-collapse:collapse;font-size:0.8rem;">';
         html += '<thead><tr style="background:#1a1a2e;position:sticky;top:0;">';
-        html += '<th style="text-align:left;padding:0.5rem 0.75rem;">Model</th>';
-        html += '<th style="text-align:right;padding:0.5rem 0.75rem;white-space:nowrap;">Input/1M</th>';
-        html += '<th style="text-align:right;padding:0.5rem 0.75rem;white-space:nowrap;">Output/1M</th>';
+        html += '<th style="text-align:left;padding:0.5rem 0.75rem;">Model</th><th style="text-align:right;padding:0.5rem 0.75rem;">Input</th><th style="text-align:right;padding:0.5rem 0.75rem;">Output</th>';
         html += '</tr></thead><tbody>';
 
         filtered.forEach(function(m) {
             var sel = m.id === orSelectedModel;
             var bg = sel ? "background:rgba(16,185,129,0.15);border-left:3px solid var(--accent);" : "border-left:3px solid transparent;";
             html += '<tr data-model-id="' + escapeHtml(m.id) + '" style="cursor:pointer;border-bottom:1px solid var(--border);' + bg + '" class="or-model-row">';
-            html += '<td style="padding:0.5rem 0.75rem;"><div style="font-weight:600;' + (sel ? 'color:var(--accent);' : '') + '">' + escapeHtml(m.name) + '</div><div style="color:var(--text-dim);font-size:0.7rem;">' + escapeHtml(m.id) + '</div></td>';
-            html += '<td style="text-align:right;padding:0.5rem 0.75rem;font-family:monospace;color:var(--text-dim);">' + formatPrice(m.input) + '</td>';
-            html += '<td style="text-align:right;padding:0.5rem 0.75rem;font-family:monospace;color:var(--text-dim);">' + formatPrice(m.output) + '</td>';
+            html += '<td style="padding:0.5rem 0.75rem;"><div style="font-weight:600;">' + escapeHtml(m.name) + '</div><div style="color:var(--text-dim);font-size:0.7rem;">' + escapeHtml(m.id) + '</div></td>';
+            html += '<td style="text-align:right;padding:0.5rem 0.75rem;font-family:monospace;">$' + (m.input*1000000).toFixed(2) + '</td>';
+            html += '<td style="text-align:right;padding:0.5rem 0.75rem;font-family:monospace;">$' + (m.output*1000000).toFixed(2) + '</td>';
             html += '</tr>';
         });
 
-        if (filtered.length === 0) {
-            html += '<tr><td colspan="3" style="padding:1.5rem;text-align:center;color:var(--text-dim);">No models found</td></tr>';
-        }
         html += '</tbody></table>';
         document.getElementById("or-model-list").innerHTML = html;
     }
 
-    // Event delegation for model row clicks
     document.getElementById("or-model-list").addEventListener("click", function(e) {
         var row = e.target.closest ? e.target.closest(".or-model-row") : null;
         if (!row) {
-            // Fallback for older browsers
             var el = e.target;
             while (el && el !== this) {
                 if (el.classList && el.classList.contains("or-model-row")) { row = el; break; }
                 el = el.parentElement;
             }
         }
-        if (row) {
-            var id = row.getAttribute("data-model-id");
-            if (id) window.selectORModel(id);
-        }
+        if (row) window.selectORModel(row.getAttribute("data-model-id"));
     });
 
-    // Search filter
-    document.getElementById("or-model-search").addEventListener("input", function() {
-        renderORModels();
-    });
-
-    // Sort buttons
+    document.getElementById("or-model-search").addEventListener("input", renderORModels);
     document.getElementById("or-sort-name").addEventListener("click", function() { window.sortORModels("name"); });
     document.getElementById("or-sort-input").addEventListener("click", function() { window.sortORModels("input"); });
     document.getElementById("or-sort-output").addEventListener("click", function() { window.sortORModels("output"); });
     document.getElementById("btn-fetch-models").addEventListener("click", function() { window.fetchORModels(); });
 
-    // =========== GLOBAL FUNCTION EXPOSURE ===========
-    // All functions used in onclick handlers MUST be on window for Tauri webview compatibility
-    window.copyLog = copyLog;
-    window.wizardGo = wizardGo;
-    window.applyLLMConfig = applyLLMConfig;
-    window.testLLMConfig = testLLMConfig;
-    window.setupTelegram = setupTelegram;
-    window.setupDiscord = setupDiscord;
-    window.setupWhatsApp = setupWhatsApp;
-    window.setupSlack = setupSlack;
-    window.closeChannelSetup = closeChannelSetup;
-    window.saveTelegramToken = saveTelegramToken;
-    window.saveDiscordToken = saveDiscordToken;
-    window.saveWhatsApp = saveWhatsApp;
-    window.saveSlack = saveSlack;
-    window.testChannel = testChannel;
-    window.toggleDaemon = toggleDaemon;
-    window.emergencyFlush = emergencyFlush;
-    window.sendAgentMessage = sendAgentMessage;
-    window.saveSettings = saveSettings;
-    window.resetSettings = resetSettings;
-    window.escapeHtml = escapeHtml;
-
-    // Open log folder button
     document.getElementById("btn-open-log-folder").addEventListener("click", function() {
-        var folderPath = LOG_FOLDER;
         if (window.__TAURI__) {
             try {
-                var resolved = folderPath.replace("~", detectedOS === "windows" ? "%USERPROFILE%" : "$HOME");
+                var resolved = LOG_FOLDER.replace("~", detectedOS === "windows" ? "%USERPROFILE%" : "$HOME");
                 if (window.__TAURI__.opener) window.__TAURI__.opener.openUrl(resolved);
                 else if (window.__TAURI__.shell) window.__TAURI__.shell.open(resolved);
-                else showToast("Navigate to: " + LOG_FILE_PATH, "info");
-            } catch(e) { showToast("Log path: " + LOG_FILE_PATH, "info"); }
-        } else {
-            showToast("Log path: " + LOG_FILE_PATH + " (available in desktop app)", "info");
+            } catch(e) {}
         }
     });
 
-    // =========== BUTTON addEventListener BINDINGS (all buttons, no onclick) ===========
-    document.getElementById("btn-apply-llm").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-apply-llm clicked"); applyLLMConfig(); });
-    document.getElementById("btn-test-llm").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-test-llm clicked"); testLLMConfig(); });
-    document.getElementById("btn-setup-tg").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-setup-tg clicked"); setupTelegram(); });
-    document.getElementById("btn-setup-dc").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-setup-dc clicked"); setupDiscord(); });
-    document.getElementById("btn-setup-wa").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-setup-wa clicked"); setupWhatsApp(); });
-    document.getElementById("btn-setup-sl").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-setup-sl clicked"); setupSlack(); });
-    document.getElementById("btn-close-channel").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-close-channel clicked"); closeChannelSetup(); });
-    document.getElementById("btn-daemon-toggle").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-daemon-toggle clicked"); toggleDaemon(); });
-    document.getElementById("btn-emergency-flush").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-emergency-flush clicked"); emergencyFlush(); });
-    document.getElementById("btn-send-chat").addEventListener("click", function(e) { e.preventDefault(); e.stopPropagation(); appendLog("dash-log", "[BTN] btn-send-chat clicked"); sendAgentMessage(e); return false; });
-    document.getElementById("agent-chat-input").addEventListener("keydown", function(e) { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); appendLog("dash-log", "[BTN] chat Enter key"); sendAgentMessage(e); return false; } });
-    document.getElementById("btn-save-settings").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-save-settings clicked"); saveSettings(); });
-    document.getElementById("btn-reset-settings").addEventListener("click", function() { appendLog("dash-log", "[BTN] btn-reset-settings clicked"); resetSettings(); });
-    document.getElementById("set-tool-iterations").addEventListener("input", function() {
-        document.getElementById("tool-iter-value").textContent = this.value;
-    });
-
-    // =========== VERSION FETCH ===========
     async function fetchVersion() {
         try {
-            appendLog("boot-log", "[BOOT] fetchVersion: fetching from release proxy...");
             var resp = await fetch(PROXY_URL + "?action=latest");
             if (!resp.ok) throw new Error("HTTP " + resp.status);
             var data = await resp.json();
@@ -4782,32 +4128,18 @@
             if (el) el.textContent = ver;
             var aboutVer = document.getElementById("about-version");
             if (aboutVer) aboutVer.textContent = ver;
-            appendLog("boot-log", "[BOOT] fetchVersion: resolved -> " + ver);
-        } catch(e) {
-            var el = document.getElementById("app-version");
-            if (el) el.textContent = "v-offline";
-            appendLog("boot-log", "[BOOT] fetchVersion: ERROR -> " + (e.message || e));
-        }
+        } catch(e) {}
     }
 
-    // =========== STARTUP ===========
+    // MAIN BOOT SEQUENCE
     async function boot() {
         try {
-        // Splash screen timer is self-contained in inline script above.
-        // Using local logo.png bundled directly by Tauri.
-        
-        var installedFlag = localStorage.getItem("bambooclaw-installed");
-            appendLog("boot-log", "[BOOT] boot(): localStorage bambooclaw-installed = " + JSON.stringify(installedFlag));
-            // Fire version fetch (non-blocking)
+            var installedFlag = localStorage.getItem("bambooclaw-installed");
             fetchVersion();
             if (installedFlag === "true") {
-                appendLog("boot-log", "[BOOT] boot(): entering dashboard (already installed)");
-                await window.enterDashboard(); // Critical wait added here
-                // Load personas
+                await window.enterDashboard();
                 loadPersonas();
-                // Run image diagnostics (non-blocking)
                 testImageConnectivity();
-                // Auto-save default settings if not set
                 if (!currentConfig.settings) {
                     currentConfig.settings = {
                         autonomy: "autonomous",
@@ -4819,9 +4151,7 @@
                         maxToolIterations: 10
                     };
                     saveAllConfig();
-                    appendLog("dash-log", "[BOOT] Auto-saved default settings");
                 }
-                // Restore tool iterations from saved config
                 if (currentConfig.settings && currentConfig.settings.maxToolIterations) {
                     MAX_TOOL_ITERATIONS = currentConfig.settings.maxToolIterations;
                     var slider = document.getElementById("set-tool-iterations");
@@ -4829,77 +4159,45 @@
                     if (slider) slider.value = MAX_TOOL_ITERATIONS;
                     if (label) label.textContent = MAX_TOOL_ITERATIONS;
                 }
-                // Restore enabled skills from saved config
                 if (currentConfig.enabledSkills) {
                     enabledSkills = currentConfig.enabledSkills;
                     renderBuiltinSkills();
                     rebuildBuiltinTools();
-                    appendLog("dash-log", "[BOOT] Restored " + Object.keys(enabledSkills).filter(function(k) { return enabledSkills[k]; }).length + " enabled skills");
                     renderActiveToolsSummary();
                     renderEnabledIntegrations();
                 }
-                // Restore Composio API key and auto-reconnect
                 if (currentConfig.composioApiKey) {
                     var ckEl = document.getElementById("composio-api-key");
                     if (ckEl) ckEl.value = currentConfig.composioApiKey;
-                    // Auto-reconnect to fetch toolkits
                     setTimeout(function() { saveComposioKey(); }, 1000);
                 }
-                // Delayed counter refresh to ensure correct count after all async restoration
                 setTimeout(function() { renderActiveToolsSummary(); renderEnabledIntegrations(); }, 2000);
-                // Auto-start daemon if LLM is configured and daemon not running
                 setTimeout(function() {
                     if (currentConfig.llm && currentConfig.llm.api_key && !daemonRunning) {
-                        appendLog("dash-log", "[BOOT] Auto-starting daemon (LLM configured)...");
                         toggleDaemon();
                     }
                 }, 500);
             } else {
-                appendLog("boot-log", "[BOOT] boot(): calling runSystemChecks()");
                 runSystemChecks();
             }
-        } catch(e) {
-            appendLog("boot-log", "[FATAL] boot() crashed: " + (e.message || e));
-        }
+        } catch(e) {}
     }
 
     (function waitForTauri() {
         try {
-            appendLog("boot-log", "[BOOT] waitForTauri: polling started at " + new Date().toISOString());
             var startTime = Date.now();
             var waited = 0;
             var interval = setInterval(function() {
                 waited += 50;
                 if (window.__TAURI__) {
                     clearInterval(interval);
-                    appendLog("boot-log", "[BOOT] waitForTauri: __TAURI__ found after " + (Date.now() - startTime) + "ms");
                     boot();
                 } else if (waited >= 3000) {
                     clearInterval(interval);
-                    appendLog("boot-log", "[BOOT] waitForTauri: timeout after " + (Date.now() - startTime) + "ms, proceeding WITHOUT __TAURI__");
                     boot();
                 }
             }, 50);
-        } catch(e) {
-            appendLog("boot-log", "[FATAL] waitForTauri crashed: " + (e.message || e));
-        }
-    })();
-    </script>
-
-    <!-- SCRIPT 3: VERIFICATION — confirms Script 2 parsed successfully -->
-    <script>
-    (function() {
-        try {
-            var el = document.getElementById("boot-log");
-            if (typeof boot === "undefined") {
-                if (el) el.textContent += "[FATAL] Script 2 failed to parse. The boot() function does not exist. Check console for syntax errors.\n";
-            } else {
-                if (el) el.textContent += "[VERIFY] Script 2 parsed OK. boot() is defined.\n";
-            }
-        } catch(e) {
-            var el2 = document.getElementById("boot-log");
-            if (el2) el2.textContent += "[VERIFY] Error during verification: " + e.message + "\n";
-        }
+        } catch(e) {}
     })();
     </script>
 </body>
