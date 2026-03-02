@@ -985,13 +985,75 @@
     });
 
     // ==========================================
+    // ==========================================
     // EVENT BINDINGS
     // ==========================================
-    document.getElementById("btn-apply-llm").addEventListener("click", applyLLMConfig);
-    document.getElementById("btn-test-llm").addEventListener("click", testLLMConfig);
-    document.getElementById("btn-save-settings").addEventListener("click", saveSettings);
-    document.getElementById("btn-copy-boot-log").addEventListener("click", function() { copyLog('boot-log'); });
-    document.getElementById("btn-copy-log").addEventListener("click", function() { copyLog('unified-log'); });
+    function safeBind(id, event, fn) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener(event, fn);
+    }
+
+    // Logging & Wizard
+    safeBind("btn-copy-boot-log", "click", function() { copyLog('boot-log'); });
+    safeBind("btn-copy-install-log", "click", function() { copyLog('install-log'); });
+    safeBind("btn-copy-cap-log", "click", function() { copyLog('capability-log'); });
+    safeBind("btn-copy-log", "click", function() { copyLog('unified-log'); });
+    safeBind("btn-copy-payload", "click", function() { copyLog('llm-payload-display'); });
+    safeBind("btn-back-step1", "click", function() { wizardGo(0); });
+    safeBind("btn-back-step2", "click", function() { wizardGo(1); });
+    safeBind("btn-step0-next", "click", function() { wizardGo(1); });
+    safeBind("btn-step1-next", "click", function() { wizardGo(2); });
+    safeBind("btn-enter-dashboard", "click", function() { window.enterDashboard(); });
+
+    // Settings & LLM
+    safeBind("btn-apply-llm", "click", applyLLMConfig);
+    safeBind("btn-test-llm", "click", testLLMConfig);
+    safeBind("btn-save-settings", "click", saveSettings);
+    safeBind("btn-reset-settings", "click", resetSettings);
+
+    // OpenRouter Models
+    safeBind("or-model-search", "input", renderORModels);
+    safeBind("or-sort-name", "click", function() { window.sortORModels("name"); });
+    safeBind("or-sort-input", "click", function() { window.sortORModels("input"); });
+    safeBind("or-sort-output", "click", function() { window.sortORModels("output"); });
+    safeBind("btn-fetch-models", "click", function() { window.fetchORModels(); });
+
+    // Channels
+    safeBind("btn-setup-tg", "click", setupTelegram);
+    safeBind("btn-setup-dc", "click", setupDiscord);
+    safeBind("btn-setup-wa", "click", setupWhatsApp);
+    safeBind("btn-setup-sl", "click", setupSlack);
+    safeBind("btn-close-channel", "click", closeChannelSetup);
+
+    // Agent Control
+    safeBind("btn-daemon-toggle", "click", toggleDaemon);
+    safeBind("btn-emergency-flush", "click", emergencyFlush);
+    safeBind("btn-send-chat", "click", sendAgentMessage);
+    var chatInput = document.getElementById("agent-chat-input");
+    if (chatInput) { chatInput.addEventListener("keydown", function(e) { if (e.key === "Enter") { sendAgentMessage(e); } }); }
+
+    // Skills & Composio
+    safeBind("btn-save-composio", "click", saveComposioKey);
+    safeBind("btn-toggle-tools-list", "click", function() { window.toggleActiveToolsList(); });
+    safeBind("btn-open-composio", "click", function() {
+        if (window.__TAURI__) {
+            try { var opener = (window.__TAURI__.opener && window.__TAURI__.opener.openUrl) || (window.__TAURI__.shell && window.__TAURI__.shell.open); if (opener) opener("https://app.composio.dev/settings"); } catch(e) {}
+        } else window.open("https://app.composio.dev/settings", "_blank");
+    });
+    safeBind("btn-open-log-folder", "click", function() {
+        if (window.__TAURI__) {
+            try {
+                var resolved = LOG_FOLDER.replace("~", detectedOS === "windows" ? "%USERPROFILE%" : "$HOME");
+                if (window.__TAURI__.opener) window.__TAURI__.opener.openUrl(resolved);
+                else if (window.__TAURI__.shell) window.__TAURI__.shell.open(resolved);
+            } catch(e) {}
+        }
+    });
+
+    var helpSearchEl = document.getElementById("help-search");
+    if (helpSearchEl) { helpSearchEl.addEventListener("input", function(e) { window.filterHelp(e.target.value); }); }
+    var skillSearchEl = document.getElementById("skill-search");
+    if (skillSearchEl) { skillSearchEl.addEventListener("input", function() { renderComposioToolkits(); }); }
 
     // Tabs
     document.querySelectorAll(".tab").forEach(function(tab) {
