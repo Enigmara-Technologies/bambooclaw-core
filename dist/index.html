@@ -572,6 +572,11 @@
         if (el) navigator.clipboard.writeText(el.textContent).then(() => showToast("Log copied", "success")).catch(() => showToast("Failed to copy", "error"));
     }
 
+    function safeBind(id, event, fn) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener(event, fn);
+    }
+
     // ==========================================
     // CONFIGURATION SAVING & LOADING
     // ==========================================
@@ -731,6 +736,209 @@
             }
         }
     }
+
+    // ==========================================
+    // WIZARD & INSTALLATION LOGIC (RESTORED)
+    // ==========================================
+    function wizardGo(step) {
+        document.querySelectorAll(".wizard-step").forEach((s, i) => s.classList.toggle("hidden", i !== step));
+        document.querySelectorAll(".step-dot").forEach((d, i) => d.classList.toggle("active", i <= step));
+        if (step === 0) runSystemChecks();
+        if (step === 1) runPrereqInstall();
+    }
+
+    function updateBadge(id, text, cls) {
+        var el = document.getElementById(id);
+        if (el) { el.textContent = text; el.className = "status-badge " + cls; }
+    }
+
+    async function runSystemChecks() {
+        appendLog("boot-log", "[CHECK] runSystemChecks() called");
+
+        invokeShort("get_platform").then(os => {
+            detectedOS = os || "unknown";
+            updateBadge("chk-os", detectedOS === "windows" ? "Windows" : detectedOS === "macos" ? "macOS" : detectedOS === "linux" ? "Linux" : detectedOS, "status-found");
+        }).catch(() => {
+            detectedOS = "windows";
+            updateBadge("chk-os", "Windows (assumed)", "status-not-installed");
+        });
+
+        invokeShort("check_prerequisite", { name: "rustc" }).then(rv => {
+            updateBadge("chk-rust", rv.trim().split("\n")[0], "status-found");
+        }).catch(() => updateBadge("chk-rust", "Not Installed", "status-not-installed"));
+
+        invokeShort("run_shell_command", { commandName: "git", args: ["--version"] }).then(gv => {
+            updateBadge("chk-git", gv.trim().split("\n")[0], "status-found");
+        }).catch(() => updateBadge("chk-git", "Not Installed", "status-not-installed"));
+
+        invokeShort("check_prerequisite", { name: "vs_build_tools" }).then(bv => {
+            updateBadge("chk-build", bv.trim() || "Found", "status-found");
+        }).catch(() => updateBadge("chk-build", detectedOS === "windows" ? "Not Installed" : "N/A", detectedOS === "windows" ? "status-not-installed" : "status-found"));
+
+        invokeShort("run_shell_command", { commandName: "python", args: ["--version"] }).then(pv => {
+            updateBadge("chk-python", pv.trim().split("\n")[0], "status-found");
+        }).catch(() => {
+            invokeShort("run_shell_command", { commandName: "python3", args: ["--version"] })
+                .then(pv => updateBadge("chk-python", pv.trim().split("\n")[0], "status-found"))
+                .catch(() => updateBadge("chk-python", "Not Installed", "status-not-installed"));
+        });
+
+        invokeShort("run_shell_command", { commandName: "node", args: ["--version"] }).then(nv => {
+            updateBadge("chk-node", nv.trim().split("\n")[0], "status-found");
+        }).catch(() => updateBadge("chk-node", "Not Installed", "status-not-installed"));
+
+        setTimeout(() => {
+            var btn = document.getElementById("btn-step0-next");
+            if (btn) btn.disabled = false;
+        }, 1500);
+    }
+
+    async function runPrereqInstall() {
+        var log = "install-log";
+        var el = document.getElementById(log); if (el) el.textContent = "";
+        appendLog(log, "[INFO] Detected OS: " + detectedOS);
+        appendLog(log, "[INFO] Starting prerequisite installation...");
+
+        var rustBadge = document.getElementById("chk-rust");
+        if (rustBadge && rustBadge.classList.contains("status-found")) {
+            appendLog(log, "[SKIP] Rust already installed.");
+        } else {
+            appendLog(log, "[INFO] Installing Rust toolchain...");
+            try {
+                if (detectedOS === "windows") {
+                    var res = await invokeLong("run_shell_command", { commandName: "winget", args: ["install", "--id", "Rustlang.Rustup", "-e", "--silent", "--accept-package-agreements", "--accept-source-agreements"] });
+                    appendLog(log, res);
+                } else {
+                    var res = await invokeLong("run_shell_command", { commandName: "sh", args: ["-c", "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y"] });
+                    appendLog(log, res);
+                }
+                appendLog(log, "[OK] Rust installation completed.");
+            } catch(e) { appendLog(log, "[ERROR] Rust installation failed."); }
+        }
+
+        var buildBadge = document.getElementById("chk-build");
+        if (detectedOS === "windows" && !(buildBadge && buildBadge.classList.contains("status-found"))) {
+            appendLog(log, "[INFO] Installing Visual Studio Build Tools...");
+            try {
+                var res = await invokeLong("run_shell_command", {
+                    commandName: "winget", args: ["install", "--id", "Microsoft.VisualStudio.2022.BuildTools", "-e", "--silent", "--override", "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended", "--accept-package-agreements", "--accept-source-agreements"]
+                });
+                appendLog(log, res);
+                appendLog(log, "[OK] Build Tools installation completed.");
+            } catch(e) { appendLog(log, "[ERROR] Build Tools installation failed."); }
+        } else if (detectedOS === "macos") {
+            appendLog(log, "[INFO] Checking Xcode Command Line Tools...");
+            try { await invokeLong("run_shell_command", { commandName: "xcode-select", args: ["--install"] }, 120000); appendLog(log, "[OK] Xcode CLT ready."); } catch(e) { appendLog(log, "[INFO] Xcode CLT may already be installed."); }
+        }
+        appendLog(log, "[DONE] All prerequisites ready.");
+        var btn = document.getElementById("btn-step1-next"); if (btn) btn.disabled = false;
+    }
+
+    async function deployBinary(log) {
+        appendLog(log, "[INFO] Deploying pre-built binary...");
+        try {
+            var metaRes = await fetch(PROXY_URL);
+            var meta = await metaRes.json();
+            var assets = meta.assets || [];
+            var assetName = "";
+            if (detectedOS === "windows") { assetName = (assets.find(a => a.name.endsWith(".exe")) || assets.find(a => a.name.endsWith(".msi")) || {}).name || ""; }
+            else if (detectedOS === "macos") { assetName = (assets.find(a => a.name.endsWith(".dmg")) || assets.find(a => a.name.includes("macos")) || {}).name || ""; }
+            else { assetName = (assets.find(a => a.name.endsWith(".AppImage")) || assets.find(a => a.name.includes("linux")) || {}).name || ""; }
+
+            if (!assetName) { appendLog(log, "[ERROR] Could not find binary for your platform."); return; }
+
+            var homePath = "~";
+            try {
+                if (detectedOS === "windows") homePath = (await invokeShort("run_shell_command", { commandName: "cmd", args: ["/C", "echo %USERPROFILE%"] })).trim();
+                else homePath = (await invokeShort("run_shell_command", { commandName: "sh", args: ["-c", "echo $HOME"] })).trim();
+            } catch(e) {}
+
+            var sep = detectedOS === "windows" ? "\\" : "/";
+            var destDir = homePath + sep + ".bambooclaw";
+            var destFile = destDir + sep + (detectedOS === "windows" ? "bambooclaw.exe" : "bambooclaw");
+
+            try {
+                if (detectedOS === "windows") await invokeShort("run_shell_command", { commandName: "cmd", args: ["/C", "mkdir \"" + destDir + "\" 2>nul || echo exists"] });
+                else await invokeShort("run_shell_command", { commandName: "mkdir", args: ["-p", destDir] });
+            } catch(e) {}
+
+            var dlUrl = PROXY_URL + "?asset=" + encodeURIComponent(assetName);
+            await invokeLong("download_binary", { url: dlUrl, dest: destFile });
+            appendLog(log, "[OK] Binary downloaded.");
+
+            if (detectedOS !== "windows") { try { await invokeShort("run_shell_command", { commandName: "chmod", args: ["+x", destFile] }); } catch(e) {} }
+            var ipd = document.getElementById("install-path-display"); if (ipd) ipd.value = destFile;
+            appendLog(log, "[DONE] BambooClaw deployed.");
+        } catch(e) { appendLog(log, "[ERROR] Deployment failed: " + e); }
+    }
+
+    safeBind("btn-step2-skip", "click", async () => {
+        var log = "capability-log";
+        var el = document.getElementById(log); if (el) el.textContent = "";
+        appendLog(log, "[INFO] Skipping agent capabilities.");
+        await deployBinary(log);
+        wizardGo(3);
+    });
+
+    safeBind("btn-step2-install", "click", async function() {
+        var log = "capability-log";
+        var el = document.getElementById(log); if (el) el.textContent = "";
+        this.disabled = true;
+        var skipBtn = document.getElementById("btn-step2-skip"); if (skipBtn) skipBtn.disabled = true;
+
+        var wantPython = document.getElementById("cap-python")?.checked;
+        var wantBrowser = document.getElementById("cap-browser")?.checked;
+        var wantNode = document.getElementById("cap-node")?.checked;
+        var pipCmd = detectedOS === "windows" ? "pip" : "pip3";
+        var pythonCmd = detectedOS === "windows" ? "python" : "python3";
+
+        if (wantPython || wantBrowser || wantNode) {
+            if (wantPython) {
+                var pyBadge = document.getElementById("chk-python");
+                if (pyBadge && pyBadge.classList.contains("status-found")) { appendLog(log, "[SKIP] Python already installed."); } 
+                else {
+                    appendLog(log, "[INFO] Installing Python 3.12...");
+                    try {
+                        if (detectedOS === "windows") await invokeLong("run_shell_command", { commandName: "winget", args: ["install", "Python.Python.3.12", "--silent", "--accept-package-agreements", "--accept-source-agreements"] });
+                        else if (detectedOS === "macos") await invokeLong("run_shell_command", { commandName: "brew", args: ["install", "python3"] });
+                        else await invokeLong("run_shell_command", { commandName: "sh", args: ["-c", "sudo apt install -y python3 python3-pip"] });
+                        appendLog(log, "[OK] Python installed.");
+                    } catch(e) { appendLog(log, "[ERROR] Python installation failed."); }
+                }
+                appendLog(log, "[INFO] Installing Python packages...");
+                try { await invokeLong("run_shell_command", { commandName: pipCmd, args: ["install", "pyautogui", "pillow", "requests", "beautifulsoup4", "psutil", "pandas", "numpy"] }); appendLog(log, "[OK] Packages installed."); } catch(e) { appendLog(log, "[ERROR] pip install failed."); }
+            }
+
+            if (wantBrowser) {
+                appendLog(log, "[INFO] Installing Playwright...");
+                try {
+                    await invokeLong("run_shell_command", { commandName: pipCmd, args: ["install", "playwright"] });
+                    appendLog(log, "[INFO] Installing Chromium...");
+                    await invokeLong("run_shell_command", { commandName: pythonCmd, args: ["-m", "playwright", "install", "chromium"] });
+                    appendLog(log, "[OK] Playwright installed.");
+                } catch(e) { appendLog(log, "[ERROR] Playwright installation failed."); }
+            }
+
+            if (wantNode) {
+                var nodeBadge = document.getElementById("chk-node");
+                if (nodeBadge && nodeBadge.classList.contains("status-found")) { appendLog(log, "[SKIP] Node.js already installed."); } 
+                else {
+                    appendLog(log, "[INFO] Installing Node.js...");
+                    try {
+                        if (detectedOS === "windows") await invokeLong("run_shell_command", { commandName: "winget", args: ["install", "OpenJS.NodeJS.LTS", "--silent", "--accept-package-agreements", "--accept-source-agreements"] });
+                        else if (detectedOS === "macos") await invokeLong("run_shell_command", { commandName: "brew", args: ["install", "node"] });
+                        else await invokeLong("run_shell_command", { commandName: "sh", args: ["-c", "sudo apt install -y nodejs npm"] });
+                        appendLog(log, "[OK] Node.js installed.");
+                    } catch(e) { appendLog(log, "[ERROR] Node.js installation failed."); }
+                }
+            }
+            appendLog(log, "[DONE] Capabilities complete.");
+        }
+        await deployBinary(log);
+        this.disabled = false;
+        if (skipBtn) skipBtn.disabled = false;
+        wizardGo(3);
+    });
 
     // ==========================================
     // LLM PROVIDERS & KEYS
@@ -1116,11 +1324,6 @@
     // ==========================================
     // EVENT BINDINGS (SAFE WRAPPERS)
     // ==========================================
-    function safeBind(id, event, fn) {
-        var el = document.getElementById(id);
-        if (el) el.addEventListener(event, fn);
-    }
-
     window.filterHelp = function(query) {
         query = query.toLowerCase();
         document.querySelectorAll(".help-section").forEach(sec => {
@@ -1220,8 +1423,7 @@
                 setTimeout(() => { renderActiveToolsSummary(); renderEnabledIntegrations(); }, 2000);
                 setTimeout(() => { if (currentConfig.llm && currentConfig.llm.api_key && !daemonRunning) toggleDaemon(); }, 500);
             } else {
-                var btn = document.getElementById("btn-step0-next");
-                if (btn) btn.disabled = false;
+                wizardGo(0); // Safely launches the system checks and the wizard flow
             }
         } catch(e) { appendLog("dash-log", "[BOOT] Error: " + e); }
     }
