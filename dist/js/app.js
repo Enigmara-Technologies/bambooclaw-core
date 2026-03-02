@@ -741,7 +741,8 @@
                 if (identEl) identEl.value = activePersonaIndex >= 0 ? activePersonaIndex : "-1";
             }
         }
-
+    }
+    
     // =========== CHANNEL SETUP ===========
     function closeChannelSetup() {
         appendLog("dash-log", "[CH] closeChannelSetup()");
@@ -2851,7 +2852,7 @@
                     }
                 }, 500);
             } else {
-                runSystemChecks();
+                wizardGo(0);
             }
         } catch(e) {}
     }
