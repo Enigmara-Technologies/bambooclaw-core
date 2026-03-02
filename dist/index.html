@@ -988,11 +988,13 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Identity Format</label>
+                            <label>Active Persona</label>
                             <select id="set-identity">
-                                <option value="bamboo" selected>BambooClaw Default</option>
-                                <option value="custom">Custom Persona</option>
+                                <option value="-1">— BambooClaw Default (System Prompt Only) —</option>
                             </select>
+                            <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.4rem;">
+                                Select a persona to inject specific behavioral rules. Manage personas below.
+                            </p>
                         </div>
                         <div class="form-group">
                             <label>Runtime Adapter</label>
@@ -1031,18 +1033,11 @@
 
                     <div style="margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1.5rem;">
                         <h2 style="font-size: 1.1rem; margin-bottom: 0.5rem;">🎭 Personas</h2>
-                        <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Create reusable personas. The selected persona is combined with the System Prompt above and applied to every agent conversation.</p>
-
-                        <div style="margin-bottom: 1rem;">
-                            <label style="font-size: 0.85rem;">Active Persona</label>
-                            <select id="persona-selector" style="margin-bottom: 0.5rem;">
-                                <option value="">— None (use System Prompt only) —</option>
-                            </select>
-                        </div>
+                        <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Create reusable personas. The active persona is selected in the settings grid above and combined with the System Prompt.</p>
 
                         <div id="persona-list" style="margin-bottom: 1rem;"></div>
 
-                        <details style="border: 1px solid var(--border); border-radius: 8px; padding: 0; background: #050507;">
+                        <details id="persona-details-block" style="border: 1px solid var(--border); border-radius: 8px; padding: 0; background: #050507;">
                             <summary style="padding: 0.75rem 1rem; cursor: pointer; font-weight: 600; font-size: 0.9rem; color: var(--accent); user-select: none; list-style: none;">+ Create New Persona</summary>
                             <div style="padding: 1rem;">
                                 <div class="form-group">
@@ -2128,11 +2123,20 @@
             if (s.autonomy) document.getElementById("set-autonomy").value = s.autonomy;
             if (s.port || s.gateway_port) document.getElementById("set-port").value = s.port || s.gateway_port;
             if (s.tunnel) document.getElementById("set-tunnel").value = s.tunnel;
-            if (s.identity) document.getElementById("set-identity").value = s.identity;
             if (s.runtime) document.getElementById("set-runtime").value = s.runtime;
             if (s.loglevel || s.log_level) document.getElementById("set-loglevel").value = s.loglevel || s.log_level;
+            
+            if (s.identity !== undefined) {
+                var identVal = parseInt(s.identity);
+                if (!isNaN(identVal)) {
+                    activePersonaIndex = identVal;
+                } else {
+                    activePersonaIndex = -1;
+                }
+                var identEl = document.getElementById("set-identity");
+                if (identEl) identEl.value = activePersonaIndex >= 0 ? activePersonaIndex : "-1";
+            }
         }
-    }
 
     // =========== CHANNEL SETUP ===========
     function closeChannelSetup() {
@@ -2893,16 +2897,18 @@
     }
 
     function renderPersonas() {
-        var sel = document.getElementById("persona-selector");
-        if (!sel) return;
-        sel.innerHTML = '<option value="">— None (use System Prompt only) —</option>';
-        personas.forEach(function(p, i) {
-            var opt = document.createElement("option");
-            opt.value = i;
-            opt.textContent = p.name;
-            if (i === activePersonaIndex) opt.selected = true;
-            sel.appendChild(opt);
-        });
+        var sel = document.getElementById("set-identity");
+        if (sel) {
+            sel.innerHTML = '<option value="-1">— BambooClaw Default (System Prompt Only) —</option>';
+            personas.forEach(function(p, i) {
+                var opt = document.createElement("option");
+                opt.value = i;
+                opt.textContent = p.name;
+                if (i === activePersonaIndex) opt.selected = true;
+                sel.appendChild(opt);
+            });
+            sel.value = activePersonaIndex >= 0 ? activePersonaIndex : -1;
+        }
 
         var listEl = document.getElementById("persona-list");
         if (!listEl) return;
@@ -2917,15 +2923,35 @@
             html += '<div style="flex:1;"><span style="font-weight:600;font-size:0.85rem;">' + escapeHtml(p.name) + '</span>';
             html += '<div style="font-size:0.7rem;color:var(--text-dim);margin-top:0.2rem;max-height:40px;overflow:hidden;">' + escapeHtml(p.prompt).substring(0, 120) + (p.prompt.length > 120 ? '...' : '') + '</div></div>';
             html += '<div style="display:flex;gap:0.5rem;margin-left:0.75rem;">';
-            html += '<button class="btn btn-sm btn-outline" id="btn-del-persona-' + i + '" style="padding:0.3rem 0.6rem;font-size:0.75rem;">✕</button>';
+            html += '<button class="btn btn-sm btn-outline" id="btn-edit-persona-' + i + '" style="padding:0.3rem 0.6rem;font-size:0.75rem;">✎</button>';
+            html += '<button class="btn btn-sm btn-outline" id="btn-del-persona-' + i + '" style="padding:0.3rem 0.6rem;font-size:0.75rem;color:var(--error);border-color:var(--error);">✕</button>';
             html += '</div></div>';
         });
         listEl.innerHTML = html;
         
         personas.forEach(function(p, i) {
-            var btn = document.getElementById('btn-del-persona-' + i);
-            if (btn) btn.addEventListener("click", function() { deletePersona(i); });
+            var editBtn = document.getElementById('btn-edit-persona-' + i);
+            if (editBtn) editBtn.addEventListener("click", function() { editPersona(i); });
+            var delBtn = document.getElementById('btn-del-persona-' + i);
+            if (delBtn) delBtn.addEventListener("click", function() { deletePersona(i); });
         });
+    }
+
+    var editingPersonaIndex = -1;
+
+    function editPersona(idx) {
+        var p = personas[idx];
+        var nameEl = document.getElementById("new-persona-name");
+        var promptEl = document.getElementById("new-persona-prompt");
+        if (nameEl) nameEl.value = p.name;
+        if (promptEl) promptEl.value = p.prompt;
+        
+        var btn = document.getElementById("btn-create-persona");
+        if (btn) btn.textContent = "Update Persona";
+        
+        editingPersonaIndex = idx;
+        var detailsBlock = document.getElementById("persona-details-block");
+        if (detailsBlock) detailsBlock.open = true;
     }
 
     function createPersona() {
@@ -2935,20 +2961,33 @@
         var prompt = promptEl ? promptEl.value.trim() : "";
         if (!name) { showToast("Please enter a persona name", "error"); return; }
         if (!prompt) { showToast("Please enter a persona prompt", "error"); return; }
-        personas.push({ name: name, prompt: prompt });
+        
+        if (editingPersonaIndex >= 0) {
+            personas[editingPersonaIndex] = { name: name, prompt: prompt };
+            showToast("Persona '" + name + "' updated", "success");
+            editingPersonaIndex = -1;
+            var btn = document.getElementById("btn-create-persona");
+            if (btn) btn.textContent = "Create Persona";
+        } else {
+            personas.push({ name: name, prompt: prompt });
+            showToast("Persona '" + name + "' created", "success");
+        }
+        
         savePersonas();
         renderPersonas();
         if (nameEl) nameEl.value = "";
         if (promptEl) promptEl.value = "";
-        showToast("Persona '" + name + "' created", "success");
     }
 
     function deletePersona(idx) {
         if (idx < 0 || idx >= personas.length) return;
         var name = personas[idx].name;
+        if (!confirm("Are you sure you want to delete the persona '" + name + "'?")) return;
+        
         personas.splice(idx, 1);
         if (activePersonaIndex === idx) activePersonaIndex = -1;
         else if (activePersonaIndex > idx) activePersonaIndex--;
+        
         savePersonas();
         renderPersonas();
         showToast("Persona '" + name + "' deleted", "info");
@@ -2959,22 +2998,23 @@
         appendLog("dash-log", "[SETTINGS] saveSettings() called");
         var iterVal = parseInt(document.getElementById("set-tool-iterations").value) || 10;
         MAX_TOOL_ITERATIONS = iterVal;
+        
+        var identVal = document.getElementById("set-identity").value;
         currentConfig.settings = {
             autonomy: document.getElementById("set-autonomy").value,
             port: document.getElementById("set-port").value,
             tunnel: document.getElementById("set-tunnel").value,
-            identity: document.getElementById("set-identity").value,
+            identity: identVal,
             runtime: document.getElementById("set-runtime").value,
             loglevel: document.getElementById("set-loglevel").value,
             maxToolIterations: iterVal,
         };
         
-        var settingsPrompt = document.getElementById("settings-system-prompt");
-        
-        // FIX: Ensure LLM object exists so the prompt always saves
+        // Ensure LLM config exists before assigning system prompt
         if (!currentConfig.llm) {
             currentConfig.llm = { provider: "openai", api_key: "", model: "", system_prompt: "" };
         }
+        var settingsPrompt = document.getElementById("settings-system-prompt");
         currentConfig.llm.system_prompt = settingsPrompt ? settingsPrompt.value : "";
         
         saveAllConfig();
@@ -2983,13 +3023,14 @@
         var sr = document.getElementById("settings-save-reminder"); if (sr) sr.classList.remove("visible");
     }
 
-    ["set-autonomy","set-port","set-tunnel","set-identity","set-runtime","set-loglevel","set-tool-iterations","settings-system-prompt","persona-selector"].forEach(function(id) {
+    ["set-autonomy","set-port","set-tunnel","set-identity","set-runtime","set-loglevel","set-tool-iterations","settings-system-prompt"].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.addEventListener("change", function() {
-            if (id === "persona-selector") {
-                activePersonaIndex = el.value === "" ? -1 : parseInt(el.value);
+            if (id === "set-identity") {
+                activePersonaIndex = parseInt(el.value);
+                if (isNaN(activePersonaIndex)) activePersonaIndex = -1;
                 savePersonas();
-                renderPersonas();
+                renderPersonas(); // Highlights the active persona in the list
             }
             var sr = document.getElementById("settings-save-reminder"); if (sr) sr.classList.add("visible");
         });
