@@ -1080,22 +1080,90 @@
     // BOOT SEQUENCE
     // ==========================================
     window.enterDashboard = async function() {
-        document.getElementById("wizard-view").style.display = "none";
-        document.getElementById("dashboard-view").style.display = "block";
-        document.getElementById("dashboard-view").classList.remove("hidden");
-        await loadConfig();
+        try {
+            appendLog("dash-log", "[DASH] enterDashboard() called");
+            document.getElementById("wizard-view").style.display = "none";
+            document.getElementById("dashboard-view").style.display = "block";
+            document.getElementById("dashboard-view").classList.remove("hidden");
+            await loadConfig();
+            localStorage.setItem("bambooclaw-installed", "true");
+        } catch(e) {
+            appendLog("dash-log", "[ERROR] enterDashboard failed: " + (e.message || e));
+        }
     };
 
+    async function fetchVersion() {
+        try {
+            var resp = await fetch(PROXY_URL + "?action=latest");
+            if (!resp.ok) throw new Error("HTTP " + resp.status);
+            var data = await resp.json();
+            var ver = data.tag_name || "v-unknown";
+            var el = document.getElementById("app-version"); if (el) el.textContent = ver;
+            var aboutVer = document.getElementById("about-version"); if (aboutVer) aboutVer.textContent = ver;
+        } catch(e) {}
+    }
+
     async function boot() {
-        var installed = localStorage.getItem("bambooclaw-installed");
-        if (installed === "true") {
-            await window.enterDashboard();
-        } else {
-            document.getElementById("btn-step0-next").disabled = false;
+        try {
+            var installedFlag = localStorage.getItem("bambooclaw-installed");
+            fetchVersion();
+            
+            if (installedFlag === "true") {
+                await window.enterDashboard();
+                testImageConnectivity();
+                
+                if (!currentConfig.settings) {
+                    currentConfig.settings = { autonomy: "autonomous", port: "7331", tunnel: "none", identity: "-1", runtime: "native", loglevel: "info", maxToolIterations: 10 };
+                    saveAllConfig();
+                }
+                
+                if (currentConfig.settings && currentConfig.settings.maxToolIterations) {
+                    MAX_TOOL_ITERATIONS = currentConfig.settings.maxToolIterations;
+                    var slider = document.getElementById("set-tool-iterations");
+                    var label = document.getElementById("tool-iter-value");
+                    if (slider) slider.value = MAX_TOOL_ITERATIONS;
+                    if (label) label.textContent = MAX_TOOL_ITERATIONS;
+                }
+                
+                if (currentConfig.enabledSkills) {
+                    enabledSkills = currentConfig.enabledSkills;
+                    renderBuiltinSkills();
+                    rebuildBuiltinTools();
+                }
+                
+                if (currentConfig.composioApiKey) {
+                    var ckEl = document.getElementById("composio-api-key");
+                    if (ckEl) ckEl.value = currentConfig.composioApiKey;
+                    setTimeout(function() { saveComposioKey(); }, 1000);
+                }
+                
+                setTimeout(function() { renderActiveToolsSummary(); renderEnabledIntegrations(); }, 2000);
+                setTimeout(function() { if (currentConfig.llm && currentConfig.llm.api_key && !daemonRunning) toggleDaemon(); }, 500);
+                
+            } else {
+                runSystemChecks();
+            }
+        } catch(e) {
+            appendLog("dash-log", "[BOOT] Error: " + (e.message || e));
         }
     }
 
-    setTimeout(boot, 500);
+    (function waitForTauri() {
+        try {
+            var waited = 0;
+            var interval = setInterval(function() {
+                waited += 50;
+                // Safely wait for the Tauri bridge to inject before booting
+                if (window.__TAURI__) { 
+                    clearInterval(interval); 
+                    boot(); 
+                } else if (waited >= 3000) { 
+                    clearInterval(interval); 
+                    boot(); 
+                }
+            }, 50);
+        } catch(e) {}
+    })();
 
     </script>
 </body>
