@@ -598,7 +598,6 @@
             <div class="splash-bar-track"><div class="splash-bar-fill"></div></div>
         </div>
         <script>
-        // Self-contained splash timer — runs independently of boot()
         (function() {
             var SPLASH_DURATION = 10000;
             var splashEl = document.getElementById("splash-screen");
@@ -663,32 +662,6 @@
                         <button class="btn" id="btn-step0-next" disabled>Initialize Environment →</button>
                     </div>
                 </div>
-
-    <script>
-    (function() {
-        try {
-            var el = document.getElementById("boot-log");
-            if (el) el.textContent = "[CANARY] JS engine alive at " + new Date().toISOString() + "\n";
-            // Also init unified log
-            var ul = document.getElementById("unified-log");
-            if (ul && !ul.textContent) ul.textContent = "";
-        } catch(e) {}
-    })();
-    // Global error boundary
-    window.onerror = function(msg, src, line, col, err) {
-        try {
-            var el = document.getElementById("boot-log");
-            if (el) el.textContent += "[FATAL] " + msg + " at line " + line + ":" + col + "\n";
-        } catch(e) {}
-        return false;
-    };
-    window.addEventListener("unhandledrejection", function(event) {
-        try {
-            var el = document.getElementById("boot-log");
-            if (el) el.textContent += "[FATAL] Unhandled rejection: " + (event.reason ? (event.reason.message || event.reason) : "unknown") + "\n";
-        } catch(e) {}
-    });
-    </script>
 
                 <div class="glass-card wizard-step hidden" id="step-1">
                     <h1>Readying Prereqs</h1>
@@ -820,17 +793,17 @@
                         <div id="or-save-reminder" class="save-reminder">⚠ You changed the model. Click <strong>Apply Configuration</strong> to save.</div>
                         <input type="text" id="or-model-search" placeholder="Search models..." style="margin-bottom:0.5rem;" />
                         <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;flex-wrap:wrap;">
-                            <button class="btn btn-sm btn-outline" id="or-sort-name">▼ Name</button>
-                            <button class="btn btn-sm btn-outline" id="or-sort-input">▼ Input $/1M</button>
-                            <button class="btn btn-sm btn-outline" id="or-sort-output">▼ Output $/1M</button>
-                            <button class="btn btn-sm" id="btn-fetch-models">Fetch Models</button>
+                            <button type="button" class="btn btn-sm btn-outline" id="or-sort-name">▼ Name</button>
+                            <button type="button" class="btn btn-sm btn-outline" id="or-sort-input">▼ Input $/1M</button>
+                            <button type="button" class="btn btn-sm btn-outline" id="or-sort-output">▼ Output $/1M</button>
+                            <button type="button" class="btn btn-sm" id="btn-fetch-models">Fetch Models</button>
                         </div>
                         <div id="or-model-list" style="height:420px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;background:#050507;"></div>
                     </div>
                     
                     <div id="llm-save-reminder" class="save-reminder">⚠ You have unsaved changes. Click <strong>Apply Configuration</strong> to save.</div>
-                    <button class="btn" id="btn-apply-llm">Apply Configuration</button>
-                    <button class="btn btn-outline" style="margin-left: 0.5rem;" id="btn-test-llm">Test Connection</button>
+                    <button type="button" class="btn" id="btn-apply-llm">Apply Configuration</button>
+                    <button type="button" class="btn btn-outline" style="margin-left: 0.5rem;" id="btn-test-llm">Test Connection</button>
                 </div>
 
                 <div class="glass-card tab-panel hidden" id="tab-channels">
@@ -842,7 +815,7 @@
                             <div class="channel-name">🤖 Telegram Bot</div>
                             <div class="channel-status" id="tg-status">Not configured</div>
                         </div>
-                        <button class="btn btn-sm btn-outline" id="btn-setup-tg">Setup</button>
+                        <button type="button" class="btn btn-sm btn-outline" id="btn-setup-tg">Setup</button>
                     </div>
 
                     <div class="channel-row">
@@ -850,7 +823,7 @@
                             <div class="channel-name">💬 Discord App</div>
                             <div class="channel-status" id="dc-status">Not configured</div>
                         </div>
-                        <button class="btn btn-sm btn-outline" id="btn-setup-dc">Setup</button>
+                        <button type="button" class="btn btn-sm btn-outline" id="btn-setup-dc">Setup</button>
                     </div>
 
                     <div class="channel-row">
@@ -858,7 +831,7 @@
                             <div class="channel-name">📱 WhatsApp</div>
                             <div class="channel-status" id="wa-status">Not configured</div>
                         </div>
-                        <button class="btn btn-sm btn-outline" id="btn-setup-wa">Setup</button>
+                        <button type="button" class="btn btn-sm btn-outline" id="btn-setup-wa">Setup</button>
                     </div>
 
                     <div class="channel-row">
@@ -866,13 +839,13 @@
                             <div class="channel-name">🔗 Slack</div>
                             <div class="channel-status" id="sl-status">Not configured</div>
                         </div>
-                        <button class="btn btn-sm btn-outline" id="btn-setup-sl">Setup</button>
+                        <button type="button" class="btn btn-sm btn-outline" id="btn-setup-sl">Setup</button>
                     </div>
 
                     <div id="channel-setup-area" class="hidden" style="margin-top: 1.5rem; padding: 1.5rem; border: 1px solid var(--border); border-radius: 8px; background: #050507;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                             <h2 style="font-size: 1.1rem;" id="channel-setup-title">Setup</h2>
-                            <button class="btn btn-sm btn-outline" id="btn-close-channel" style="font-size: 1.2rem; padding: 2px 8px;">✕</button>
+                            <button type="button" class="btn btn-sm btn-outline" id="btn-close-channel" style="font-size: 1.2rem; padding: 2px 8px;">✕</button>
                         </div>
                         <div id="channel-setup-body"></div>
                     </div>
@@ -888,8 +861,8 @@
                             </span>
                         </div>
                         <div style="display:flex;flex-direction:column;gap:10px;align-items:stretch;">
-                            <button class="btn" id="btn-daemon-toggle">Start Agent Daemon</button>
-                            <button class="btn btn-flush" id="btn-emergency-flush">⚠ Emergency Flush</button>
+                            <button type="button" class="btn" id="btn-daemon-toggle">Start Agent Daemon</button>
+                            <button type="button" class="btn btn-flush" id="btn-emergency-flush">⚠ Emergency Flush</button>
                         </div>
                     </div>
 
@@ -903,7 +876,6 @@
                             <button type="button" class="btn" style="border-radius: 0;" id="btn-send-chat">Send</button>
                         </div>
                     </div>
-
                 </div>
 
                 <div class="glass-card tab-panel hidden" id="tab-skills">
@@ -934,7 +906,7 @@
                                 <label>Composio API Key</label>
                                 <input type="password" id="composio-api-key" placeholder="Your Composio API key..." />
                             </div>
-                            <button class="btn btn-sm" id="btn-save-composio" style="height: 38px;">Connect</button>
+                            <button type="button" class="btn btn-sm" id="btn-save-composio" style="height: 38px;">Connect</button>
                         </div>
                         <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0.5rem;">
                             Get a free API key at <span style="color: var(--accent); cursor: pointer;" id="btn-open-composio">app.composio.dev/settings</span>
@@ -956,7 +928,6 @@
                             <div id="composio-pagination" style="text-align: center; margin-top: 1rem;"></div>
                         </div>
                     </div>
-
                 </div>
 
                 <div class="glass-card tab-panel hidden" id="tab-settings">
@@ -975,6 +946,15 @@
                             </p>
                         </div>
                         <div class="form-group">
+                            <label>Active Persona</label>
+                            <select id="set-identity">
+                                <option value="-1">— BambooClaw Default (System Prompt Only) —</option>
+                            </select>
+                            <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.4rem;">
+                                Select a persona to inject specific behavioral rules. Manage personas below.
+                            </p>
+                        </div>
+                        <div class="form-group">
                             <label>Gateway Port</label>
                             <input type="number" id="set-port" value="7331" min="1024" max="65535" />
                         </div>
@@ -986,15 +966,6 @@
                                 <option value="tailscale">Tailscale</option>
                                 <option value="ngrok">ngrok</option>
                             </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Active Persona</label>
-                            <select id="set-identity">
-                                <option value="-1">— BambooClaw Default (System Prompt Only) —</option>
-                            </select>
-                            <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.4rem;">
-                                Select a persona to inject specific behavioral rules. Manage personas below.
-                            </p>
                         </div>
                         <div class="form-group">
                             <label>Runtime Adapter</label>
@@ -1038,7 +1009,7 @@
                         <div id="persona-list" style="margin-bottom: 1rem;"></div>
 
                         <details id="persona-details-block" style="border: 1px solid var(--border); border-radius: 8px; padding: 0; background: #050507;">
-                            <summary style="padding: 0.75rem 1rem; cursor: pointer; font-weight: 600; font-size: 0.9rem; color: var(--accent); user-select: none; list-style: none;">+ Create New Persona</summary>
+                            <summary style="padding: 0.75rem 1rem; cursor: pointer; font-weight: 600; font-size: 0.9rem; color: var(--accent); user-select: none; list-style: none;">+ Create / Edit Persona</summary>
                             <div style="padding: 1rem;">
                                 <div class="form-group">
                                     <label>Persona Name</label>
@@ -1048,15 +1019,18 @@
                                     <label>Persona Prompt</label>
                                     <textarea id="new-persona-prompt" rows="20" placeholder="Define how the agent should behave when this persona is active..." style="min-height:400px;overflow-y:auto;resize:vertical;"></textarea>
                                 </div>
-                                <button class="btn btn-sm" id="btn-create-persona">Create Persona</button>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button type="button" class="btn btn-sm" id="btn-create-persona">Save Persona</button>
+                                    <button type="button" class="btn btn-sm btn-outline hidden" id="btn-cancel-edit-persona">Cancel Edit</button>
+                                </div>
                             </div>
                         </details>
                     </div>
 
                     <div id="settings-save-reminder" class="save-reminder">⚠ You have unsaved changes. Click <strong>Save Settings</strong> to apply.</div>
                     <div style="margin-top: 1.5rem;">
-                        <button class="btn" id="btn-save-settings">Save Settings</button>
-                        <button class="btn btn-outline" style="margin-left: 0.5rem;" id="btn-reset-settings">Reset Defaults</button>
+                        <button type="button" class="btn" id="btn-save-settings">Save Settings</button>
+                        <button type="button" class="btn btn-outline" style="margin-left: 0.5rem;" id="btn-reset-settings">Reset Defaults</button>
                     </div>
                 </div>
 
@@ -1093,241 +1067,6 @@
                             <div class="help-step"><div class="help-step-num">3</div><div><strong>Deploy Agent</strong> — Downloads and compiles the BambooClaw™ agent binary. This is the actual AI assistant engine. It takes 3–8 minutes depending on your PC speed.</div></div>
                             <div class="help-step"><div class="help-step-num">4</div><div><strong>Enter Dashboard</strong> — Once done, you land here — the control panel where you configure and manage everything.</div></div>
                             <div class="help-warn">⚠️ <strong>Important:</strong> The first installation requires an internet connection and about 2 GB of free disk space. Subsequent updates are much faster.</div>
-                            <div class="help-tip">💡 <strong>Tip:</strong> If a step fails, check the Boot Trace Log at the bottom of the screen for error details. The most common issue is a firewall blocking the download.</div>
-                        </div>
-                    </details>
-
-                    <details class="help-section">
-                        <summary>🧠 LLM Settings (Your AI Brain)</summary>
-                        <div class="help-body">
-                            <p>LLM stands for "Large Language Model" — it's the AI that makes your assistant smart. You need to connect at least one AI provider before your assistant can respond to messages.</p>
-
-                            <div class="help-sub">
-                                <h4>Choosing a Provider</h4>
-                                <p>BambooClaw™ supports many AI providers. Here's a quick comparison:</p>
-                                <ul>
-                                    <li><strong>OpenRouter</strong> (Recommended) — One API key gives you access to hundreds of models from every provider. Best value and flexibility.</li>
-                                    <li><strong>OpenAI</strong> — For GPT-4, GPT-5, and other OpenAI models directly.</li>
-                                    <li><strong>Anthropic</strong> — For Claude models. Excellent for careful, nuanced responses.</li>
-                                    <li><strong>Google Gemini</strong> — Google's AI models with large context windows.</li>
-                                    <li><strong>Groq</strong> — Ultra-fast inference. Great for quick tasks.</li>
-                                    <li><strong>Ollama</strong> — Run models entirely on your own computer, no internet needed. Free but requires a powerful GPU.</li>
-                                    <li><strong>DeepSeek</strong> — High-quality models at very low cost.</li>
-                                    <li><strong>Mistral</strong> — European AI provider with fast, capable models.</li>
-                                    <li><strong>Inception</strong> — Mercury 2 model for ultra-fast code generation via api.inceptionlabs.ai.</li>
-                                </ul>
-                            </div>
-
-                            <div class="help-sub">
-                                <h4>How to Set Up</h4>
-                                <div class="help-step"><div class="help-step-num">1</div><div>Pick your provider from the <strong>AI Provider</strong> dropdown.</div></div>
-                                <div class="help-step"><div class="help-step-num">2</div><div>Paste your <strong>API Key</strong>. You get this from the provider's website (e.g., <code>openrouter.ai/keys</code>). It usually starts with <code>sk-</code>.</div></div>
-                                <div class="help-step"><div class="help-step-num">3</div><div>Select a <strong>Model</strong>. If you chose OpenRouter, click "Fetch Models" to see all available options with pricing.</div></div>
-                                <div class="help-step"><div class="help-step-num">4</div><div>Click <strong>"Apply Configuration"</strong> to save.</div></div>
-                                <div class="help-step"><div class="help-step-num">5</div><div>Click <strong>"Test Connection"</strong> to verify everything works.</div></div>
-                            </div>
-
-                            <div class="help-sub">
-                                <h4>System Prompt (Optional)</h4>
-                                <p>The system prompt tells the AI how to behave. For example: "You are a helpful coding assistant. Be concise." Leave it blank to use the default BambooClaw™ persona.</p>
-                            </div>
-
-                            <div class="help-tip">💡 <strong>Tip:</strong> If you're new, start with <strong>OpenRouter</strong>. Sign up at openrouter.ai, add $5 credit, copy your key, and you'll have access to hundreds of models instantly.</div>
-                        </div>
-                    </details>
-
-                    <details class="help-section">
-                        <summary>📡 Channels (Where You Talk to Your Agent)</summary>
-                        <div class="help-body">
-                            <p>Channels let you chat with your BambooClaw assistant from messaging apps on your phone or desktop. You can connect multiple channels at the same time.</p>
-
-                            <div class="help-sub">
-                                <h4>🤖 Telegram Setup</h4>
-                                <p>Telegram is the easiest channel to set up. Here's how:</p>
-                                <div class="help-step"><div class="help-step-num">1</div><div>Open Telegram and search for <strong>@BotFather</strong> (the official Telegram bot for creating bots).</div></div>
-                                <div class="help-step"><div class="help-step-num">2</div><div>Send <code>/newbot</code> to BotFather. It will ask you for a name and username for your bot.</div></div>
-                                <div class="help-step"><div class="help-step-num">3</div><div>BotFather will give you a <strong>Bot Token</strong> — a long string of numbers and letters. Copy it.</div></div>
-                                <div class="help-step"><div class="help-step-num">4</div><div>Back in BambooClaw™, go to <strong>Channels → Telegram → Setup</strong>.</div></div>
-                                <div class="help-step"><div class="help-step-num">5</div><div>Paste your Bot Token and click <strong>Save</strong>.</div></div>
-                                <div class="help-step"><div class="help-step-num">6</div><div>Add your Telegram user ID to the <strong>Allowed Users</strong> list. This prevents strangers from using your bot.</div></div>
-                                <div class="help-tip">💡 <strong>Tip:</strong> To find your Telegram user ID, search for <strong>@userinfobot</strong> on Telegram and send it any message. It will reply with your numeric ID.</div>
-                            </div>
-
-                            <div class="help-sub">
-                                <h4>💬 Discord Setup</h4>
-                                <div class="help-step"><div class="help-step-num">1</div><div>Go to <strong>discord.com/developers/applications</strong> and click "New Application".</div></div>
-                                <div class="help-step"><div class="help-step-num">2</div><div>Give it a name (e.g., "BambooClaw"), then go to the <strong>Bot</strong> section.</div></div>
-                                <div class="help-step"><div class="help-step-num">3</div><div>Click "Reset Token" and copy the new <strong>Bot Token</strong>.</div></div>
-                                <div class="help-step"><div class="help-step-num">4</div><div>Enable these <strong>Privileged Gateway Intents</strong>: Message Content Intent, Server Members Intent.</div></div>
-                                <div class="help-step"><div class="help-step-num">5</div><div>Go to <strong>OAuth2 → URL Generator</strong>. Check "bot" scope, then "Send Messages" and "Read Message History" permissions. Copy the invite URL and add the bot to your server.</div></div>
-                                <div class="help-step"><div class="help-step-num">6</div><div>Back in BambooClaw™, go to <strong>Channels → Discord → Setup</strong> and paste your Bot Token.</div></div>
-                            </div>
-
-                            <div class="help-sub">
-                                <h4>📱 WhatsApp & 💼 Slack</h4>
-                                <p>WhatsApp and Slack integrations are available but require additional setup with business APIs. Click the <strong>Setup</strong> button for each to see the step-by-step instructions specific to that platform.</p>
-                            </div>
-
-                            <div class="help-warn">⚠️ <strong>Important:</strong> Your BambooClaw™ daemon must be running for channels to work. Messages received while the daemon is stopped will be missed.</div>
-                        </div>
-                    </details>
-
-                    <details class="help-section">
-                        <summary>🎮 Agent Control (Running Your Assistant)</summary>
-                        <div class="help-body">
-                            <p>The Agent Control tab is where you start, stop, and chat with your BambooClaw assistant.</p>
-
-                            <div class="help-sub">
-                                <h4>Starting & Stopping</h4>
-                                <p>Click <strong>"Start Daemon"</strong> to launch your assistant in the background. The status indicator will change from 🔴 Stopped to 🟢 Running.</p>
-                                <p>Click <strong>"Stop Daemon"</strong> to shut it down. Any connected channels (Telegram, Discord) will stop receiving responses until you start it again.</p>
-                            </div>
-
-                            <div class="help-sub">
-                                <h4>In-App Chat</h4>
-                                <p>The built-in chat lets you talk to your assistant directly, without needing Telegram or Discord. Type your message and press Send. The response comes from the same AI brain you configured in LLM Settings.</p>
-                            </div>
-
-                            <div class="help-sub">
-                                <h4>Runtime Log</h4>
-                                <p>The log panel shows real-time activity: incoming messages, AI responses, tool executions, and errors. This is your best friend for understanding what your assistant is doing.</p>
-                                <ul>
-                                    <li><strong>Green text</strong> — Successful actions</li>
-                                    <li><strong>Yellow text</strong> — Warnings (non-critical)</li>
-                                    <li><strong>Red text</strong> — Errors (something went wrong)</li>
-                                </ul>
-                            </div>
-
-                            <div class="help-tip">💡 <strong>Tip:</strong> You can close the Companion App and the daemon will keep running in the background. Re-open the app anytime to check the status.</div>
-                        </div>
-                    </details>
-
-                    <details class="help-section">
-                        <summary>🧩 Skills (Extending What Your Agent Can Do)</summary>
-                        <div class="help-body">
-                            <p>Skills give your assistant superpowers beyond just chatting. With skills enabled, your assistant can interact with real apps and services.</p>
-
-                            <div class="help-sub">
-                                <h4>What is Composio?</h4>
-                                <p><strong>Composio</strong> is the platform that provides skills to BambooClaw. Think of it as an app store for your AI assistant. Each skill connects your assistant to a real service (Gmail, GitHub, Google Search, etc.).</p>
-                            </div>
-
-                            <div class="help-sub">
-                                <h4>Setting Up Skills</h4>
-                                <div class="help-step"><div class="help-step-num">1</div><div>Go to <strong>composio.dev</strong> and create a free account.</div></div>
-                                <div class="help-step"><div class="help-step-num">2</div><div>Navigate to your <strong>Settings → API Keys</strong> and copy your key.</div></div>
-                                <div class="help-step"><div class="help-step-num">3</div><div>In BambooClaw™, go to the <strong>Skills</strong> tab and paste your Composio API Key.</div></div>
-                                <div class="help-step"><div class="help-step-num">4</div><div>Toggle on any skills you want to enable. Each skill card shows what it does.</div></div>
-                            </div>
-
-                            <div class="help-sub">
-                                <h4>Skill Categories</h4>
-                                <ul>
-                                    <li>🔍 <strong>Web Search</strong> — Search Google, DuckDuckGo, or Brave from chat</li>
-                                    <li>📧 <strong>Email</strong> — Read, draft, and send emails via Gmail</li>
-                                    <li>📁 <strong>File Management</strong> — Read, create, and edit files on your computer</li>
-                                    <li>💻 <strong>Code Execution</strong> — Run Python, JavaScript, or shell commands</li>
-                                    <li>🌐 <strong>Web Browsing</strong> — Visit websites and extract information</li>
-                                    <li>📊 <strong>GitHub</strong> — Create issues, read repos, submit PRs</li>
-                                    <li>📝 <strong>Note-taking</strong> — Create and organize notes</li>
-                                </ul>
-                            </div>
-
-                            <div class="help-warn">⚠️ <strong>Important:</strong> Skills that modify files or run code can make real changes to your system. Start with the <strong>Collaborative</strong> autonomy level (in Settings) so your assistant asks for permission before doing anything potentially risky.</div>
-                        </div>
-                    </details>
-
-                    <details class="help-section">
-                        <summary>⚙️ Settings (Fine-Tuning Behavior)</summary>
-                        <div class="help-body">
-                            <p>The Settings tab lets you control how your assistant behaves. Defaults are already configured for you — only change these if you know what you need.</p>
-
-                            <div class="help-sub">
-                                <h4>Autonomy Levels</h4>
-                                <ul>
-                                    <li><strong>Observation Only</strong> — The assistant can only read and respond. It cannot run commands or modify files. Safest option.</li>
-                                    <li><strong>Collaborative (Default)</strong> — The assistant can suggest actions and execute them after you approve. Best balance of safety and usefulness.</li>
-                                    <li><strong>Full Autonomy</strong> — The assistant can take action without asking. Powerful but use with caution — it can run shell commands, write files, and more.</li>
-                                </ul>
-                            </div>
-
-                            <div class="help-sub">
-                                <h4>Other Settings</h4>
-                                <ul>
-                                    <li><strong>Gateway Port</strong> — The local port the daemon listens on (default: 7331). Change only if you have a conflict.</li>
-                                    <li><strong>Tunnel Provider</strong> — If you want to access your agent from outside your network. Most users should leave this as "None".</li>
-                                    <li><strong>Identity Format</strong> — Controls the assistant's persona and name.</li>
-                                    <li><strong>Runtime Adapter</strong> — How code gets executed. "Native" is fastest and recommended.</li>
-                                    <li><strong>Log Level</strong> — How much detail shows in the logs. "Info" is fine for normal use; switch to "Debug" when troubleshooting.</li>
-                                    <li><strong>Max Tool Iterations</strong> — How many steps the AI can chain in one response. Higher values allow more complex tasks but take longer.</li>
-                                </ul>
-                            </div>
-
-                            <div class="help-tip">💡 <strong>Tip:</strong> If you're just getting started, leave all settings at their defaults. The pre-configured values work well for most users.</div>
-                        </div>
-                    </details>
-
-                    <details class="help-section">
-                        <summary>🔧 Troubleshooting / FAQ</summary>
-                        <div class="help-body">
-                            <div class="help-sub">
-                                <h4>"Daemon won't start"</h4>
-                                <ul>
-                                    <li>Check the Dashboard Debug Log at the bottom of the screen for error messages.</li>
-                                    <li>Make sure the installation completed successfully (all wizard steps were green).</li>
-                                    <li>Try restarting the Companion App.</li>
-                                    <li>Ensure port 7331 (or your custom port) is not in use by another application.</li>
-                                </ul>
-                            </div>
-
-                            <div class="help-sub">
-                                <h4>"Telegram not responding"</h4>
-                                <ul>
-                                    <li>Verify the daemon is running (check Agent Control tab).</li>
-                                    <li>Make sure you saved a valid Bot Token in Channels → Telegram.</li>
-                                    <li>Check that your Telegram user ID is in the Allowed Users list.</li>
-                                    <li>Try clicking "Test" in the Telegram setup to validate the token.</li>
-                                </ul>
-                            </div>
-
-                            <div class="help-sub">
-                                <h4>"Composio key not validating"</h4>
-                                <ul>
-                                    <li>Make sure you copied the full key from composio.dev (Settings → API Keys).</li>
-                                    <li>BambooClaw tries multiple API endpoints automatically. If you're in the desktop app and it still fails, check your internet connection.</li>
-                                    <li>If you're viewing this in a web browser preview, CORS restrictions may block the validation. The key will still work when running in the actual desktop app.</li>
-                                </ul>
-                            </div>
-
-                            <div class="help-sub">
-                                <h4>"Model gives errors"</h4>
-                                <ul>
-                                    <li>Double-check your API key is correct and has credits/balance.</li>
-                                    <li>Some models require a paid plan. Try a different, cheaper model first.</li>
-                                    <li>Click "Test Connection" in the LLM Settings tab to see the exact error.</li>
-                                </ul>
-                            </div>
-
-                            <div class="help-sub">
-                                <h4>"Everything looks broken in the browser preview"</h4>
-                                <p>If you're viewing BambooClaw™ inside a web browser (e.g., the Lovable preview), some features won't work because they require the actual desktop app (Tauri). Specifically:</p>
-                                <ul>
-                                    <li>Starting/stopping the daemon</li>
-                                    <li>System checks (OS detection, Rust, Git)</li>
-                                    <li>Composio API validation (may show CORS errors)</li>
-                                </ul>
-                                <p>These all work correctly in the real desktop app. The browser preview is useful for checking the UI layout and reading help content like this.</p>
-                            </div>
-
-                            <div class="help-sub">
-                                <h4>"How do I update BambooClaw?"</h4>
-                                <p>When a new version is available, the Companion App will show an update notification on the top-right. Click it to download and install the update. Your settings and channel configurations are preserved across updates.</p>
-                            </div>
-
-                            <div class="help-sub">
-                                <h4>"Where is my data stored?"</h4>
-                                <p>All BambooClaw™ data is stored locally on your computer in the <code>~/.bambooclaw/</code> folder. This includes your configuration, API keys, and chat history. Nothing is sent to external servers except your messages to the AI provider you chose.</p>
-                            </div>
                         </div>
                     </details>
                 </div>
@@ -1363,8 +1102,8 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
                         <span style="font-size: 0.75rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace;">SESSION LOG — <span id="session-id-label">...</span></span>
                         <div style="display:flex;gap:0.5rem;">
-                            <button class="btn btn-sm btn-outline" id="btn-copy-log">📋 Copy Log</button>
-                            <button class="btn btn-sm btn-outline" id="btn-open-log-folder">📂 Open Folder</button>
+                            <button type="button" class="btn btn-sm btn-outline" id="btn-copy-log">📋 Copy Log</button>
+                            <button type="button" class="btn btn-sm btn-outline" id="btn-open-log-folder">📂 Open Folder</button>
                         </div>
                     </div>
                     <div class="log-body" id="unified-log" style="height:400px;background:#050507;border:1px solid var(--border);border-radius:6px;font-size:0.72rem;line-height:1.6;"></div>
@@ -1378,7 +1117,7 @@
                     <div style="margin-top:1.5rem;">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
                             <h2 style="font-size:1.1rem;margin:0;">🔍 Last LLM Request Payload</h2>
-                            <button class="btn btn-sm btn-outline" id="btn-copy-payload">📋 Copy Payload</button>
+                            <button type="button" class="btn btn-sm btn-outline" id="btn-copy-payload">📋 Copy Payload</button>
                         </div>
                         <p style="font-size:0.8rem;color:var(--text-dim);margin-bottom:0.75rem;">The complete request body sent to the model on the last call, including system prompt, persona, skills/tools, conversation history, and user message.</p>
                         <div id="llm-payload-display" class="log-body" style="height:400px;background:#050507;border:1px solid var(--border);border-radius:6px;font-size:0.72rem;line-height:1.6;white-space:pre-wrap;word-break:break-all;color:var(--text-dim);padding:1rem;">
@@ -1394,15 +1133,11 @@
     <div class="toast-container" id="toast-container"></div>
 
     <script>
-    // Error boundary is in Script 1 (canary) to catch parse errors in this script block.
-
-    // =========== GLOBALS ===========
     var detectedOS = "unknown";
     var daemonRunning = false;
     var currentConfig = {};
     var PROXY_URL = "https://mjmdhqglpratbyzmgndm.supabase.co/functions/v1/github-release-proxy";
 
-    // =========== SESSION ID ===========
     var SESSION_ID = (function() {
         var d = new Date();
         var pad = function(n) { return n < 10 ? "0" + n : "" + n; };
@@ -1411,13 +1146,12 @@
     })();
     var LOG_FOLDER = "~/.bambooclaw/logs/";
     var LOG_FILE_PATH = LOG_FOLDER + SESSION_ID + ".log";
-    // Set session ID in UI
+
     setTimeout(function() {
         var lbl = document.getElementById("session-id-label");
         if (lbl) lbl.textContent = SESSION_ID;
         var pathEl = document.getElementById("log-path-display");
         if (pathEl) pathEl.value = LOG_FILE_PATH;
-        // About tab: set version and copyright year
         var aboutVer = document.getElementById("about-version");
         var appVer = document.getElementById("app-version");
         if (aboutVer && appVer) aboutVer.textContent = appVer.textContent;
@@ -1425,7 +1159,6 @@
         if (copyrightEl) copyrightEl.textContent = "© " + new Date().getFullYear() + " Bamboo Synergy Technologies, Inc.";
     }, 0);
 
-    // =========== TOAST ===========
     function showToast(message, type) {
         type = type || "info";
         var container = document.getElementById("toast-container");
@@ -1439,12 +1172,9 @@
         }, 3000);
     }
 
-    // =========== TAURI HELPERS ===========
     function tauriInvoke(cmd, args) {
         if (!window.__TAURI__) return Promise.reject(new Error("Tauri not available (running in browser)"));
-        var inv = (window.__TAURI__.core && window.__TAURI__.core.invoke)
-               || (window.__TAURI__.tauri && window.__TAURI__.tauri.invoke)
-               || window.__TAURI__.invoke;
+        var inv = (window.__TAURI__.core && window.__TAURI__.core.invoke) || (window.__TAURI__.tauri && window.__TAURI__.tauri.invoke) || window.__TAURI__.invoke;
         if (typeof inv === "function") return inv(cmd, args || {});
         if (typeof window.__TAURI__.transformCallback === "function" && typeof window.__TAURI_IPC__ === "function") {
             return new Promise(function(resolve, reject) {
@@ -1469,7 +1199,6 @@
         ]);
     }
 
-    // =========== COPY LOG ===========
     function copyLog(logId) {
         try {
             var el = document.getElementById(logId);
@@ -1486,10 +1215,9 @@
                     showToast("Log copied to clipboard", "success");
                 });
             }
-        } catch(e) {
-            console.error("[copyLog error]", e);
-        }
+        } catch(e) {}
     }
+
     function appendLog(logId, line) {
         try {
             var now = new Date();
@@ -1498,13 +1226,9 @@
 
             var logLevel = (currentConfig.settings && currentConfig.settings.loglevel) || "info";
             var shouldShow = true;
-            if (logLevel === "error") {
-                shouldShow = /ERROR|FAIL|EXCEPTION/i.test(line);
-            } else if (logLevel === "warn") {
-                shouldShow = /ERROR|FAIL|EXCEPTION|WARN|WARNING/i.test(line);
-            } else if (logLevel === "info") {
-                shouldShow = !/^\[DEBUG\]/i.test(line);
-            }
+            if (logLevel === "error") shouldShow = /ERROR|FAIL|EXCEPTION/i.test(line);
+            else if (logLevel === "warn") shouldShow = /ERROR|FAIL|EXCEPTION|WARN|WARNING/i.test(line);
+            else if (logLevel === "info") shouldShow = !/^\[DEBUG\]/i.test(line);
 
             var el = document.getElementById(logId);
             if (el && el.style.display !== "none" && shouldShow) {
@@ -1528,20 +1252,13 @@
                     }).catch(function(){});
                 } catch(e) {}
             }
-        } catch(e) {
-            console.error("[appendLog error]", e);
-        }
+        } catch(e) {}
     }
 
-    // =========== WIZARD ===========
     var currentStep = 0;
     function wizardGo(step) {
-        document.querySelectorAll(".wizard-step").forEach(function(s, i) {
-            s.classList.toggle("hidden", i !== step);
-        });
-        document.querySelectorAll(".step-dot").forEach(function(d, i) {
-            d.classList.toggle("active", i <= step);
-        });
+        document.querySelectorAll(".wizard-step").forEach(function(s, i) { s.classList.toggle("hidden", i !== step); });
+        document.querySelectorAll(".step-dot").forEach(function(d, i) { d.classList.toggle("active", i <= step); });
         currentStep = step;
         if (step === 0) runSystemChecks();
         if (step === 1) runPrereqInstall();
@@ -1559,26 +1276,22 @@
             detectedOS = os || "unknown";
             var osLabel = detectedOS === "windows" ? "Windows" : detectedOS === "macos" ? "macOS" : detectedOS === "linux" ? "Linux" : detectedOS;
             updateBadge("chk-os", osLabel, "status-found");
-        }).catch(function(e) {
+        }).catch(function() {
             detectedOS = "windows";
             updateBadge("chk-os", "Windows (assumed)", "status-not-installed");
         });
 
         var checkRust = invokeShort("check_prerequisite", { name: "rustc" }).then(function(rv) {
             updateBadge("chk-rust", rv.trim().split("\n")[0], "status-found");
-        }).catch(function(e) {
-            updateBadge("chk-rust", "Not Installed", "status-not-installed");
-        });
+        }).catch(function() { updateBadge("chk-rust", "Not Installed", "status-not-installed"); });
 
         var checkGit = invokeShort("run_shell_command", { commandName: "git", args: ["--version"] }).then(function(gv) {
             updateBadge("chk-git", gv.trim().split("\n")[0], "status-found");
-        }).catch(function(e) {
-            updateBadge("chk-git", "Not Installed", "status-not-installed");
-        });
+        }).catch(function() { updateBadge("chk-git", "Not Installed", "status-not-installed"); });
 
         var checkBuild = invokeShort("check_prerequisite", { name: "vs_build_tools" }).then(function(bv) {
             updateBadge("chk-build", bv.trim() || "Found", "status-found");
-        }).catch(function(e) {
+        }).catch(function() {
             updateBadge("chk-build", detectedOS === "windows" ? "Not Installed" : "N/A", detectedOS === "windows" ? "status-not-installed" : "status-found");
         });
 
@@ -1587,16 +1300,12 @@
         }).catch(function() {
             return invokeShort("run_shell_command", { commandName: "python3", args: ["--version"] }).then(function(pv) {
                 updateBadge("chk-python", pv.trim().split("\n")[0], "status-found");
-            }).catch(function(e) {
-                updateBadge("chk-python", "Not Installed", "status-not-installed");
-            });
+            }).catch(function() { updateBadge("chk-python", "Not Installed", "status-not-installed"); });
         });
 
         var checkNode = invokeShort("run_shell_command", { commandName: "node", args: ["--version"] }).then(function(nv) {
             updateBadge("chk-node", nv.trim().split("\n")[0], "status-found");
-        }).catch(function(e) {
-            updateBadge("chk-node", "Not Installed", "status-not-installed");
-        });
+        }).catch(function() { updateBadge("chk-node", "Not Installed", "status-not-installed"); });
 
         await Promise.allSettled([checkOS, checkRust, checkGit, checkBuild, checkPython, checkNode]);
         document.getElementById("btn-step0-next").disabled = false;
@@ -1609,9 +1318,7 @@
         appendLog(log, "[INFO] Starting prerequisite installation...");
 
         var rustBadge = document.getElementById("chk-rust");
-        var rustInstalled = rustBadge && rustBadge.classList.contains("status-found");
-
-        if (rustInstalled) {
+        if (rustBadge && rustBadge.classList.contains("status-found")) {
             appendLog(log, "[SKIP] Rust already installed.");
         } else {
             appendLog(log, "[INFO] Installing Rust toolchain...");
@@ -1624,15 +1331,11 @@
                     appendLog(log, result);
                 }
                 appendLog(log, "[OK] Rust installation completed.");
-            } catch(e) {
-                appendLog(log, "[ERROR] Rust installation failed: " + (e.message || e));
-            }
+            } catch(e) { appendLog(log, "[ERROR] Rust installation failed: " + (e.message || e)); }
         }
 
         var buildBadge = document.getElementById("chk-build");
-        var buildInstalled = buildBadge && buildBadge.classList.contains("status-found");
-
-        if (detectedOS === "windows" && !buildInstalled) {
+        if (detectedOS === "windows" && !(buildBadge && buildBadge.classList.contains("status-found"))) {
             appendLog(log, "[INFO] Installing Visual Studio Build Tools...");
             try {
                 var result = await invokeLong("run_shell_command", {
@@ -1641,17 +1344,13 @@
                 });
                 appendLog(log, result);
                 appendLog(log, "[OK] Build Tools installation completed.");
-            } catch(e) {
-                appendLog(log, "[ERROR] Build Tools installation failed: " + (e.message || e));
-            }
+            } catch(e) { appendLog(log, "[ERROR] Build Tools installation failed: " + (e.message || e)); }
         } else if (detectedOS === "macos") {
             appendLog(log, "[INFO] Checking Xcode Command Line Tools...");
             try {
                 var result = await invokeLong("run_shell_command", { commandName: "xcode-select", args: ["--install"] }, 120000);
                 appendLog(log, result || "[OK] Xcode CLT ready.");
-            } catch(e) {
-                appendLog(log, "[INFO] Xcode CLT may already be installed: " + (e.message || e));
-            }
+            } catch(e) { appendLog(log, "[INFO] Xcode CLT may already be installed."); }
         }
 
         appendLog(log, "[DONE] All prerequisites ready.");
@@ -1685,11 +1384,8 @@
 
             var homePath = "~";
             try {
-                if (detectedOS === "windows") {
-                    homePath = (await invokeShort("run_shell_command", { commandName: "cmd", args: ["/C", "echo %USERPROFILE%"] })).trim();
-                } else {
-                    homePath = (await invokeShort("run_shell_command", { commandName: "sh", args: ["-c", "echo $HOME"] })).trim();
-                }
+                if (detectedOS === "windows") homePath = (await invokeShort("run_shell_command", { commandName: "cmd", args: ["/C", "echo %USERPROFILE%"] })).trim();
+                else homePath = (await invokeShort("run_shell_command", { commandName: "sh", args: ["-c", "echo $HOME"] })).trim();
             } catch(e) {}
 
             var sep = detectedOS === "windows" ? "\\" : "/";
@@ -1697,11 +1393,8 @@
             var destFile = destDir + sep + (detectedOS === "windows" ? "bambooclaw.exe" : "bambooclaw");
 
             try {
-                if (detectedOS === "windows") {
-                    await invokeShort("run_shell_command", { commandName: "cmd", args: ["/C", "mkdir \"" + destDir + "\" 2>nul || echo exists"] });
-                } else {
-                    await invokeShort("run_shell_command", { commandName: "mkdir", args: ["-p", destDir] });
-                }
+                if (detectedOS === "windows") await invokeShort("run_shell_command", { commandName: "cmd", args: ["/C", "mkdir \"" + destDir + "\" 2>nul || echo exists"] });
+                else await invokeShort("run_shell_command", { commandName: "mkdir", args: ["-p", destDir] });
             } catch(e) {}
 
             var dlUrl = PROXY_URL + "?asset=" + encodeURIComponent(assetName);
@@ -1714,9 +1407,7 @@
 
             document.getElementById("install-path-display").value = destFile;
             appendLog(log, "[DONE] BambooClaw deployed.");
-        } catch(e) {
-            appendLog(log, "[ERROR] Binary download failed: " + (e.message || e));
-        }
+        } catch(e) { appendLog(log, "[ERROR] Binary download failed: " + (e.message || e)); }
     }
 
     document.getElementById("btn-step2-skip").addEventListener("click", async function() {
@@ -1726,6 +1417,7 @@
         await deployBinary(log);
         wizardGo(3);
     });
+    
     document.getElementById("btn-step2-install").addEventListener("click", async function() {
         var log = "capability-log";
         document.getElementById(log).textContent = "";
@@ -1740,12 +1432,9 @@
         var pythonCmd = detectedOS === "windows" ? "python" : "python3";
 
         if (wantPython || wantBrowser || wantNode) {
-            // --- Python Ecosystem ---
             if (wantPython) {
                 var pyBadge = document.getElementById("chk-python");
-                var pyInstalled = pyBadge && pyBadge.classList.contains("status-found");
-
-                if (pyInstalled) {
+                if (pyBadge && pyBadge.classList.contains("status-found")) {
                     appendLog(log, "[SKIP] Python already installed.");
                 } else {
                     appendLog(log, "[INFO] Installing Python 3.12...");
@@ -1761,22 +1450,17 @@
                             appendLog(log, r);
                         }
                         appendLog(log, "[OK] Python installed.");
-                    } catch(e) {
-                        appendLog(log, "[ERROR] Python installation failed: " + (e.message || e));
-                    }
+                    } catch(e) { appendLog(log, "[ERROR] Python installation failed."); }
                 }
 
-                appendLog(log, "[INFO] Installing Python packages (pyautogui, pillow, requests, beautifulsoup4, psutil, pandas, numpy)...");
+                appendLog(log, "[INFO] Installing Python packages...");
                 try {
                     var r = await invokeLong("run_shell_command", { commandName: pipCmd, args: ["install", "pyautogui", "pillow", "requests", "beautifulsoup4", "psutil", "pandas", "numpy"] });
                     appendLog(log, r);
                     appendLog(log, "[OK] Python packages installed.");
-                } catch(e) {
-                    appendLog(log, "[ERROR] pip install failed: " + (e.message || e));
-                }
+                } catch(e) { appendLog(log, "[ERROR] pip install failed."); }
             }
 
-            // --- Browser Automation ---
             if (wantBrowser) {
                 appendLog(log, "[INFO] Installing Playwright...");
                 try {
@@ -1786,17 +1470,12 @@
                     var r2 = await invokeLong("run_shell_command", { commandName: pythonCmd, args: ["-m", "playwright", "install", "chromium"] });
                     appendLog(log, r2);
                     appendLog(log, "[OK] Playwright + Chromium installed.");
-                } catch(e) {
-                    appendLog(log, "[ERROR] Playwright installation failed: " + (e.message || e));
-                }
+                } catch(e) { appendLog(log, "[ERROR] Playwright installation failed."); }
             }
 
-            // --- Developer Tools (Node.js) ---
             if (wantNode) {
                 var nodeBadge = document.getElementById("chk-node");
-                var nodeInstalled = nodeBadge && nodeBadge.classList.contains("status-found");
-
-                if (nodeInstalled) {
+                if (nodeBadge && nodeBadge.classList.contains("status-found")) {
                     appendLog(log, "[SKIP] Node.js already installed.");
                 } else {
                     appendLog(log, "[INFO] Installing Node.js LTS...");
@@ -1812,12 +1491,9 @@
                             appendLog(log, r);
                         }
                         appendLog(log, "[OK] Node.js installed.");
-                    } catch(e) {
-                        appendLog(log, "[ERROR] Node.js installation failed: " + (e.message || e));
-                    }
+                    } catch(e) { appendLog(log, "[ERROR] Node.js installation failed."); }
                 }
             }
-
             appendLog(log, "[DONE] Agent capability setup complete.");
         }
 
@@ -1835,12 +1511,9 @@
             document.getElementById("dashboard-view").style.display = "block";
             document.getElementById("dashboard-view").classList.remove("hidden");
             await loadConfig();
-        } catch(e) {
-            appendLog("boot-log", "[ERROR] enterDashboard failed: " + (e.message || e));
-        }
+        } catch(e) { appendLog("boot-log", "[ERROR] enterDashboard failed: " + (e.message || e)); }
     };
 
-    // =========== TAB SWITCHING ===========
     document.querySelectorAll(".tab").forEach(function(tab) {
         tab.addEventListener("click", function() {
             var target = this.getAttribute("data-tab");
@@ -1851,7 +1524,6 @@
         });
     });
 
-    // =========== LLM PROVIDER MODELS ===========
     var providerModels = {
         openai: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo", "o1-preview", "o1-mini"],
         anthropic: ["claude-opus-4-20250514", "claude-sonnet-4-20250514", "claude-3.5-sonnet-20241022", "claude-3-haiku-20240307"],
@@ -1875,16 +1547,10 @@
         if (isOR) {
             document.getElementById("or-models-area").classList.remove("hidden");
             document.getElementById("or-models-area").style.display = "block";
+            if (orModels.length === 0) { window.fetchORModels(); }
         } else {
             document.getElementById("or-models-area").classList.add("hidden");
             document.getElementById("or-models-area").style.display = "none";
-        }
-        if (isOR) {
-            if (orModels.length === 0) {
-                appendLog("dash-log", "[UI] Auto-fetching OpenRouter models...");
-                window.fetchORModels();
-            }
-        } else {
             var models = providerModels[this.value] || [];
             var sel = document.getElementById("llm-model");
             sel.innerHTML = "";
@@ -1900,89 +1566,64 @@
     document.getElementById("llm-api-key").addEventListener("input", function() {
         var provider = document.getElementById("llm-provider").value;
         if (provider === "openrouter" && this.value.trim().length > 10 && orModels.length === 0) {
-            appendLog("dash-log", "[UI] API key entered, auto-fetching OpenRouter models...");
             window.fetchORModels();
         }
     });
 
     document.getElementById("llm-provider").dispatchEvent(new Event("change"));
 
-    // =========== LLM CONFIG ===========
     async function applyLLMConfig() {
         appendLog("dash-log", "[LLM] applyLLMConfig() called");
         var provider = document.getElementById("llm-provider").value;
-        var apiKey = document.getElementById("llm-api-key").value.trim(); // FIX: Trim invisible whitespace
+        var apiKey = document.getElementById("llm-api-key").value.trim();
         var model = provider === "openrouter" ? orSelectedModel : document.getElementById("llm-model").value;
         var spEl = document.getElementById("settings-system-prompt");
         var systemPrompt = spEl ? spEl.value : "";
-        appendLog("dash-log", "[LLM] provider=" + provider + ", model=" + model + ", hasKey=" + (apiKey.length > 0));
 
-        if (!apiKey.trim() && provider !== "ollama") {
-            showToast("API key is required for " + provider, "error");
-            appendLog("dash-log", "[LLM] REJECTED: no API key");
-            return;
-        }
-        if (provider === "openrouter" && !model) {
-            showToast("Please select a model from the list first", "error");
-            appendLog("dash-log", "[LLM] REJECTED: no model selected");
-            return;
-        }
+        if (!apiKey && provider !== "ollama") { showToast("API key is required", "error"); return; }
+        if (provider === "openrouter" && !model) { showToast("Please select a model from the list first", "error"); return; }
 
-        currentConfig.llm = { provider: provider, api_key: apiKey, model: model, system_prompt: systemPrompt };
+        if (!currentConfig.llm) currentConfig.llm = {};
+        currentConfig.llm.provider = provider;
+        currentConfig.llm.api_key = apiKey;
+        currentConfig.llm.model = model;
+        currentConfig.llm.system_prompt = systemPrompt;
+        
         var tomlContent = buildConfigToml();
-
         try {
             await invokeShort("write_config", { content: tomlContent });
-            showToast("Configuration saved to ~/.bambooclaw/config.toml", "success");
-            appendLog("dash-log", "[LLM] Config saved via Tauri");
+            showToast("Configuration saved", "success");
         } catch(e) {
             localStorage.setItem("bambooclaw-config", JSON.stringify(currentConfig));
-            showToast("Configuration saved successfully", "success");
-            appendLog("dash-log", "[LLM] Config saved to localStorage (Tauri unavailable)");
+            showToast("Configuration saved to local storage", "success");
         }
         var r1 = document.getElementById("or-save-reminder"); if (r1) r1.classList.remove("visible");
         var r2 = document.getElementById("llm-save-reminder"); if (r2) r2.classList.remove("visible");
     }
 
     async function testLLMConfig() {
-        appendLog("dash-log", "[TEST] testLLMConfig() called");
         var provider = document.getElementById("llm-provider").value;
         var apiKey = document.getElementById("llm-api-key").value.trim();
-        if (!apiKey && provider !== "ollama") {
-            showToast("Enter an API key first", "error");
-            return;
-        }
+        if (!apiKey && provider !== "ollama") { showToast("Enter an API key first", "error"); return; }
         showToast("Testing connection...", "info");
 
         try {
             if (provider === "openrouter") {
-                var resp = await fetch("https://openrouter.ai/api/v1/models", {
-                    headers: { "Authorization": "Bearer " + apiKey }
-                });
-                if (resp.ok) {
-                    showToast("OpenRouter API key is valid!", "success");
-                } else {
-                    showToast("Invalid API key (HTTP " + resp.status + ")", "error");
-                }
+                var resp = await fetch("https://openrouter.ai/api/v1/models", { headers: { "Authorization": "Bearer " + apiKey } });
+                if (resp.ok) showToast("OpenRouter API key is valid!", "success");
+                else showToast("Invalid API key (HTTP " + resp.status + ")", "error");
             } else if (provider === "ollama") {
                 var resp2 = await fetch("http://localhost:11434/api/tags");
-                if (resp2.ok) {
-                    showToast("Ollama is running locally!", "success");
-                } else {
-                    showToast("Ollama not reachable", "error");
-                }
+                if (resp2.ok) showToast("Ollama is running locally!", "success");
+                else showToast("Ollama not reachable", "error");
             } else {
                 showToast("Key saved. Full connection test available when agent daemon is running.", "info");
             }
-        } catch(e) {
-            showToast("Connection test error: " + (e.message || e), "error");
-        }
+        } catch(e) { showToast("Connection test error", "error"); }
     }
 
-    // =========== CONFIG SERIALIZATION ===========
     function buildConfigToml() {
         var lines = ["# BambooClaw Agent Configuration", "# Auto-generated by BambooClaw Companion", ""];
-
         if (currentConfig.llm) {
             lines.push("[llm]");
             if (currentConfig.llm.provider) lines.push('provider = ' + JSON.stringify(currentConfig.llm.provider));
@@ -1991,31 +1632,26 @@
             if (currentConfig.llm.system_prompt != null) lines.push('system_prompt = ' + JSON.stringify(currentConfig.llm.system_prompt));
             lines.push("");
         }
-
         if (currentConfig.channels) {
             Object.keys(currentConfig.channels).forEach(function(ch) {
                 lines.push("[channels." + ch + "]");
                 var c = currentConfig.channels[ch];
-                Object.keys(c).forEach(function(k) {
-                    lines.push(k + ' = ' + JSON.stringify(c[k] || ""));
-                });
+                Object.keys(c).forEach(function(k) { lines.push(k + ' = ' + JSON.stringify(c[k] || "")); });
                 lines.push("");
             });
         }
-
         if (currentConfig.settings) {
             lines.push("[agent]");
             var s = currentConfig.settings;
             if (s.autonomy) lines.push('autonomy = ' + JSON.stringify(s.autonomy));
             if (s.port) lines.push("gateway_port = " + s.port);
             if (s.tunnel) lines.push('tunnel = ' + JSON.stringify(s.tunnel));
-            if (s.identity) lines.push('identity = ' + JSON.stringify(s.identity));
+            if (s.identity !== undefined) lines.push('identity = ' + JSON.stringify(String(s.identity)));
             if (s.runtime) lines.push('runtime = ' + JSON.stringify(s.runtime));
             if (s.loglevel) lines.push('log_level = ' + JSON.stringify(s.loglevel));
             if (currentConfig.composioApiKey) lines.push('composio_api_key = ' + JSON.stringify(currentConfig.composioApiKey));
             lines.push("");
         }
-
         return lines.join("\n");
     }
 
@@ -2023,23 +1659,14 @@
         appendLog("dash-log", "[CONFIG] loadConfig() started...");
         try {
             var raw = await invokeShort("read_config");
-            appendLog("dash-log", "[CONFIG] Loaded from disk successfully. Length: " + raw.length);
-            showToast("Configuration loaded from disk", "info");
             parseAndApplyConfig(raw);
-            appendLog("dash-log", "[CONFIG] Parsed and applied successfully.");
         } catch(e) {
-            appendLog("dash-log", "[CONFIG] Failed to read from disk: " + (e.message || e));
             var saved = localStorage.getItem("bambooclaw-config");
             if (saved) {
-                appendLog("dash-log", "[CONFIG] Falling back to localStorage data.");
                 try {
                     currentConfig = JSON.parse(saved);
                     applyConfigToUI();
-                } catch(e2) {
-                    appendLog("dash-log", "[CONFIG] LocalStorage parse error.");
-                }
-            } else {
-                appendLog("dash-log", "[CONFIG] No fallback data found.");
+                } catch(e2) {}
             }
         }
     }
@@ -2058,14 +1685,8 @@
                 var key = kvMatch[1], valRaw = kvMatch[2].trim();
                 var val = valRaw;
                 if (valRaw.startsWith('"')) {
-                    try {
-                        val = JSON.parse(valRaw);
-                    } catch(e) {
-                        val = valRaw.replace(/^"|"$/g, '');
-                    }
-                } else if (!isNaN(valRaw)) {
-                    val = Number(valRaw);
-                }
+                    try { val = JSON.parse(valRaw); } catch(e) { val = valRaw.replace(/^"|"$/g, ''); }
+                } else if (!isNaN(valRaw)) { val = Number(valRaw); }
                 
                 if (section === "llm") {
                     if (!currentConfig.llm) currentConfig.llm = {};
@@ -2078,9 +1699,8 @@
                     currentConfig.channels[ch][key] = String(val);
                 }
                 if (section === "agent") {
-                    if (key === "composio_api_key") {
-                        currentConfig.composioApiKey = String(val);
-                    } else {
+                    if (key === "composio_api_key") currentConfig.composioApiKey = String(val);
+                    else {
                         if (!currentConfig.settings) currentConfig.settings = {};
                         currentConfig.settings[key] = String(val);
                     }
@@ -2127,41 +1747,26 @@
             if (s.loglevel || s.log_level) document.getElementById("set-loglevel").value = s.loglevel || s.log_level;
             
             if (s.identity !== undefined) {
-                var identVal = parseInt(s.identity);
-                if (!isNaN(identVal)) {
-                    activePersonaIndex = identVal;
-                } else {
-                    activePersonaIndex = -1;
-                }
-                var identEl = document.getElementById("set-identity");
-                if (identEl) identEl.value = activePersonaIndex >= 0 ? activePersonaIndex : "-1";
+                activePersonaIndex = parseInt(s.identity);
+                if (isNaN(activePersonaIndex)) activePersonaIndex = -1;
             }
         }
-
-    // =========== CHANNEL SETUP ===========
-    function closeChannelSetup() {
-        appendLog("dash-log", "[CH] closeChannelSetup()");
-        document.getElementById("channel-setup-area").classList.add("hidden");
     }
 
+    function closeChannelSetup() { document.getElementById("channel-setup-area").classList.add("hidden"); }
+
     function setupTelegram() {
-        appendLog("dash-log", "[CH] setupTelegram() called");
         var savedToken = (currentConfig.channels && currentConfig.channels.telegram && currentConfig.channels.telegram.token) || "";
         document.getElementById("channel-setup-title").textContent = "Telegram Bot Setup";
         document.getElementById("channel-setup-body").innerHTML =
             '<p style="margin-bottom:1rem;color:var(--text-dim);">1. Open Telegram and talk to <strong>@BotFather</strong><br>2. Send /newbot and follow the prompts<br>3. Copy the bot token and paste it below</p>' +
             '<div class="form-group"><label>Bot Token</label><input type="text" id="tg-token" placeholder="123456:ABC-DEF1234ghIkl..." value="' + savedToken.replace(/"/g, '&quot;') + '" /></div>' +
-            '<button class="btn btn-sm" id="btn-save-tg">Save Token</button>' +
-            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" id="btn-test-tg">Test</button>';
+            '<button type="button" class="btn btn-sm" id="btn-save-tg">Save Token</button>' +
+            '<button type="button" class="btn btn-sm btn-outline" style="margin-left:0.5rem;" id="btn-test-tg">Test</button>';
         document.getElementById("channel-setup-area").classList.remove("hidden");
         document.getElementById("btn-save-tg").addEventListener("click", function() { window.saveTelegramToken(); });
         document.getElementById("btn-test-tg").addEventListener("click", function() { window.testChannel("telegram"); });
-        try {
-            if (window.__TAURI__) {
-                var opener = (window.__TAURI__.opener && window.__TAURI__.opener.openUrl) || (window.__TAURI__.shell && window.__TAURI__.shell.open);
-                if (opener) opener("https://t.me/BotFather");
-            }
-        } catch(e) {}
+        try { if (window.__TAURI__) { var opener = (window.__TAURI__.opener && window.__TAURI__.opener.openUrl) || (window.__TAURI__.shell && window.__TAURI__.shell.open); if (opener) opener("https://t.me/BotFather"); } } catch(e) {}
     }
 
     function saveTelegramToken() {
@@ -2183,8 +1788,8 @@
             '<p style="margin-bottom:1rem;color:var(--text-dim);">1. Go to <strong>discord.com/developers/applications</strong><br>2. Create a new application → Bot → Reset Token<br>3. Enable MESSAGE CONTENT INTENT<br>4. Paste the bot token below</p>' +
             '<div class="form-group"><label>Bot Token</label><input type="text" id="dc-token" placeholder="MTA..." value="' + savedToken.replace(/"/g, '&quot;') + '" /></div>' +
             '<div class="form-group"><label>Guild ID (optional)</label><input type="text" id="dc-guild" placeholder="Server ID for slash commands" value="' + savedGuild.replace(/"/g, '&quot;') + '" /></div>' +
-            '<button class="btn btn-sm" id="btn-save-dc">Save Token</button>' +
-            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" id="btn-test-dc">Test</button>';
+            '<button type="button" class="btn btn-sm" id="btn-save-dc">Save Token</button>' +
+            '<button type="button" class="btn btn-sm btn-outline" style="margin-left:0.5rem;" id="btn-test-dc">Test</button>';
         document.getElementById("channel-setup-area").classList.remove("hidden");
         document.getElementById("btn-save-dc").addEventListener("click", function() { window.saveDiscordToken(); });
         document.getElementById("btn-test-dc").addEventListener("click", function() { window.testChannel("discord"); });
@@ -2208,8 +1813,8 @@
             '<div class="form-group"><label>Phone Number ID</label><input type="text" id="wa-phone-id" placeholder="From Meta Developer Console" /></div>' +
             '<div class="form-group"><label>Access Token</label><input type="text" id="wa-token" placeholder="EAA..." /></div>' +
             '<div class="form-group"><label>Webhook Verify Token</label><input type="text" id="wa-verify" placeholder="Your custom verify string" /></div>' +
-            '<button class="btn btn-sm" id="btn-save-wa">Save Configuration</button>' +
-            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" id="btn-test-wa">Test</button>';
+            '<button type="button" class="btn btn-sm" id="btn-save-wa">Save Configuration</button>' +
+            '<button type="button" class="btn btn-sm btn-outline" style="margin-left:0.5rem;" id="btn-test-wa">Test</button>';
         document.getElementById("channel-setup-area").classList.remove("hidden");
         document.getElementById("btn-save-wa").addEventListener("click", function() { window.saveWhatsApp(); });
         document.getElementById("btn-test-wa").addEventListener("click", function() { window.testChannel("whatsapp"); });
@@ -2234,8 +1839,8 @@
             '<p style="margin-bottom:1rem;color:var(--text-dim);">1. Go to <strong>api.slack.com/apps</strong> and create a new app<br>2. Enable Socket Mode and Event Subscriptions<br>3. Add bot scopes: chat:write, app_mentions:read, channels:history</p>' +
             '<div class="form-group"><label>Bot Token</label><input type="text" id="sl-bot-token" placeholder="xoxb-..." /></div>' +
             '<div class="form-group"><label>App Token</label><input type="text" id="sl-app-token" placeholder="xapp-..." /></div>' +
-            '<button class="btn btn-sm" id="btn-save-sl">Save Configuration</button>' +
-            '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" id="btn-test-sl">Test</button>';
+            '<button type="button" class="btn btn-sm" id="btn-save-sl">Save Configuration</button>' +
+            '<button type="button" class="btn btn-sm btn-outline" style="margin-left:0.5rem;" id="btn-test-sl">Test</button>';
         document.getElementById("channel-setup-area").classList.remove("hidden");
         document.getElementById("btn-save-sl").addEventListener("click", function() { window.saveSlack(); });
         document.getElementById("btn-test-sl").addEventListener("click", function() { window.testChannel("slack"); });
@@ -2265,11 +1870,8 @@
                 if (!token) { showToast("No Telegram bot token configured.", "error"); return; }
                 var resp = await fetch("https://api.telegram.org/bot" + token + "/getMe");
                 var data = await resp.json();
-                if (data.ok) {
-                    showToast("Telegram bot @" + data.result.username + " is valid!", "success");
-                } else {
-                    showToast("Invalid Telegram token: " + (data.description || "unknown error"), "error");
-                }
+                if (data.ok) showToast("Telegram bot @" + data.result.username + " is valid!", "success");
+                else showToast("Invalid Telegram token", "error");
             } else if (channel === "discord") {
                 var dToken = currentConfig.channels && currentConfig.channels.discord && currentConfig.channels.discord.token;
                 if (!dToken) {
@@ -2277,26 +1879,16 @@
                     if (dcInput) dToken = dcInput.value.trim();
                 }
                 if (!dToken) { showToast("No Discord bot token configured", "error"); return; }
-                var dresp = await fetch("https://discord.com/api/v10/users/@me", {
-                    headers: { "Authorization": "Bot " + dToken }
-                });
-                if (dresp.ok) {
-                    var ddata = await dresp.json();
-                    showToast("Discord bot " + ddata.username + " is valid!", "success");
-                } else {
-                    showToast("Invalid Discord token (HTTP " + dresp.status + ")", "error");
-                }
+                var dresp = await fetch("https://discord.com/api/v10/users/@me", { headers: { "Authorization": "Bot " + dToken } });
+                if (dresp.ok) showToast("Discord bot is valid!", "success");
+                else showToast("Invalid Discord token", "error");
             } else {
                 showToast("Configuration saved. Full " + channel + " test available when agent is running.", "info");
             }
-        } catch(e) {
-            showToast(channel + " test error: " + (e.message || e), "error");
-        }
+        } catch(e) { showToast(channel + " test error", "error"); }
     }
 
-    // =========== AGENT CONTROL ===========
     async function toggleDaemon() {
-        var btn = document.getElementById("btn-daemon-toggle");
         if (daemonRunning) {
             try {
                 stopTelegramPolling();
@@ -2310,7 +1902,7 @@
                 stopTelegramPolling();
                 daemonRunning = false;
                 updateDaemonUI();
-                showToast("Daemon process not found (may have already stopped)", "info");
+                showToast("Daemon process stopped", "info");
             }
         } else {
             try {
@@ -2321,9 +1913,7 @@
                 if (chatEl) chatEl.innerHTML = '<div class="chat-msg assistant"><span class="role">Agent:</span> Daemon is online. How can I help you?</div>';
                 showToast("Agent daemon started", "success");
                 startTelegramPolling();
-            } catch(e) {
-                showToast("Failed to start daemon: " + (e.message || e), "error");
-            }
+            } catch(e) { showToast("Failed to start daemon", "error"); }
         }
     }
 
@@ -2347,9 +1937,7 @@
     async function emergencyFlush() {
         showToast("Flushing system processes...", "info");
         stopTelegramPolling();
-        try { await invokeShort("emergency_flush"); } catch(e) {
-            try { await invokeShort("stop_daemon"); } catch(e2) {}
-        }
+        try { await invokeShort("emergency_flush"); } catch(e) { try { await invokeShort("stop_daemon"); } catch(e2) {} }
         daemonRunning = false;
         updateDaemonUI();
         chatHistory = [];
@@ -2392,91 +1980,16 @@
         return false;
     }
 
-    // =========== DIRECT LLM CALL WITH TOOL CALLING ===========
     var chatHistory = [];
     var MAX_TOOL_ITERATIONS = 10;
 
     var agentTools = [
-        {
-            type: "function",
-            function: {
-                name: "run_shell",
-                description: "Execute a shell command on the user's computer. Returns stdout+stderr.",
-                parameters: {
-                    type: "object",
-                    properties: {
-                        command: { type: "string" },
-                        args: { type: "array", items: { type: "string" } }
-                    },
-                    required: ["command"],
-                    additionalProperties: false
-                }
-            }
-        },
-        {
-            type: "function",
-            function: {
-                name: "read_file",
-                description: "Read the contents of a file on the user's computer.",
-                parameters: {
-                    type: "object",
-                    properties: { path: { type: "string" } },
-                    required: ["path"],
-                    additionalProperties: false
-                }
-            }
-        },
-        {
-            type: "function",
-            function: {
-                name: "write_file",
-                description: "Write content to a file on the user's computer.",
-                parameters: {
-                    type: "object",
-                    properties: { path: { type: "string" }, content: { type: "string" } },
-                    required: ["path", "content"],
-                    additionalProperties: false
-                }
-            }
-        },
-        {
-            type: "function",
-            function: {
-                name: "http_request",
-                description: "Make an HTTP request.",
-                parameters: {
-                    type: "object",
-                    properties: { url: { type: "string" }, method: { type: "string" }, headers: { type: "object" }, body: { type: "string" } },
-                    required: ["url"],
-                    additionalProperties: false
-                }
-            }
-        },
-        {
-            type: "function",
-            function: {
-                name: "list_directory",
-                description: "List files and folders.",
-                parameters: {
-                    type: "object",
-                    properties: { path: { type: "string" } },
-                    required: ["path"],
-                    additionalProperties: false
-                }
-            }
-        },
-        {
-            type: "function",
-            function: {
-                name: "take_screenshot",
-                description: "Take a screenshot of the user's screen.",
-                parameters: {
-                    type: "object",
-                    properties: { filename: { type: "string" } },
-                    additionalProperties: false
-                }
-            }
-        }
+        { type: "function", function: { name: "run_shell", description: "Execute a shell command on the user's computer. Returns stdout+stderr.", parameters: { type: "object", properties: { command: { type: "string" }, args: { type: "array", items: { type: "string" } } }, required: ["command"], additionalProperties: false } } },
+        { type: "function", function: { name: "read_file", description: "Read the contents of a file on the user's computer.", parameters: { type: "object", properties: { path: { type: "string" } }, required: ["path"], additionalProperties: false } } },
+        { type: "function", function: { name: "write_file", description: "Write content to a file on the user's computer.", parameters: { type: "object", properties: { path: { type: "string" }, content: { type: "string" } }, required: ["path", "content"], additionalProperties: false } } },
+        { type: "function", function: { name: "http_request", description: "Make an HTTP request.", parameters: { type: "object", properties: { url: { type: "string" }, method: { type: "string" }, headers: { type: "object" }, body: { type: "string" } }, required: ["url"], additionalProperties: false } } },
+        { type: "function", function: { name: "list_directory", description: "List files and folders.", parameters: { type: "object", properties: { path: { type: "string" } }, required: ["path"], additionalProperties: false } } },
+        { type: "function", function: { name: "take_screenshot", description: "Take a screenshot of the user's screen.", parameters: { type: "object", properties: { filename: { type: "string" } }, additionalProperties: false } } }
     ];
 
     var pendingApprovalId = 0;
@@ -2494,16 +2007,13 @@
             card.innerHTML = '<div class="approval-title">⚠ Approval Required</div>' +
                 '<div class="approval-detail"><strong>' + escapeHtml(toolName) + '</strong><br>' + escapeHtml(argsStr) + '</div>' +
                 '<div class="approval-actions">' +
-                '<button class="btn-approve" data-aid="' + aid + '">✓ Allow</button>' +
-                '<button class="btn-deny" data-aid="' + aid + '">✗ Deny</button>' +
+                '<button type="button" class="btn-approve" data-aid="' + aid + '">✓ Allow</button>' +
+                '<button type="button" class="btn-deny" data-aid="' + aid + '">✗ Deny</button>' +
                 '</div>' +
                 '<div class="approval-timeout">Auto-denies in 120 seconds</div>';
             chatArea.appendChild(card);
             chatArea.scrollTop = chatArea.scrollHeight;
-            var timeout = setTimeout(function() {
-                cleanup();
-                reject(new Error("User approval timed out for: " + toolName));
-            }, 120000);
+            var timeout = setTimeout(function() { cleanup(); reject(new Error("User approval timed out for: " + toolName)); }, 120000);
             function cleanup() { var el = document.getElementById(aid); if (el) el.remove(); }
             card.querySelector(".btn-approve").addEventListener("click", function() { clearTimeout(timeout); cleanup(); resolve(true); });
             card.querySelector(".btn-deny").addEventListener("click", function() { clearTimeout(timeout); cleanup(); reject(new Error("User denied tool execution")); });
@@ -2513,23 +2023,14 @@
     var DANGEROUS_TOOLS = ["run_shell", "write_file", "docker_command", "ssh_execute", "mqtt_publish"];
 
     async function executeTool(toolName, args) {
-        appendLog("unified-log", "[AGENT] [TOOL] Executing: " + toolName + "(" + JSON.stringify(args).substring(0, 100) + ")");
-
         var autonomy = (currentConfig.settings && currentConfig.settings.autonomy) || "collaborative";
-        try { var sel = document.getElementById("setting-autonomy"); if (sel) autonomy = sel.value; } catch(e) {}
+        try { var sel = document.getElementById("set-autonomy"); if (sel) autonomy = sel.value; } catch(e) {}
 
-        if (autonomy === "observe") {
-            return "[BLOCKED] Observation Only mode is active.";
-        }
-
+        if (autonomy === "observe") return "[BLOCKED] Observation Only mode is active.";
         if (autonomy === "collaborative") {
             var isDangerous = DANGEROUS_TOOLS.indexOf(toolName) >= 0 || toolName.startsWith("composio_");
             if (isDangerous) {
-                try {
-                    await awaitUserApproval(toolName, args);
-                } catch(e) {
-                    return "Tool execution denied: " + (e.message || String(e));
-                }
+                try { await awaitUserApproval(toolName, args); } catch(e) { return "Tool execution denied"; }
             }
         }
 
@@ -2542,27 +2043,22 @@
             } else if (toolName === "read_file") {
                 var platform = await invokeShort("get_platform");
                 var result;
-                if (platform === "windows") {
-                    result = await invokeShort("run_shell_command", { commandName: "cmd", args: ["/c", "type", args.path] });
-                } else {
-                    result = await invokeShort("run_shell_command", { commandName: "cat", args: [args.path] });
-                }
+                if (platform === "windows") result = await invokeShort("run_shell_command", { commandName: "cmd", args: ["/c", "type", args.path] });
+                else result = await invokeShort("run_shell_command", { commandName: "cat", args: [args.path] });
                 return result || "(empty file)";
             } else if (toolName === "write_file") {
                 var platform = await invokeShort("get_platform");
                 if (platform === "windows") {
                     var psCmd = "Set-Content -Path '" + args.path.replace(/'/g, "''") + "' -Value '" + (args.content || "").replace(/'/g, "''") + "'";
-                    var result = await invokeShort("run_shell_command", { commandName: "powershell", args: ["-Command", psCmd] });
+                    await invokeShort("run_shell_command", { commandName: "powershell", args: ["-Command", psCmd] });
                 } else {
-                    var result = await invokeShort("run_shell_command", { commandName: "bash", args: ["-c", "cat > '" + args.path.replace(/'/g, "'\''") + "' << 'BCEOF'\n" + (args.content || "") + "\nBCEOF"] });
+                    await invokeShort("run_shell_command", { commandName: "bash", args: ["-c", "cat > '" + args.path.replace(/'/g, "'\''") + "' << 'BCEOF'\n" + (args.content || "") + "\nBCEOF"] });
                 }
                 return "File written successfully: " + args.path;
             } else if (toolName === "http_request") {
                 var method = (args.method || "GET").toUpperCase();
                 var fetchOpts = { method: method, headers: args.headers || {} };
-                if (args.body && (method === "POST" || method === "PUT" || method === "PATCH")) {
-                    fetchOpts.body = args.body;
-                }
+                if (args.body && (method === "POST" || method === "PUT" || method === "PATCH")) fetchOpts.body = args.body;
                 var resp = await fetch(args.url, fetchOpts);
                 var text = await resp.text();
                 return "HTTP " + resp.status + "\n" + text.substring(0, 5000);
@@ -2584,9 +2080,7 @@
             } else {
                 return "Unknown tool: " + toolName;
             }
-        } catch(e) {
-            return "Tool error: " + (e.message || String(e));
-        }
+        } catch(e) { return "Tool error: " + (e.message || String(e)); }
     }
 
     async function callLLM(userMessage) {
@@ -2613,15 +2107,7 @@
         } else if (autonomy === "collaborative") {
             systemPrompt += "MODE: COLLABORATIVE.\n\n";
         } else {
-            systemPrompt += "MODE: FULL AUTONOMY. You have absolute control over this computer.\n\n";
-            systemPrompt += "CRITICAL RULES FOR FULL AUTONOMY:\n";
-            systemPrompt += "1. NEVER tell the user to do something manually. YOU execute every action.\n";
-            systemPrompt += "2. For GUI tasks: Take screenshot -> Analyze -> pyautogui -> Verify screenshot.\n";
-            systemPrompt += "3. For web service tasks: Use API scripts preferred. Fallback to browser automation.\n";
-            systemPrompt += "4. Chain as many tool calls as needed. Do not stop halfway. Your max iterations: " + maxIter + "\n";
-            systemPrompt += "5. Complete ALL steps before responding.\n";
-            systemPrompt += "6. For file operations: just do them.\n";
-            systemPrompt += "7. ENCODING RULE: NEVER output raw Unicode characters (like German umlauts ä, ö, ü, or the Euro symbol €) inside Python scripts. ALWAYS use standard ASCII equivalents (e.g. 'ae', 'oe', 'ue', 'EUR') to prevent Windows encoding crashes.\n\n";
+            systemPrompt += "MODE: FULL AUTONOMY. You have absolute control over this computer.\n\nCRITICAL RULES FOR FULL AUTONOMY:\n1. NEVER tell the user to do something manually. YOU execute every action.\n2. For GUI tasks: Take screenshot -> Analyze -> pyautogui -> Verify screenshot.\n3. For web service tasks: Use API scripts preferred. Fallback to browser automation.\n4. Chain as many tool calls as needed. Do not stop halfway. Your max iterations: " + maxIter + "\n5. Complete ALL steps before responding.\n6. For file operations: just do them.\n7. ENCODING RULE: NEVER output raw Unicode characters (like German umlauts ä, ö, ü, or the Euro symbol €) inside Python scripts. ALWAYS use standard ASCII equivalents (e.g. 'ae', 'oe', 'ue', 'EUR') to prevent Windows encoding crashes.\n\n";
         }
 
         var userSystemPrompt = (currentConfig.llm && currentConfig.llm.system_prompt) ? currentConfig.llm.system_prompt.trim() : "";
@@ -2632,9 +2118,7 @@
         if (userSystemPrompt || personaPrompt) {
             systemPrompt += "\n--- OPERATOR INSTRUCTIONS ---\n";
             if (userSystemPrompt) systemPrompt += userSystemPrompt + "\n";
-            if (personaPrompt) {
-                systemPrompt += "\n--- ACTIVE PERSONA ---\n" + personaPrompt + "\n--- END PERSONA ---\n";
-            }
+            if (personaPrompt) systemPrompt += "\n--- ACTIVE PERSONA ---\n" + personaPrompt + "\n--- END PERSONA ---\n";
             systemPrompt += "--- END OPERATOR INSTRUCTIONS ---\n";
         }
 
@@ -2688,13 +2172,10 @@
 
         if (!supportsTools) {
             var body;
-            if (provider === "anthropic") {
-                body = JSON.stringify({ model: model, max_tokens: 2048, system: systemPrompt, messages: chatHistory });
-            } else if (provider === "google") {
-                body = JSON.stringify({ contents: [{ parts: [{ text: userMessage }] }] });
-            } else if (provider === "ollama") {
-                body = JSON.stringify({ model: model, messages: messages, stream: false });
-            }
+            if (provider === "anthropic") body = JSON.stringify({ model: model, max_tokens: 2048, system: systemPrompt, messages: chatHistory });
+            else if (provider === "google") body = JSON.stringify({ contents: [{ parts: [{ text: userMessage }] }] });
+            else if (provider === "ollama") body = JSON.stringify({ model: model, messages: messages, stream: false });
+            
             updatePayloadInspector(JSON.parse(body));
             var resp = await fetch(apiUrl, { method: "POST", headers: headers, body: body });
             if (!resp.ok) throw new Error("LLM API error (HTTP " + resp.status + ")");
@@ -2718,7 +2199,6 @@
                     dedupedTools.push(t);
                 }
             });
-            // FIX: Lowered max_tokens to 4096 to prevent HTTP 400 Bad Request on strict models
             var reqBody = { model: model, messages: messages, max_tokens: 4096 };
             if (dedupedTools.length > 0) {
                 reqBody.tools = dedupedTools;
@@ -2730,10 +2210,7 @@
             if (!resp.ok) {
                 chatHistory.pop();
                 var errText = await resp.text();
-                // FIX: Explicit 401 handling to diagnose wrong API keys
-                if (resp.status === 401) {
-                    throw new Error("HTTP 401: Invalid API Key. Make sure you entered a valid " + provider + " key.");
-                }
+                if (resp.status === 401) throw new Error("HTTP 401: Invalid API Key. Make sure you entered a valid " + provider + " key.");
                 throw new Error("LLM API error (HTTP " + resp.status + ") - " + errText.substring(0, 100));
             }
             var data = await resp.json();
@@ -2749,14 +2226,8 @@
                     var toolName = tc.function.name;
                     var toolArgs = {};
                     try { toolArgs = JSON.parse(tc.function.arguments); } catch(e) {}
-
                     var toolResult = await executeTool(toolName, toolArgs);
-
-                    messages.push({
-                        role: "tool",
-                        tool_call_id: tc.id,
-                        content: toolResult
-                    });
+                    messages.push({ role: "tool", tool_call_id: tc.id, content: toolResult });
                 }
                 continue;
             }
@@ -2772,18 +2243,13 @@
         return reply;
     }
 
-    // =========== TELEGRAM POLLING ===========
     var tgPollingTimeout = null;
     var tgLastUpdateId = 0;
 
     function startTelegramPolling() {
         if (tgPollingTimeout) return; 
         var token = currentConfig.channels && currentConfig.channels.telegram && currentConfig.channels.telegram.token;
-        if (!token) {
-            appendLog("dash-log", "[TG-POLL] No Telegram token configured, skipping polling");
-            return;
-        }
-        appendLog("dash-log", "[TG-POLL] Starting Telegram polling...");
+        if (!token) return;
         pollTelegramLoop();
     }
 
@@ -2794,17 +2260,12 @@
     }
 
     function stopTelegramPolling() {
-        if (tgPollingTimeout) {
-            clearTimeout(tgPollingTimeout);
-            tgPollingTimeout = null;
-            appendLog("dash-log", "[TG-POLL] Telegram polling stopped");
-        }
+        if (tgPollingTimeout) { clearTimeout(tgPollingTimeout); tgPollingTimeout = null; }
     }
 
     async function pollTelegram() {
         var token = currentConfig.channels && currentConfig.channels.telegram && currentConfig.channels.telegram.token;
         if (!token || !daemonRunning) return;
-
         try {
             var url = "https://api.telegram.org/bot" + token + "/getUpdates?offset=" + (tgLastUpdateId + 1) + "&timeout=1&allowed_updates=[%22message%22]";
             var resp = await fetch(url);
@@ -2818,20 +2279,15 @@
                 if (update.message && update.message.text) {
                     var chatId = update.message.chat.id;
                     var text = update.message.text;
-                    var from = update.message.from && update.message.from.first_name || "User";
-                    appendLog("unified-log", "[AGENT] [TELEGRAM] Message from " + from + ": " + text);
-
                     var chatEl = document.getElementById("agent-chat-messages");
                     if (chatEl) {
                         chatEl.innerHTML += '<div class="chat-msg"><span class="role">You (Telegram):</span> ' + escapeHtml(text) + '</div>';
                         chatEl.scrollTop = chatEl.scrollHeight;
                     }
-
                     try {
                         var reply = await callLLM(text);
                         await fetch("https://api.telegram.org/bot" + token + "/sendMessage", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
+                            method: "POST", headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ chat_id: chatId, text: stripMarkdownForTelegram(reply), parse_mode: "Markdown" })
                         });
                         if (chatEl) {
@@ -2840,9 +2296,8 @@
                         }
                     } catch(e) {
                         await fetch("https://api.telegram.org/bot" + token + "/sendMessage", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ chat_id: chatId, text: "Sorry, I encountered an error: " + (e.message || "unknown") })
+                            method: "POST", headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ chat_id: chatId, text: "Error: " + (e.message || "unknown") })
                         });
                     }
                 }
@@ -2850,9 +2305,7 @@
         } catch(e) {}
     }
 
-    function escapeHtml(str) {
-        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-    }
+    function escapeHtml(str) { return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
 
     function formatMarkdownToHtml(str) {
         var s = escapeHtml(str);
@@ -2873,28 +2326,21 @@
         return s;
     }
 
-    function stripMarkdownForTelegram(str) {
-        return str.replace(/^###+ (.+)$/gm, '\u25b8 $1');
-    }
+    function stripMarkdownForTelegram(str) { return str.replace(/^###+ (.+)$/gm, '\u25b8 $1'); }
 
-    // =========== PERSONA MANAGEMENT ===========
     var personas = [];
     var activePersonaIndex = -1;
+    var editingPersonaIndex = -1;
 
     function loadPersonas() {
         try {
             var saved = localStorage.getItem("bambooclaw-personas");
             if (saved) personas = JSON.parse(saved);
         } catch(e) {}
-        var activeIdx = localStorage.getItem("bambooclaw-active-persona");
-        activePersonaIndex = activeIdx !== null ? parseInt(activeIdx) : -1;
         renderPersonas();
     }
 
-    function savePersonas() {
-        localStorage.setItem("bambooclaw-personas", JSON.stringify(personas));
-        localStorage.setItem("bambooclaw-active-persona", String(activePersonaIndex));
-    }
+    function savePersonas() { localStorage.setItem("bambooclaw-personas", JSON.stringify(personas)); }
 
     function renderPersonas() {
         var sel = document.getElementById("set-identity");
@@ -2923,79 +2369,66 @@
             html += '<div style="flex:1;"><span style="font-weight:600;font-size:0.85rem;">' + escapeHtml(p.name) + '</span>';
             html += '<div style="font-size:0.7rem;color:var(--text-dim);margin-top:0.2rem;max-height:40px;overflow:hidden;">' + escapeHtml(p.prompt).substring(0, 120) + (p.prompt.length > 120 ? '...' : '') + '</div></div>';
             html += '<div style="display:flex;gap:0.5rem;margin-left:0.75rem;">';
-            html += '<button class="btn btn-sm btn-outline" id="btn-edit-persona-' + i + '" style="padding:0.3rem 0.6rem;font-size:0.75rem;">✎</button>';
-            html += '<button class="btn btn-sm btn-outline" id="btn-del-persona-' + i + '" style="padding:0.3rem 0.6rem;font-size:0.75rem;color:var(--error);border-color:var(--error);">✕</button>';
+            html += '<button type="button" class="btn btn-sm btn-outline" id="btn-edit-persona-' + i + '" style="padding:0.3rem 0.6rem;font-size:0.75rem;">✎</button>';
+            html += '<button type="button" class="btn btn-sm btn-outline" id="btn-del-persona-' + i + '" style="padding:0.3rem 0.6rem;font-size:0.75rem;color:var(--error);border-color:var(--error);">✕</button>';
             html += '</div></div>';
         });
         listEl.innerHTML = html;
         
         personas.forEach(function(p, i) {
             var editBtn = document.getElementById('btn-edit-persona-' + i);
-            if (editBtn) editBtn.addEventListener("click", function() { editPersona(i); });
+            if (editBtn) editBtn.addEventListener("click", function(e) { e.preventDefault(); editPersona(i); });
             var delBtn = document.getElementById('btn-del-persona-' + i);
-            if (delBtn) delBtn.addEventListener("click", function() { deletePersona(i); });
+            if (delBtn) delBtn.addEventListener("click", function(e) { e.preventDefault(); deletePersona(i); });
         });
     }
 
-    var editingPersonaIndex = -1;
-
     function editPersona(idx) {
         var p = personas[idx];
-        var nameEl = document.getElementById("new-persona-name");
-        var promptEl = document.getElementById("new-persona-prompt");
-        if (nameEl) nameEl.value = p.name;
-        if (promptEl) promptEl.value = p.prompt;
-        
-        var btn = document.getElementById("btn-create-persona");
-        if (btn) btn.textContent = "Update Persona";
-        
+        document.getElementById("new-persona-name").value = p.name;
+        document.getElementById("new-persona-prompt").value = p.prompt;
+        document.getElementById("btn-create-persona").textContent = "Update Persona";
+        document.getElementById("btn-cancel-edit-persona").classList.remove("hidden");
         editingPersonaIndex = idx;
-        var detailsBlock = document.getElementById("persona-details-block");
-        if (detailsBlock) detailsBlock.open = true;
+        document.getElementById("persona-details-block").open = true;
+    }
+
+    function cancelEditPersona() {
+        document.getElementById("new-persona-name").value = "";
+        document.getElementById("new-persona-prompt").value = "";
+        document.getElementById("btn-create-persona").textContent = "Save Persona";
+        document.getElementById("btn-cancel-edit-persona").classList.add("hidden");
+        editingPersonaIndex = -1;
     }
 
     function createPersona() {
-        var nameEl = document.getElementById("new-persona-name");
-        var promptEl = document.getElementById("new-persona-prompt");
-        var name = nameEl ? nameEl.value.trim() : "";
-        var prompt = promptEl ? promptEl.value.trim() : "";
-        if (!name) { showToast("Please enter a persona name", "error"); return; }
-        if (!prompt) { showToast("Please enter a persona prompt", "error"); return; }
+        var name = document.getElementById("new-persona-name").value.trim();
+        var prompt = document.getElementById("new-persona-prompt").value.trim();
+        if (!name || !prompt) { showToast("Please enter a name and prompt", "error"); return; }
         
         if (editingPersonaIndex >= 0) {
             personas[editingPersonaIndex] = { name: name, prompt: prompt };
-            showToast("Persona '" + name + "' updated", "success");
-            editingPersonaIndex = -1;
-            var btn = document.getElementById("btn-create-persona");
-            if (btn) btn.textContent = "Create Persona";
+            showToast("Persona updated", "success");
         } else {
             personas.push({ name: name, prompt: prompt });
-            showToast("Persona '" + name + "' created", "success");
+            showToast("Persona created", "success");
         }
         
         savePersonas();
         renderPersonas();
-        if (nameEl) nameEl.value = "";
-        if (promptEl) promptEl.value = "";
+        cancelEditPersona();
     }
 
     function deletePersona(idx) {
-        if (idx < 0 || idx >= personas.length) return;
-        var name = personas[idx].name;
-        if (!confirm("Are you sure you want to delete the persona '" + name + "'?")) return;
-        
+        if (!confirm("Are you sure you want to delete the persona '" + personas[idx].name + "'?")) return;
         personas.splice(idx, 1);
         if (activePersonaIndex === idx) activePersonaIndex = -1;
         else if (activePersonaIndex > idx) activePersonaIndex--;
-        
         savePersonas();
         renderPersonas();
-        showToast("Persona '" + name + "' deleted", "info");
     }
 
-    // =========== SETTINGS ===========
     async function saveSettings() {
-        appendLog("dash-log", "[SETTINGS] saveSettings() called");
         var iterVal = parseInt(document.getElementById("set-tool-iterations").value) || 10;
         MAX_TOOL_ITERATIONS = iterVal;
         
@@ -3010,10 +2443,7 @@
             maxToolIterations: iterVal,
         };
         
-        // Ensure LLM config exists before assigning system prompt
-        if (!currentConfig.llm) {
-            currentConfig.llm = { provider: "openai", api_key: "", model: "", system_prompt: "" };
-        }
+        if (!currentConfig.llm) currentConfig.llm = { provider: "openai", api_key: "", model: "", system_prompt: "" };
         var settingsPrompt = document.getElementById("settings-system-prompt");
         currentConfig.llm.system_prompt = settingsPrompt ? settingsPrompt.value : "";
         
@@ -3030,7 +2460,7 @@
                 activePersonaIndex = parseInt(el.value);
                 if (isNaN(activePersonaIndex)) activePersonaIndex = -1;
                 savePersonas();
-                renderPersonas(); // Highlights the active persona in the list
+                renderPersonas();
             }
             var sr = document.getElementById("settings-save-reminder"); if (sr) sr.classList.add("visible");
         });
@@ -3039,27 +2469,22 @@
         });
     });
 
-    setTimeout(function() {
-        var btn = document.getElementById("btn-create-persona");
-        if (btn) btn.addEventListener("click", function() { createPersona(); });
-    }, 0);
-
     function resetSettings() {
-        appendLog("dash-log", "[SETTINGS] resetSettings() called");
         document.getElementById("set-autonomy").value = "collaborative";
         document.getElementById("set-port").value = "7331";
         document.getElementById("set-tunnel").value = "none";
-        document.getElementById("set-identity").value = "bamboo";
+        document.getElementById("set-identity").value = "-1";
+        activePersonaIndex = -1;
         document.getElementById("set-runtime").value = "native";
         document.getElementById("set-loglevel").value = "info";
         document.getElementById("set-tool-iterations").value = "10";
         document.getElementById("tool-iter-value").textContent = "10";
         MAX_TOOL_ITERATIONS = 10;
         var sp = document.getElementById("settings-system-prompt"); if (sp) sp.value = "";
+        renderPersonas();
         showToast("Settings reset to defaults", "info");
     }
 
-    // =========== SKILLS / COMPOSIO ===========
     var COMPOSIO_API_URL = "https://backend.composio.dev/api/v3";
     var enabledSkills = {};
     var composioTools = [];
@@ -3068,63 +2493,22 @@
     var composioActiveCategory = "All";
 
     function sanitizeToolSchema(rawParams) {
-        if (!rawParams || typeof rawParams !== "object") {
-            return { type: "object", properties: {}, required: [], additionalProperties: false };
-        }
-        var p;
-        try { p = JSON.parse(JSON.stringify(rawParams)); } catch(e) {
-            return { type: "object", properties: {}, required: [], additionalProperties: false };
-        }
-
+        if (!rawParams || typeof rawParams !== "object") return { type: "object", properties: {}, required: [], additionalProperties: false };
+        var p; try { p = JSON.parse(JSON.stringify(rawParams)); } catch(e) { return { type: "object", properties: {}, required: [], additionalProperties: false }; }
         function cleanProp(obj) {
             if (!obj || typeof obj !== "object") return obj;
             if (Array.isArray(obj)) return obj.map(cleanProp);
-            var badKeys = ["$ref", "$defs", "$schema", "$id", "default", "examples", "example", "title", "format",
-                           "readOnly", "writeOnly", "deprecated", "externalDocs", "xml", "discriminator",
-                           "minLength", "maxLength", "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum",
-                           "multipleOf", "pattern", "minItems", "maxItems", "uniqueItems", "minProperties", "maxProperties",
-                           "const", "contentMediaType", "contentEncoding", "if", "then", "else", "not"];
+            var badKeys = ["$ref", "$defs", "$schema", "$id", "default", "examples", "example", "title", "format", "readOnly", "writeOnly", "deprecated", "externalDocs", "xml", "discriminator", "minLength", "maxLength", "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "multipleOf", "pattern", "minItems", "maxItems", "uniqueItems", "minProperties", "maxProperties", "const", "contentMediaType", "contentEncoding", "if", "then", "else", "not"];
             badKeys.forEach(function(k) { delete obj[k]; });
-            if (obj.allOf && Array.isArray(obj.allOf) && obj.allOf.length === 1) {
-                var inner = cleanProp(obj.allOf[0]);
-                delete obj.allOf;
-                Object.keys(inner).forEach(function(k) { if (!obj[k]) obj[k] = inner[k]; });
-            } else if (obj.allOf) {
-                obj.allOf.forEach(function(item) {
-                    var cleaned = cleanProp(item);
-                    if (cleaned.properties) {
-                        if (!obj.properties) obj.properties = {};
-                        Object.keys(cleaned.properties).forEach(function(pk) { obj.properties[pk] = cleaned.properties[pk]; });
-                    }
-                    if (cleaned.required && Array.isArray(cleaned.required)) {
-                        if (!obj.required) obj.required = [];
-                        cleaned.required.forEach(function(r) { if (obj.required.indexOf(r) < 0) obj.required.push(r); });
-                    }
-                });
-                delete obj.allOf;
-            }
-            if (obj.properties && typeof obj.properties === "object") {
-                Object.keys(obj.properties).forEach(function(k) {
-                    obj.properties[k] = cleanProp(obj.properties[k]);
-                });
-            }
+            if (obj.allOf && Array.isArray(obj.allOf) && obj.allOf.length === 1) { var inner = cleanProp(obj.allOf[0]); delete obj.allOf; Object.keys(inner).forEach(function(k) { if (!obj[k]) obj[k] = inner[k]; }); }
+            else if (obj.allOf) { obj.allOf.forEach(function(item) { var cleaned = cleanProp(item); if (cleaned.properties) { if (!obj.properties) obj.properties = {}; Object.keys(cleaned.properties).forEach(function(pk) { obj.properties[pk] = cleaned.properties[pk]; }); } if (cleaned.required && Array.isArray(cleaned.required)) { if (!obj.required) obj.required = []; cleaned.required.forEach(function(r) { if (obj.required.indexOf(r) < 0) obj.required.push(r); }); } }); delete obj.allOf; }
+            if (obj.properties && typeof obj.properties === "object") { Object.keys(obj.properties).forEach(function(k) { obj.properties[k] = cleanProp(obj.properties[k]); }); }
             if (obj.items) obj.items = cleanProp(obj.items);
-            if (obj.anyOf && Array.isArray(obj.anyOf) && obj.anyOf.length > 0) {
-                var first = cleanProp(obj.anyOf[0]);
-                delete obj.anyOf;
-                Object.keys(first).forEach(function(fk) { if (!obj[fk]) obj[fk] = first[fk]; });
-            }
-            if (obj.oneOf && Array.isArray(obj.oneOf) && obj.oneOf.length > 0) {
-                var first2 = cleanProp(obj.oneOf[0]);
-                delete obj.oneOf;
-                Object.keys(first2).forEach(function(fk) { if (!obj[fk]) obj[fk] = first2[fk]; });
-            }
-            if (Array.isArray(obj.type)) {
-                obj.type = obj.type.find(function(t) { return t !== "null"; }) || "string";
-            }
+            if (obj.anyOf && Array.isArray(obj.anyOf) && obj.anyOf.length > 0) { var first = cleanProp(obj.anyOf[0]); delete obj.anyOf; Object.keys(first).forEach(function(fk) { if (!obj[fk]) obj[fk] = first[fk]; }); }
+            if (obj.oneOf && Array.isArray(obj.oneOf) && obj.oneOf.length > 0) { var first2 = cleanProp(obj.oneOf[0]); delete obj.oneOf; Object.keys(first2).forEach(function(fk) { if (!obj[fk]) obj[fk] = first2[fk]; }); }
+            if (Array.isArray(obj.type)) obj.type = obj.type.find(function(t) { return t !== "null"; }) || "string";
             return obj;
         }
-
         p = cleanProp(p);
         if (!p.type) p.type = "object";
         if (!p.properties) p.properties = {};
@@ -3138,23 +2522,15 @@
         var badge = document.getElementById("active-tools-count-badge");
         var listEl = document.getElementById("active-tools-list");
         if (!badge || !listEl) return;
-        var enabledCount = 0;
-        var html = "";
-        var allKeys = Object.keys(enabledSkills);
-        allKeys.forEach(function(k) {
+        var enabledCount = 0, html = "";
+        Object.keys(enabledSkills).forEach(function(k) {
             if (enabledSkills[k]) {
                 enabledCount++;
                 var isComposio = k.startsWith("composio_");
                 var dotClass = isComposio ? "composio" : "builtin";
                 var label = isComposio ? k.replace("composio_", "") : k;
                 var toolCount = 0;
-                agentTools.forEach(function(t) {
-                    if (isComposio) {
-                        if (t.function.name.indexOf(k.replace("composio_", "")) > -1) toolCount++;
-                    } else if (t._source === k || t.function.name === k) {
-                        toolCount++;
-                    }
-                });
+                agentTools.forEach(function(t) { if (isComposio) { if (t.function.name.indexOf(k.replace("composio_", "")) > -1) toolCount++; } else if (t._source === k || t.function.name === k) toolCount++; });
                 var suffix = toolCount > 0 ? " (" + toolCount + " tools)" : "";
                 html += '<div class="active-tool-entry"><span class="tool-dot ' + dotClass + '"></span>' + escapeHtml(label) + '<span style="color:var(--text-dim);font-size:0.7rem;margin-left:0.3rem;">' + suffix + '</span></div>';
             }
@@ -3170,25 +2546,13 @@
         try {
             var endpoint = COMPOSIO_API_URL + "/connected_accounts?toolkit=" + encodeURIComponent(slug);
             var resultJson = "";
-            if (window.__TAURI__) {
-                resultJson = await tauriInvoke("run_shell_command", {
-                    commandName: "curl",
-                    args: ["-s", "-H", "x-api-key: " + composioKey, endpoint]
-                });
-            } else {
-                var resp = await fetch(endpoint, { headers: { "x-api-key": composioKey } });
-                resultJson = await resp.text();
-            }
+            if (window.__TAURI__) resultJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, endpoint] });
+            else { var resp = await fetch(endpoint, { headers: { "x-api-key": composioKey } }); resultJson = await resp.text(); }
             var data = JSON.parse(resultJson);
             var accounts = data.items || data.results || [];
             if (Array.isArray(data)) accounts = data;
             var hasConnection = accounts.length > 0;
-            for (var i = 0; i < composioToolkits.length; i++) {
-                if (composioToolkits[i].slug === slug) {
-                    composioToolkits[i].auth_warning = !hasConnection;
-                    break;
-                }
-            }
+            for (var i = 0; i < composioToolkits.length; i++) { if (composioToolkits[i].slug === slug) { composioToolkits[i].auth_warning = !hasConnection; break; } }
             renderComposioToolkits();
         } catch(e) {}
     }
@@ -3198,29 +2562,13 @@
         if (existing) existing.remove();
 
         var tk = null;
-        for (var i = 0; i < composioToolkits.length; i++) {
-            if (composioToolkits[i].slug === slug) { tk = composioToolkits[i]; break; }
-        }
+        for (var i = 0; i < composioToolkits.length; i++) { if (composioToolkits[i].slug === slug) { tk = composioToolkits[i]; break; } }
         var name = tk ? (tk.meta_name || tk.name || slug) : slug;
 
         var overlay = document.createElement("div");
         overlay.id = "conn-modal-overlay";
         overlay.className = "conn-modal-overlay visible";
-        overlay.innerHTML = '<div class="conn-modal">' +
-            '<h3>Connect ' + escapeHtml(name) + '</h3>' +
-            '<p>Link your ' + escapeHtml(name) + ' account so the agent can use its tools on your behalf.</p>' +
-            '<label for="conn-api-key">API Key / Access Token</label>' +
-            '<input type="password" id="conn-api-key" placeholder="Paste your API key or token here" />' +
-            '<div class="conn-modal-actions" style="margin-bottom:0.75rem;">' +
-                '<button class="btn-connect" id="conn-btn-save-key">Connect with API Key</button>' +
-            '</div>' +
-            '<div class="conn-or">— or —</div>' +
-            '<button class="btn-oauth" id="conn-btn-oauth">🔗 Connect via OAuth (opens browser)</button>' +
-            '<div class="conn-modal-actions" style="margin-top:1rem;">' +
-                '<button class="btn-cancel" id="conn-btn-cancel">Cancel</button>' +
-            '</div>' +
-        '</div>';
-
+        overlay.innerHTML = '<div class="conn-modal"><h3>Connect ' + escapeHtml(name) + '</h3><p>Link your account so the agent can use its tools on your behalf.</p><label for="conn-api-key">API Key / Access Token</label><input type="password" id="conn-api-key" placeholder="Paste your API key or token here" /><div class="conn-modal-actions" style="margin-bottom:0.75rem;"><button type="button" class="btn-connect" id="conn-btn-save-key">Connect with API Key</button></div><div class="conn-or">— or —</div><button type="button" class="btn-oauth" id="conn-btn-oauth">🔗 Connect via OAuth (opens browser)</button><div class="conn-modal-actions" style="margin-top:1rem;"><button type="button" class="btn-cancel" id="conn-btn-cancel">Cancel</button></div></div>';
         document.body.appendChild(overlay);
 
         overlay.addEventListener("click", function(e) { if (e.target === overlay) overlay.remove(); });
@@ -3230,151 +2578,71 @@
             var apiKeyInput = document.getElementById("conn-api-key");
             var key = apiKeyInput ? apiKeyInput.value.trim() : "";
             if (!key) { showToast("Please enter an API key or token", "error"); return; }
-
             var composioKey = currentConfig.composioApiKey;
             if (!composioKey) { showToast("Set your Composio API key first", "error"); return; }
-
             showToast("Connecting " + slug + "...", "info");
-
             try {
                 var intEndpoint = COMPOSIO_API_URL + "/integrations?appName=" + encodeURIComponent(slug);
                 var intJson = "";
-                if (window.__TAURI__) {
-                    intJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, intEndpoint] });
-                } else {
-                    var intResp = await fetch(intEndpoint, { headers: { "x-api-key": composioKey } });
-                    intJson = await intResp.text();
-                }
+                if (window.__TAURI__) intJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, intEndpoint] });
+                else { var intResp = await fetch(intEndpoint, { headers: { "x-api-key": composioKey } }); intJson = await intResp.text(); }
                 var intData = JSON.parse(intJson);
                 var integrations = intData.items || intData || [];
-                if (!integrations.length) {
-                    showToast("No integration found for " + slug + ". Set it up at app.composio.dev first.", "error");
-                    return;
-                }
-                var integrationId = integrations[0].id;
-
+                if (!integrations.length) { showToast("No integration found for " + slug + ".", "error"); return; }
                 var connEndpoint = COMPOSIO_API_URL + "/connectedAccounts";
-                var connBody = JSON.stringify({
-                    integrationId: integrationId,
-                    entityId: "default",
-                    data: { api_key: key, token: key, access_token: key }
-                });
+                var connBody = JSON.stringify({ integrationId: integrations[0].id, entityId: "default", data: { api_key: key, token: key, access_token: key } });
                 var connJson = "";
-                if (window.__TAURI__) {
-                    connJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-X", "POST", "-H", "x-api-key: " + composioKey, "-H", "Content-Type: application/json", "-d", connBody, connEndpoint] });
-                } else {
-                    var connResp = await fetch(connEndpoint, { method: "POST", headers: { "x-api-key": composioKey, "Content-Type": "application/json" }, body: connBody });
-                    connJson = await connResp.text();
-                }
+                if (window.__TAURI__) connJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-X", "POST", "-H", "x-api-key: " + composioKey, "-H", "Content-Type: application/json", "-d", connBody, connEndpoint] });
+                else { var connResp = await fetch(connEndpoint, { method: "POST", headers: { "x-api-key": composioKey, "Content-Type": "application/json" }, body: connBody }); connJson = await connResp.text(); }
                 var connData = JSON.parse(connJson);
                 if (connData.connectionStatus === "ACTIVE" || connData.status === "ACTIVE" || connData.id) {
                     showToast(slug + " connected successfully!", "success");
-                    for (var i = 0; i < composioToolkits.length; i++) {
-                        if (composioToolkits[i].slug === slug) { composioToolkits[i].auth_warning = false; break; }
-                    }
-                    renderComposioToolkits();
-                    renderEnabledIntegrations();
-                    overlay.remove();
+                    for (var i = 0; i < composioToolkits.length; i++) { if (composioToolkits[i].slug === slug) { composioToolkits[i].auth_warning = false; break; } }
+                    renderComposioToolkits(); renderEnabledIntegrations(); overlay.remove();
                 } else if (connData.redirectUrl) {
                     showToast("This service requires OAuth. Opening authorization page...", "info");
-                    if (window.__TAURI__ && window.__TAURI__.shell && window.__TAURI__.shell.open) {
-                        window.__TAURI__.shell.open(connData.redirectUrl);
-                    } else {
-                        window.open(connData.redirectUrl, "_blank");
-                    }
-                    setTimeout(function() { checkComposioConnection(slug); }, 15000);
-                    overlay.remove();
-                } else {
-                    showToast("Connection attempt returned unexpected response.", "error");
-                }
-            } catch(e) {
-                showToast("Connection error: " + (e.message || e), "error");
-            }
+                    if (window.__TAURI__) { try { var opener = (window.__TAURI__.opener && window.__TAURI__.opener.openUrl) || (window.__TAURI__.shell && window.__TAURI__.shell.open); if (opener) opener(connData.redirectUrl); } catch(e) {} } else window.open(connData.redirectUrl, "_blank");
+                    setTimeout(function() { checkComposioConnection(slug); }, 15000); overlay.remove();
+                } else { showToast("Connection attempt returned unexpected response.", "error"); }
+            } catch(e) { showToast("Connection error", "error"); }
         });
 
-        document.getElementById("conn-btn-oauth").addEventListener("click", function() {
-            overlay.remove();
-            performComposioOAuth(slug);
-        });
+        document.getElementById("conn-btn-oauth").addEventListener("click", function() { overlay.remove(); performComposioOAuth(slug); });
     }
 
     async function performComposioOAuth(slug) {
         var composioKey = currentConfig.composioApiKey;
-        if (!composioKey) {
-            showToast("Set your Composio API key first", "error");
-            return;
-        }
+        if (!composioKey) { showToast("Set your Composio API key first", "error"); return; }
         showToast("Connecting " + slug + "...", "info");
         try {
             var intEndpoint = COMPOSIO_API_URL + "/integrations?appName=" + encodeURIComponent(slug);
             var intJson = "";
-            if (window.__TAURI__) {
-                intJson = await tauriInvoke("run_shell_command", {
-                    commandName: "curl",
-                    args: ["-s", "-H", "x-api-key: " + composioKey, intEndpoint]
-                });
-            } else {
-                var intResp = await fetch(intEndpoint, { headers: { "x-api-key": composioKey } });
-                intJson = await intResp.text();
-            }
+            if (window.__TAURI__) intJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, intEndpoint] });
+            else { var intResp = await fetch(intEndpoint, { headers: { "x-api-key": composioKey } }); intJson = await intResp.text(); }
             var intData = JSON.parse(intJson);
             var integrations = intData.items || intData || [];
             if (!integrations.length) {
-                showToast("No integration found for " + slug + ". Set it up at app.composio.dev first.", "error");
+                showToast("No integration found for " + slug + ".", "error");
                 var fallbackUrl = "https://app.composio.dev/apps/" + slug;
-                if (window.__TAURI__ && window.__TAURI__.shell && window.__TAURI__.shell.open) {
-                    window.__TAURI__.shell.open(fallbackUrl);
-                } else {
-                    window.open(fallbackUrl, "_blank");
-                }
+                if (window.__TAURI__) { try { var opener = (window.__TAURI__.opener && window.__TAURI__.opener.openUrl) || (window.__TAURI__.shell && window.__TAURI__.shell.open); if (opener) opener(fallbackUrl); } catch(e) {} } else window.open(fallbackUrl, "_blank");
                 return;
             }
-            var integrationId = integrations[0].id;
-
             var connEndpoint = COMPOSIO_API_URL + "/connectedAccounts";
-            var connBody = JSON.stringify({ integrationId: integrationId, entityId: "default" });
+            var connBody = JSON.stringify({ integrationId: integrations[0].id, entityId: "default" });
             var connJson = "";
-            if (window.__TAURI__) {
-                connJson = await tauriInvoke("run_shell_command", {
-                    commandName: "curl",
-                    args: ["-s", "-X", "POST", "-H", "x-api-key: " + composioKey, "-H", "Content-Type: application/json", "-d", connBody, connEndpoint]
-                });
-            } else {
-                var connResp = await fetch(connEndpoint, {
-                    method: "POST",
-                    headers: { "x-api-key": composioKey, "Content-Type": "application/json" },
-                    body: connBody
-                });
-                connJson = await connResp.text();
-            }
+            if (window.__TAURI__) connJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-X", "POST", "-H", "x-api-key: " + composioKey, "-H", "Content-Type: application/json", "-d", connBody, connEndpoint] });
+            else { var connResp = await fetch(connEndpoint, { method: "POST", headers: { "x-api-key": composioKey, "Content-Type": "application/json" }, body: connBody }); connJson = await connResp.text(); }
             var connData = JSON.parse(connJson);
             if (connData.redirectUrl) {
                 showToast("Opening authorization page for " + slug + "...", "success");
-                if (window.__TAURI__ && window.__TAURI__.shell && window.__TAURI__.shell.open) {
-                    window.__TAURI__.shell.open(connData.redirectUrl);
-                } else {
-                    window.open(connData.redirectUrl, "_blank");
-                }
+                if (window.__TAURI__) { try { var opener = (window.__TAURI__.opener && window.__TAURI__.opener.openUrl) || (window.__TAURI__.shell && window.__TAURI__.shell.open); if (opener) opener(connData.redirectUrl); } catch(e) {} } else window.open(connData.redirectUrl, "_blank");
                 setTimeout(function() { checkComposioConnection(slug); }, 15000);
-                setTimeout(function() { checkComposioConnection(slug); }, 30000);
             } else if (connData.connectionStatus === "ACTIVE") {
                 showToast(slug + " already connected!", "success");
-                for (var i = 0; i < composioToolkits.length; i++) {
-                    if (composioToolkits[i].slug === slug) { composioToolkits[i].auth_warning = false; break; }
-                }
+                for (var i = 0; i < composioToolkits.length; i++) { if (composioToolkits[i].slug === slug) { composioToolkits[i].auth_warning = false; break; } }
                 renderComposioToolkits();
-            } else {
-                showToast("Could not initiate connection.", "error");
-                var fallbackUrl2 = "https://app.composio.dev/apps/" + slug;
-                if (window.__TAURI__ && window.__TAURI__.shell && window.__TAURI__.shell.open) {
-                    window.__TAURI__.shell.open(fallbackUrl2);
-                } else {
-                    window.open(fallbackUrl2, "_blank");
-                }
-            }
-        } catch(e) {
-            showToast("Connection error: " + (e.message || e), "error");
-        }
+            } else { showToast("Could not initiate connection.", "error"); }
+        } catch(e) { showToast("Connection error", "error"); }
     }
 
     async function fetchToolkitTriggers(slug) {
@@ -3383,18 +2651,10 @@
         try {
             var endpoint = COMPOSIO_API_URL + "/triggers?toolkit=" + encodeURIComponent(slug) + "&limit=50";
             var resultJson = "";
-            if (window.__TAURI__) {
-                resultJson = await tauriInvoke("run_shell_command", {
-                    commandName: "curl",
-                    args: ["-s", "-H", "x-api-key: " + composioKey, endpoint]
-                });
-            } else {
-                var resp = await fetch(endpoint, { headers: { "x-api-key": composioKey } });
-                resultJson = await resp.text();
-            }
+            if (window.__TAURI__) resultJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, endpoint] });
+            else { var resp = await fetch(endpoint, { headers: { "x-api-key": composioKey } }); resultJson = await resp.text(); }
             var data = JSON.parse(resultJson);
-            var triggers = data.items || [];
-            composioToolkitDetails[slug + "_triggers"] = triggers;
+            composioToolkitDetails[slug + "_triggers"] = data.items || [];
             renderToolkitTriggers(slug);
         } catch(e) {}
     }
@@ -3403,17 +2663,9 @@
         var el = document.getElementById("toolkit-triggers-" + slug);
         if (!el) return;
         var triggers = composioToolkitDetails[slug + "_triggers"];
-        if (!triggers || triggers.length === 0) {
-            el.innerHTML = "";
-            return;
-        }
+        if (!triggers || triggers.length === 0) { el.innerHTML = ""; return; }
         var html = '<div style="font-size:0.7rem;font-weight:600;color:var(--warning);margin-top:0.75rem;margin-bottom:0.3rem;">⚡ Triggers (' + triggers.length + '):</div>';
-        triggers.forEach(function(tr) {
-            html += '<div class="trigger-entry">';
-            html += '<div class="trigger-name">' + escapeHtml(tr.name || tr.slug || "Unknown") + '</div>';
-            if (tr.description) html += '<div class="trigger-desc">' + escapeHtml(tr.description.substring(0, 150)) + (tr.description.length > 150 ? "…" : "") + '</div>';
-            html += '</div>';
-        });
+        triggers.forEach(function(tr) { html += '<div class="trigger-entry"><div class="trigger-name">' + escapeHtml(tr.name || tr.slug || "Unknown") + '</div>' + (tr.description ? '<div class="trigger-desc">' + escapeHtml(tr.description.substring(0, 150)) + (tr.description.length > 150 ? "…" : "") + '</div>' : '') + '</div>'; });
         html += '<div class="trigger-info-banner">⚡ Triggers require a local webhook endpoint. This feature is coming in a future update.</div>';
         el.innerHTML = html;
     }
@@ -3433,16 +2685,7 @@
         if (!el) return;
         var html = "";
         builtinSkills.forEach(function(s) {
-            html += '<div class="skill-card enabled" data-skill-id="' + s.id + '" data-skill-type="builtin">';
-            html += '<span class="skill-always-on">Always On</span>';
-            html += '<div class="skill-icon">' + s.icon + '</div>';
-            html += '<div class="skill-name">' + escapeHtml(s.name) + '</div>';
-            html += '<div class="skill-meta">';
-            html += '<span style="font-size:0.65rem;color:var(--text-dim);">● Built-in</span>';
-            html += '<button class="skill-info-btn" title="Show details">i</button>';
-            html += '</div>';
-            html += '<div class="skill-desc-full">' + escapeHtml(s.desc) + '</div>';
-            html += '</div>';
+            html += '<div class="skill-card enabled" data-skill-id="' + s.id + '" data-skill-type="builtin"><span class="skill-always-on">Always On</span><div class="skill-icon">' + s.icon + '</div><div class="skill-name">' + escapeHtml(s.name) + '</div><div class="skill-meta"><span style="font-size:0.65rem;color:var(--text-dim);">● Built-in</span><button type="button" class="skill-info-btn" title="Show details">i</button></div><div class="skill-desc-full">' + escapeHtml(s.desc) + '</div></div>';
         });
         el.innerHTML = html;
     }
@@ -3454,61 +2697,34 @@
         var html = "";
         var filtered = composioToolkits.filter(function(tk) {
             if (search && tk.name.toLowerCase().indexOf(search) < 0 && (tk.description || "").toLowerCase().indexOf(search) < 0 && tk.slug.toLowerCase().indexOf(search) < 0) return false;
-            if (composioActiveCategory !== "All") {
-                var cats = tk.categories || [];
-                if (cats.indexOf(composioActiveCategory) < 0) return false;
-            }
+            if (composioActiveCategory !== "All") { var cats = tk.categories || []; if (cats.indexOf(composioActiveCategory) < 0) return false; }
             return true;
         });
         filtered.forEach(function(tk) {
             var isEnabled = enabledSkills["composio_" + tk.slug] || false;
             var toolCount = tk.tools_count || 0;
             var triggerCount = tk.triggers_count || 0;
-            var desc = tk.description || "";
-            var descDisplay = desc || "No description available";
+            var descDisplay = tk.description || "No description available";
             html += '<div class="skill-card ' + (isEnabled ? 'enabled' : '') + '" data-skill-id="composio_' + tk.slug + '" data-skill-type="composio" data-toolkit-slug="' + tk.slug + '">';
-            html += '<button class="skill-toggle" title="' + (isEnabled ? 'Disable' : 'Enable') + '"></button>';
+            html += '<button type="button" class="skill-toggle" title="' + (isEnabled ? 'Disable' : 'Enable') + '"></button>';
             var imgSrc = "";
             if (tk.local_logo && window.__TAURI__) {
-                var convertFn = (window.__TAURI__.core && window.__TAURI__.core.convertFileSrc)
-                    || (window.__TAURI__.tauri && window.__TAURI__.tauri.convertFileSrc)
-                    || window.__TAURI__.convertFileSrc;
-                if (convertFn) { try { imgSrc = convertFn(tk.local_logo); } catch(ce) { imgSrc = ""; } }
+                var convertFn = (window.__TAURI__.core && window.__TAURI__.core.convertFileSrc) || (window.__TAURI__.tauri && window.__TAURI__.tauri.convertFileSrc) || window.__TAURI__.convertFileSrc;
+                if (convertFn) { try { imgSrc = convertFn(tk.local_logo); } catch(ce) {} }
             }
             if (!imgSrc && tk.logo) imgSrc = tk.logo;
-            if (imgSrc) {
-                html += '<div class="skill-icon"><img src="' + escapeHtml(imgSrc) + '" data-slug="' + escapeHtml(tk.slug) + '" onerror="this.outerHTML=\'<span class=skill-icon>🧩</span>\'" /></div>';
-            } else {
-                html += '<div class="skill-icon">🧩</div>';
-            }
-            html += '<div class="skill-name">' + escapeHtml(tk.name) + '</div>';
-            html += '<div class="skill-meta">';
-            if (toolCount > 0) {
-                html += '<span style="font-size:0.65rem;color:var(--accent);">● ' + toolCount + ' tools</span>';
-            }
-            if (triggerCount > 0) {
-                html += '<span style="font-size:0.65rem;color:var(--warning);">⚡ ' + triggerCount + ' triggers</span>';
-            }
-            html += '<button class="skill-info-btn" title="Show details">i</button>';
-            html += '</div>';
-            if (tk.auth_warning) {
-                html += '<div class="auth-warning-badge">⚠ Not connected — <span style="cursor:pointer;text-decoration:underline;" data-connect-slug="' + escapeHtml(tk.slug) + '">link account</span></div>';
-            }
-            html += '<div class="skill-desc-full" data-toolkit-slug="' + tk.slug + '">';
-            html += '<div>' + escapeHtml(descDisplay) + '</div>';
-            html += '<div class="toolkit-tools-list" id="toolkit-tools-' + tk.slug + '"><div style="color:var(--text-dim);font-size:0.65rem;padding:0.3rem 0;">Click to load tools...</div></div>';
-            html += '<div id="toolkit-triggers-' + tk.slug + '"></div>';
-            html += '</div>';
-            html += '</div>';
+            if (imgSrc) html += '<div class="skill-icon"><img src="' + escapeHtml(imgSrc) + '" data-slug="' + escapeHtml(tk.slug) + '" onerror="this.outerHTML=\'<span class=skill-icon>🧩</span>\'" /></div>';
+            else html += '<div class="skill-icon">🧩</div>';
+            html += '<div class="skill-name">' + escapeHtml(tk.name) + '</div><div class="skill-meta">';
+            if (toolCount > 0) html += '<span style="font-size:0.65rem;color:var(--accent);">● ' + toolCount + ' tools</span>';
+            if (triggerCount > 0) html += '<span style="font-size:0.65rem;color:var(--warning);">⚡ ' + triggerCount + ' triggers</span>';
+            html += '<button type="button" class="skill-info-btn" title="Show details">i</button></div>';
+            if (tk.auth_warning) html += '<div class="auth-warning-badge">⚠ Not connected — <span style="cursor:pointer;text-decoration:underline;" data-connect-slug="' + escapeHtml(tk.slug) + '">link account</span></div>';
+            html += '<div class="skill-desc-full" data-toolkit-slug="' + tk.slug + '"><div>' + escapeHtml(descDisplay) + '</div><div class="toolkit-tools-list" id="toolkit-tools-' + tk.slug + '"><div style="color:var(--text-dim);font-size:0.65rem;padding:0.3rem 0;">Click to load tools...</div></div><div id="toolkit-triggers-' + tk.slug + '"></div></div></div>';
         });
         if (!html) html = '<div style="color:var(--text-dim);font-size:0.85rem;padding:0.5rem;">No matching toolkits</div>';
         el.innerHTML = html;
-        el.querySelectorAll("span[data-connect-slug]").forEach(function(span) {
-            span.addEventListener("click", function(e) {
-                e.stopPropagation();
-                showConnectionModal(span.dataset.connectSlug);
-            });
-        });
+        el.querySelectorAll("span[data-connect-slug]").forEach(function(span) { span.addEventListener("click", function(e) { e.stopPropagation(); showConnectionModal(span.dataset.connectSlug); }); });
     }
 
     function renderComposioCategories() {
@@ -3517,78 +2733,46 @@
         var html = "";
         composioCategories.forEach(function(cat) {
             var active = cat === composioActiveCategory;
-            html += '<button class="btn btn-sm ' + (active ? '' : 'btn-outline') + '" style="font-size:0.75rem;" data-composio-cat="' + escapeHtml(cat) + '">' + escapeHtml(cat) + '</button>';
+            html += '<button type="button" class="btn btn-sm ' + (active ? '' : 'btn-outline') + '" style="font-size:0.75rem;" data-composio-cat="' + escapeHtml(cat) + '">' + escapeHtml(cat) + '</button>';
         });
         el.innerHTML = html;
     }
 
-    function renderAllSkills() {
-        renderBuiltinSkills();
-        renderComposioToolkits();
-        renderComposioCategories();
-        renderEnabledIntegrations();
-    }
+    function renderAllSkills() { renderBuiltinSkills(); renderComposioToolkits(); renderComposioCategories(); renderEnabledIntegrations(); }
 
     function renderEnabledIntegrations() {
         var section = document.getElementById("enabled-integrations-section");
         var grid = document.getElementById("skills-enabled-integrations");
         if (!section || !grid) return;
-        var html = "";
-        var count = 0;
+        var html = "", count = 0;
         Object.keys(enabledSkills).forEach(function(k) {
             if (!enabledSkills[k] || !k.startsWith("composio_")) return;
             count++;
             var slug = k.replace("composio_", "");
             var tk = null;
-            for (var i = 0; i < composioToolkits.length; i++) {
-                if (composioToolkits[i].slug === slug) { tk = composioToolkits[i]; break; }
-            }
+            for (var i = 0; i < composioToolkits.length; i++) { if (composioToolkits[i].slug === slug) { tk = composioToolkits[i]; break; } }
             var name = tk ? (tk.meta_name || tk.name || slug) : slug;
             var imgSrc = "";
             if (tk && tk.local_logo && window.__TAURI__) {
-                var convertFn = (window.__TAURI__.core && window.__TAURI__.core.convertFileSrc)
-                    || (window.__TAURI__.tauri && window.__TAURI__.tauri.convertFileSrc)
-                    || window.__TAURI__.convertFileSrc;
-                if (convertFn) { try { imgSrc = convertFn(tk.local_logo); } catch(ce) { imgSrc = ""; } }
+                var convertFn = (window.__TAURI__.core && window.__TAURI__.core.convertFileSrc) || (window.__TAURI__.tauri && window.__TAURI__.tauri.convertFileSrc) || window.__TAURI__.convertFileSrc;
+                if (convertFn) { try { imgSrc = convertFn(tk.local_logo); } catch(ce) {} }
             }
             if (!imgSrc && tk && tk.logo) imgSrc = tk.logo;
-            var logoHtml = "";
-            if (imgSrc) {
-                logoHtml = '<div class="skill-icon"><img src="' + escapeHtml(imgSrc) + '" onerror="this.outerHTML=\'<span class=skill-icon>🧩</span>\'" /></div>';
-            } else {
-                logoHtml = '<div class="skill-icon">🧩</div>';
-            }
+            var logoHtml = imgSrc ? '<div class="skill-icon"><img src="' + escapeHtml(imgSrc) + '" onerror="this.outerHTML=\'<span class=skill-icon>🧩</span>\'" /></div>' : '<div class="skill-icon">🧩</div>';
             var toolCount = 0;
             agentTools.forEach(function(t) { if (t.function.name.indexOf(slug) > -1) toolCount++; });
             var countLabel = toolCount > 0 ? '<span style="font-size:0.7rem;color:var(--text-dim);">' + toolCount + ' tools</span>' : '';
-            html += '<div class="skill-card" style="cursor:pointer;" onclick="window.toggleSkill(\'' + k + '\')">';
-            html += '<div style="display:flex;align-items:center;gap:0.5rem;">';
-            html += logoHtml;
-            html += '<div style="flex:1;"><div style="font-size:0.85rem;font-weight:600;">' + escapeHtml(name) + '</div>' + countLabel + '</div>';
-            html += '<span style="color:#ef4444;font-size:0.7rem;cursor:pointer;" title="Click to disable">✕</span>';
-            html += '</div>';
-            if (tk && tk.auth_warning) {
-                html += '<div class="auth-warning-badge">⚠ Not connected — <span style="cursor:pointer;text-decoration:underline;" data-connect-slug="' + escapeHtml(slug) + '">link account</span></div>';
-            }
+            html += '<div class="skill-card" style="cursor:pointer;" onclick="window.toggleSkill(\'' + k + '\')"><div style="display:flex;align-items:center;gap:0.5rem;">' + logoHtml + '<div style="flex:1;"><div style="font-size:0.85rem;font-weight:600;">' + escapeHtml(name) + '</div>' + countLabel + '</div><span style="color:#ef4444;font-size:0.7rem;cursor:pointer;" title="Click to disable">✕</span></div>';
+            if (tk && tk.auth_warning) html += '<div class="auth-warning-badge">⚠ Not connected — <span style="cursor:pointer;text-decoration:underline;" data-connect-slug="' + escapeHtml(slug) + '">link account</span></div>';
             html += '</div>';
         });
         if (count > 0) {
-            section.style.display = "";
-            grid.innerHTML = html;
-            grid.querySelectorAll("span[data-connect-slug]").forEach(function(span) {
-                span.addEventListener("click", function(e) {
-                    e.stopPropagation();
-                    showConnectionModal(span.dataset.connectSlug);
-                });
-            });
-        } else {
-            section.style.display = "none";
-            grid.innerHTML = "";
-        }
+            section.style.display = ""; grid.innerHTML = html;
+            grid.querySelectorAll("span[data-connect-slug]").forEach(function(span) { span.addEventListener("click", function(e) { e.stopPropagation(); showConnectionModal(span.dataset.connectSlug); }); });
+        } else { section.style.display = "none"; grid.innerHTML = ""; }
     }
 
     var logosDir = "";
-
     async function ensureLogosDir() {
         if (logosDir) return logosDir;
         if (!window.__TAURI__) return "";
@@ -3597,14 +2781,9 @@
             if (!home) return "";
             var sep = (detectedOS === "windows") ? "\\" : "/";
             logosDir = home.replace(/[\\/]+$/, "") + sep + "bambooclaw" + sep + "logos";
-            await tauriInvoke("run_shell_command", {
-                commandName: (detectedOS === "windows") ? "cmd" : "sh",
-                args: (detectedOS === "windows") ? ["/c", "mkdir", logosDir, "2>nul"] : ["-c", "mkdir -p \"" + logosDir + "\""]
-            }).catch(function() {});
+            await tauriInvoke("run_shell_command", { commandName: (detectedOS === "windows") ? "cmd" : "sh", args: (detectedOS === "windows") ? ["/c", "mkdir", logosDir, "2>nul"] : ["-c", "mkdir -p \"" + logosDir + "\""] }).catch(function() {});
             return logosDir;
-        } catch(e) {
-            return "";
-        }
+        } catch(e) { return ""; }
     }
 
     async function cacheToolkitLogos() {
@@ -3628,16 +2807,8 @@
                     commandName: (detectedOS === "windows") ? "cmd" : "sh",
                     args: (detectedOS === "windows") ? ["/c", "if", "exist", item.path, "(echo", "EXISTS)", "else", "(echo", "MISSING)"] : ["-c", "test -f \"" + item.path + "\" && echo EXISTS || echo MISSING"]
                 }).then(function(result) {
-                    if (result && result.indexOf("EXISTS") > -1) {
-                        composioToolkits[item.idx].local_logo = item.path;
-                        return;
-                    }
-                    return invokeShort("run_shell_command", {
-                        commandName: "curl",
-                        args: ["-sL", "-o", item.path, item.url]
-                    }).then(function() {
-                        composioToolkits[item.idx].local_logo = item.path;
-                    }).catch(function(e) {});
+                    if (result && result.indexOf("EXISTS") > -1) { composioToolkits[item.idx].local_logo = item.path; return; }
+                    return invokeShort("run_shell_command", { commandName: "curl", args: ["-sL", "-o", item.path, item.url] }).then(function() { composioToolkits[item.idx].local_logo = item.path; }).catch(function(e) {});
                 }).catch(function(e) {});
             });
             await Promise.allSettled(promises);
@@ -3645,11 +2816,7 @@
         renderComposioToolkits();
     }
 
-    async function testImageConnectivity() {
-        if (!window.__TAURI__) return;
-        var img = new Image();
-        img.src = "https://assets.composio.dev/logos/slack.png";
-    }
+    async function testImageConnectivity() { if (!window.__TAURI__) return; var img = new Image(); img.src = "https://assets.composio.dev/logos/slack.png"; }
 
     function toggleSkill(skillId) {
         enabledSkills[skillId] = !enabledSkills[skillId];
@@ -3658,18 +2825,12 @@
         renderAllSkills();
 
         if (enabledSkills[skillId]) {
-            if (skillId.startsWith("composio_")) {
-                var slug = skillId.replace("composio_", "");
-                fetchToolkitTools(slug);
-            } else {
-                rebuildBuiltinTools();
-            }
+            if (skillId.startsWith("composio_")) fetchToolkitTools(skillId.replace("composio_", ""));
+            else rebuildBuiltinTools();
             var name = skillId.startsWith("composio_") ? skillId.replace("composio_", "") : skillId;
             showToast(name + " enabled", "success");
         } else {
-            agentTools = agentTools.filter(function(t) {
-                return !t.function.name.startsWith("composio_");
-            });
+            agentTools = agentTools.filter(function(t) { return !t.function.name.startsWith("composio_"); });
             Object.keys(enabledSkills).forEach(function(sk) {
                 if (!enabledSkills[sk] || !sk.startsWith("composio_")) return;
                 var skSlug = sk.replace("composio_", "");
@@ -3682,14 +2843,7 @@
                         var safeName = ("composio_" + realSlug.replace(/[^a-zA-Z0-9_-]/g, "_")).substring(0, 64);
                         window.composioToolMap = window.composioToolMap || {};
                         window.composioToolMap[safeName] = realSlug;
-                        agentTools.push({
-                            type: "function",
-                            function: {
-                                name: safeName,
-                                description: (tool.description || tool.name || skSlug + " tool").substring(0, 1024),
-                                parameters: params
-                            }
-                        });
+                        agentTools.push({ type: "function", function: { name: safeName, description: (tool.description || tool.name || skSlug + " tool").substring(0, 1024), parameters: params } });
                     });
                 }
             });
@@ -3710,13 +2864,8 @@
         try {
             var toolsJson = "";
             var endpoint = COMPOSIO_API_URL + "/tools?toolkit=" + encodeURIComponent(slug) + "&limit=200";
-            if (window.__TAURI__) {
-                toolsJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, endpoint] });
-            } else {
-                var resp = await fetch(endpoint, { headers: { "x-api-key": composioKey } });
-                toolsJson = await resp.text();
-            }
-
+            if (window.__TAURI__) toolsJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, endpoint] });
+            else { var resp = await fetch(endpoint, { headers: { "x-api-key": composioKey } }); toolsJson = await resp.text(); }
             var data = JSON.parse(toolsJson);
             var tools = data.items || [];
             composioToolkitDetails[slug] = tools;
@@ -3735,10 +2884,7 @@
                         var safeName = ("composio_" + realSlug.replace(/[^a-zA-Z0-9_-]/g, "_")).substring(0, 64);
                         window.composioToolMap = window.composioToolMap || {};
                         window.composioToolMap[safeName] = realSlug;
-                        agentTools.push({
-                            type: "function",
-                            function: { name: safeName, description: (tool.description || tool.name || sk + " tool").substring(0, 1024) + " [via Composio " + sk + "]", parameters: params }
-                        });
+                        agentTools.push({ type: "function", function: { name: safeName, description: (tool.description || tool.name || sk + " tool").substring(0, 1024) + " [via Composio " + sk + "]", parameters: params } });
                     });
                 }
             });
@@ -3750,14 +2896,7 @@
             fetchToolkitTriggers(slug);
             renderToolkitToolsList(slug);
         } catch(e) {
-            agentTools.push({
-                type: "function",
-                function: {
-                    name: "composio_" + slug,
-                    description: "Use " + slug + " via Composio. Describe the action you want to perform.",
-                    parameters: { type: "object", properties: { action: { type: "string", description: "What to do (natural language)" } }, required: ["action"], additionalProperties: false }
-                }
-            });
+            agentTools.push({ type: "function", function: { name: "composio_" + slug, description: "Use " + slug + " via Composio. Describe the action you want to perform.", parameters: { type: "object", properties: { action: { type: "string", description: "What to do (natural language)" } }, required: ["action"], additionalProperties: false } } });
         }
     }
 
@@ -3765,33 +2904,21 @@
         var el = document.getElementById("toolkit-tools-" + slug);
         if (!el) return;
         var tools = composioToolkitDetails[slug];
-        if (!tools || tools.length === 0) {
-            el.innerHTML = '<div style="color:var(--text-dim);font-size:0.65rem;padding:0.3rem 0;">No tools found for this toolkit.</div>';
-            return;
-        }
+        if (!tools || tools.length === 0) { el.innerHTML = '<div style="color:var(--text-dim);font-size:0.65rem;padding:0.3rem 0;">No tools found for this toolkit.</div>'; return; }
         var html = '<div style="font-size:0.7rem;font-weight:600;color:var(--text);margin-bottom:0.3rem;">Tools (' + tools.length + '):</div>';
         tools.forEach(function(tool, idx) {
-            var toolSlug = tool.slug || "";
-            var toolName = tool.name || toolSlug;
-            var toolDesc = tool.description || "";
-            var params = tool.input_parameters || tool.parameters || {};
-            var props = params.properties || {};
-            var reqList = params.required || [];
-            var outParams = tool.output_parameters || {};
-            var outProps = outParams.properties || {};
+            var toolSlug = tool.slug || ""; var toolName = tool.name || toolSlug; var toolDesc = tool.description || "";
+            var params = tool.input_parameters || tool.parameters || {}; var props = params.properties || {}; var reqList = params.required || [];
+            var outParams = tool.output_parameters || {}; var outProps = outParams.properties || {};
 
-            html += '<div class="toolkit-tool-row" data-tool-idx="' + idx + '" data-toolkit-slug="' + slug + '">';
-            html += '<div class="tool-header"><span class="tool-name">▸ ' + escapeHtml(toolName) + '</span></div>';
-            html += '<div class="tool-slug">' + escapeHtml(toolSlug) + '</div>';
+            html += '<div class="toolkit-tool-row" data-tool-idx="' + idx + '" data-toolkit-slug="' + slug + '"><div class="tool-header"><span class="tool-name">▸ ' + escapeHtml(toolName) + '</span></div><div class="tool-slug">' + escapeHtml(toolSlug) + '</div>';
             if (toolDesc) html += '<div class="tool-desc">' + escapeHtml(toolDesc.substring(0, 120)) + (toolDesc.length > 120 ? "…" : "") + '</div>';
-
             html += '<div class="toolkit-tool-params" id="tool-params-' + slug + '-' + idx + '">';
             var propKeys = Object.keys(props);
             if (propKeys.length > 0) {
                 html += '<div style="color:var(--accent);margin-bottom:0.2rem;">Input Parameters:</div>';
                 propKeys.forEach(function(pName) {
-                    var p = props[pName];
-                    var isReq = reqList.indexOf(pName) >= 0;
+                    var p = props[pName]; var isReq = reqList.indexOf(pName) >= 0;
                     html += '<div class="param-row"><span class="param-name">' + escapeHtml(pName) + '</span><span class="param-type">' + escapeHtml(p.type || "any") + '</span>';
                     if (isReq) html += '<span class="param-req">required</span>';
                     html += '</div>';
@@ -3801,23 +2928,16 @@
             var outKeys = Object.keys(outProps);
             if (outKeys.length > 0) {
                 html += '<div style="color:var(--warning);margin-top:0.3rem;margin-bottom:0.2rem;">Output Parameters:</div>';
-                outKeys.forEach(function(pName) {
-                    html += '<div class="param-row"><span class="param-name">' + escapeHtml(pName) + '</span><span class="param-type">' + escapeHtml(outProps[pName].type || "any") + '</span></div>';
-                });
+                outKeys.forEach(function(pName) { html += '<div class="param-row"><span class="param-name">' + escapeHtml(pName) + '</span><span class="param-type">' + escapeHtml(outProps[pName].type || "any") + '</span></div>'; });
             }
-            if (propKeys.length === 0 && outKeys.length === 0) {
-                html += '<div style="color:var(--text-dim);">No parameters defined</div>';
-            }
+            if (propKeys.length === 0 && outKeys.length === 0) html += '<div style="color:var(--text-dim);">No parameters defined</div>';
             html += '</div></div>';
         });
         el.innerHTML = html;
     }
 
     async function loadToolkitToolsOnDemand(slug) {
-        if (composioToolkitDetails[slug]) {
-            renderToolkitToolsList(slug);
-            return;
-        }
+        if (composioToolkitDetails[slug]) { renderToolkitToolsList(slug); return; }
         var el = document.getElementById("toolkit-tools-" + slug);
         if (el) el.innerHTML = '<div style="color:var(--text-dim);font-size:0.65rem;padding:0.3rem 0;">Loading tools...</div>';
         var composioKey = currentConfig.composioApiKey;
@@ -3825,26 +2945,18 @@
         try {
             var toolsJson = "";
             var endpoint = COMPOSIO_API_URL + "/tools?toolkit=" + encodeURIComponent(slug) + "&limit=200";
-            if (window.__TAURI__) {
-                toolsJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, endpoint] });
-            } else {
-                var resp = await fetch(endpoint, { headers: { "x-api-key": composioKey } });
-                toolsJson = await resp.text();
-            }
+            if (window.__TAURI__) toolsJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, endpoint] });
+            else { var resp = await fetch(endpoint, { headers: { "x-api-key": composioKey } }); toolsJson = await resp.text(); }
             var data = JSON.parse(toolsJson);
             composioToolkitDetails[slug] = data.items || [];
             renderToolkitToolsList(slug);
             if (!composioToolkitDetails[slug + "_triggers"]) fetchToolkitTriggers(slug);
             else renderToolkitTriggers(slug);
-        } catch(e) {
-            if (el) el.innerHTML = '<div style="color:var(--error);font-size:0.65rem;">Failed to load tools</div>';
-        }
+        } catch(e) { if (el) el.innerHTML = '<div style="color:var(--error);font-size:0.65rem;">Failed to load tools</div>'; }
     }
 
     function rebuildBuiltinTools() {
-        agentTools = agentTools.filter(function(t) {
-            return !["web_browse","web_search","docker_command","ssh_execute","mqtt_publish"].includes(t.function.name);
-        });
+        agentTools = agentTools.filter(function(t) { return !["web_browse","web_search","docker_command","ssh_execute","mqtt_publish"].includes(t.function.name); });
         builtinSkills.forEach(function(s) {
             if (!enabledSkills[s.id]) return;
             if (s.id === "web_browser") agentTools.push({ type: "function", function: { name: "web_browse", description: "Open URL in headless browser", parameters: { type: "object", properties: { url: { type: "string" } }, required: ["url"], additionalProperties: false } }});
@@ -3876,48 +2988,28 @@
                 try {
                     toolkitsData = JSON.parse(curlResult);
                     if (toolkitsData.items) validated = true;
-                    else if (toolkitsData.error || toolkitsData.status === 401) {
-                        statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key</span>';
-                        return;
-                    }
-                } catch(parseErr) {
-                    if ((curlResult || "").indexOf("401") >= 0) {
-                        statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key</span>';
-                        return;
-                    }
-                }
+                    else if (toolkitsData.error || toolkitsData.status === 401) { statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key</span>'; return; }
+                } catch(parseErr) { if ((curlResult || "").indexOf("401") >= 0) { statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key</span>'; return; } }
             } catch(e) {}
         }
 
         if (!validated) {
             try {
                 var resp = await fetch(COMPOSIO_API_URL + "/toolkits?limit=500", { headers: { "x-api-key": key } });
-                if (resp.ok) {
-                    toolkitsData = await resp.json();
-                    if (toolkitsData.items) validated = true;
-                } else if (resp.status === 401 || resp.status === 403) {
-                    statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key</span>';
-                    return;
-                }
+                if (resp.ok) { toolkitsData = await resp.json(); if (toolkitsData.items) validated = true; }
+                else if (resp.status === 401 || resp.status === 403) { statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key</span>'; return; }
             } catch(e) {}
         }
 
-        if (!validated || !toolkitsData) {
-            statusEl.innerHTML = '<span style="color:var(--warning);">⚠ Cannot validate from browser (CORS). Key saved for desktop use.</span>';
-            return;
-        }
+        if (!validated || !toolkitsData) { statusEl.innerHTML = '<span style="color:var(--warning);">⚠ Cannot validate from browser (CORS). Key saved for desktop use.</span>'; return; }
 
         var rawToolkits = toolkitsData.items || [];
         composioToolkits = rawToolkits.map(function(tk) {
             var m = tk.meta || {};
             return {
-                slug: tk.slug,
-                name: tk.name || tk.slug,
-                description: m.description || tk.description || "",
-                logo: m.logo || tk.logo || "",
-                categories: (m.categories || tk.categories || []).map(function(c) { return (typeof c === "object" && c.name) ? c.name : String(c); }),
-                tools_count: m.tools_count || tk.tools_count || 0,
-                triggers_count: m.triggers_count || tk.triggers_count || 0
+                slug: tk.slug, name: tk.name || tk.slug, description: m.description || tk.description || "",
+                logo: m.logo || tk.logo || "", categories: (m.categories || tk.categories || []).map(function(c) { return (typeof c === "object" && c.name) ? c.name : String(c); }),
+                tools_count: m.tools_count || tk.tools_count || 0, triggers_count: m.triggers_count || tk.triggers_count || 0
             };
         });
         
@@ -3939,10 +3031,7 @@
         if (infoBtn) {
             e.stopPropagation();
             var card = infoBtn.closest ? infoBtn.closest(".skill-card") : infoBtn.parentElement.parentElement;
-            if (card) {
-                var descEl = card.querySelector(".skill-desc-full");
-                if (descEl) descEl.classList.toggle("visible");
-            }
+            if (card) { var descEl = card.querySelector(".skill-desc-full"); if (descEl) descEl.classList.toggle("visible"); }
         }
     });
 
@@ -3967,45 +3056,23 @@
                 if (descEl) {
                     var wasVisible = descEl.classList.contains("visible");
                     descEl.classList.toggle("visible");
-                    if (!wasVisible) {
-                        var tkSlug2 = descEl.getAttribute("data-toolkit-slug");
-                        if (tkSlug2) loadToolkitToolsOnDemand(tkSlug2);
-                    }
+                    if (!wasVisible) { var tkSlug2 = descEl.getAttribute("data-toolkit-slug"); if (tkSlug2) loadToolkitToolsOnDemand(tkSlug2); }
                 }
             }
             return;
         }
 
         var card2 = e.target.closest ? e.target.closest(".skill-card") : null;
-        if (!card2) {
-            var el = e.target;
-            while (el && el !== this) {
-                if (el.classList && el.classList.contains("skill-card")) { card2 = el; break; }
-                el = el.parentElement;
-            }
-        }
-        if (card2) {
-            var skillId = card2.getAttribute("data-skill-id");
-            if (skillId) toggleSkill(skillId);
-        }
+        if (!card2) { var el = e.target; while (el && el !== this) { if (el.classList && el.classList.contains("skill-card")) { card2 = el; break; } el = el.parentElement; } }
+        if (card2) { var skillId = card2.getAttribute("data-skill-id"); if (skillId) toggleSkill(skillId); }
     });
 
     document.getElementById("composio-category-tabs").addEventListener("click", function(e) {
         var btn = e.target.closest ? e.target.closest("[data-composio-cat]") : null;
-        if (!btn) {
-            var el = e.target;
-            while (el && el !== this) {
-                if (el.getAttribute && el.getAttribute("data-composio-cat")) { btn = el; break; }
-                el = el.parentElement;
-            }
-        }
-        if (btn) {
-            composioActiveCategory = btn.getAttribute("data-composio-cat");
-            renderAllSkills();
-        }
+        if (!btn) { var el = e.target; while (el && el !== this) { if (el.getAttribute && el.getAttribute("data-composio-cat")) { btn = el; break; } el = el.parentElement; } }
+        if (btn) { composioActiveCategory = btn.getAttribute("data-composio-cat"); renderAllSkills(); }
     });
 
-    // Replace inline onclick bindings with addEventListener
     document.getElementById("btn-copy-boot-log").addEventListener("click", function() { copyLog('boot-log'); });
     document.getElementById("btn-copy-install-log").addEventListener("click", function() { copyLog('install-log'); });
     document.getElementById("btn-copy-cap-log").addEventListener("click", function() { copyLog('capability-log'); });
@@ -4013,9 +3080,16 @@
     document.getElementById("btn-copy-payload").addEventListener("click", function() { copyLog('llm-payload-display'); });
     document.getElementById("btn-back-step1").addEventListener("click", function() { wizardGo(0); });
     document.getElementById("btn-back-step2").addEventListener("click", function() { wizardGo(1); });
+    
     document.getElementById("btn-step0-next").addEventListener("click", function() { wizardGo(1); });
     document.getElementById("btn-step1-next").addEventListener("click", function() { wizardGo(2); });
     document.getElementById("btn-enter-dashboard").addEventListener("click", function() { window.enterDashboard(); });
+    
+    var helpSearchEl = document.getElementById("help-search");
+    if (helpSearchEl) { helpSearchEl.addEventListener("input", function(e) { window.filterHelp(e.target.value); }); }
+
+    var skillSearchEl = document.getElementById("skill-search");
+    if (skillSearchEl) { skillSearchEl.addEventListener("input", function() { renderComposioToolkits(); }); }
 
     var toggleBtn = document.getElementById("btn-toggle-tools-list");
     if (toggleBtn) toggleBtn.addEventListener("click", function() { window.toggleActiveToolsList(); });
@@ -4024,13 +3098,8 @@
     if (openComp) {
         openComp.addEventListener("click", function() {
             if (window.__TAURI__) {
-                try {
-                    var opener = (window.__TAURI__.opener && window.__TAURI__.opener.openUrl) || (window.__TAURI__.shell && window.__TAURI__.shell.open);
-                    if (opener) opener("https://app.composio.dev/settings");
-                } catch(e) {}
-            } else {
-                window.open("https://app.composio.dev/settings", "_blank");
-            }
+                try { var opener = (window.__TAURI__.opener && window.__TAURI__.opener.openUrl) || (window.__TAURI__.shell && window.__TAURI__.shell.open); if (opener) opener("https://app.composio.dev/settings"); } catch(e) {}
+            } else window.open("https://app.composio.dev/settings", "_blank");
         });
     }
 
@@ -4049,29 +3118,9 @@
     document.getElementById("btn-reset-settings").addEventListener("click", resetSettings);
     document.getElementById("btn-save-composio").addEventListener("click", saveComposioKey);
 
-    // Help Center Search Listener
-    var helpSearchEl = document.getElementById("help-search");
-    if (helpSearchEl) {
-        helpSearchEl.addEventListener("input", function(e) { 
-            window.filterHelp(e.target.value); 
-        });
-    }
-
-    // Composio Skills Search Listener
-    var skillSearchEl = document.getElementById("skill-search");
-    if (skillSearchEl) {
-        skillSearchEl.addEventListener("input", function() { 
-            renderComposioToolkits(); 
-        });
-    }
-
     async function saveAllConfig() {
         var toml = buildConfigToml();
-        try {
-            await invokeShort("write_config", { content: toml });
-        } catch(e) {
-            localStorage.setItem("bambooclaw-config", JSON.stringify(currentConfig));
-        }
+        try { await invokeShort("write_config", { content: toml }); } catch(e) { localStorage.setItem("bambooclaw-config", JSON.stringify(currentConfig)); }
     }
 
     window.fetchORModels = function() {
@@ -4087,22 +3136,14 @@
                 if (!m.name || !m.pricing || !m.id) return false;
                 if (seen[m.id]) return false;
                 if (m.name === m.id) return false;
-                seen[m.id] = true;
-                return true;
+                seen[m.id] = true; return true;
             }).map(function(m) {
-                return {
-                    id: m.id,
-                    name: m.name,
-                    input: parseFloat(m.pricing.prompt || "0"),
-                    output: parseFloat(m.pricing.completion || "0")
-                };
+                return { id: m.id, name: m.name, input: parseFloat(m.pricing.prompt || "0"), output: parseFloat(m.pricing.completion || "0") };
             });
             document.getElementById("or-model-count").textContent = "(" + orModels.length + " available)";
             renderORModels();
         })
-        .catch(function(e) {
-            listEl.innerHTML = '<div style="padding:1rem;color:var(--error);text-align:center;">Failed to load models</div>';
-        });
+        .catch(function(e) { listEl.innerHTML = '<div style="padding:1rem;color:var(--error);text-align:center;">Failed to load models</div>'; });
     };
 
     window.sortORModels = function(key) {
@@ -4120,18 +3161,14 @@
         var sel = document.getElementById("llm-model");
         sel.innerHTML = "";
         var opt = document.createElement("option");
-        opt.value = id;
-        opt.textContent = m ? m.name : id;
-        sel.appendChild(opt);
-        sel.value = id;
+        opt.value = id; opt.textContent = m ? m.name : id;
+        sel.appendChild(opt); sel.value = id;
         renderORModels();
     };
 
     function renderORModels() {
         var search = (document.getElementById("or-model-search").value || "").toLowerCase();
-        var filtered = orModels.filter(function(m) {
-            return m.id.toLowerCase().indexOf(search) >= 0 || m.name.toLowerCase().indexOf(search) >= 0;
-        });
+        var filtered = orModels.filter(function(m) { return m.id.toLowerCase().indexOf(search) >= 0 || m.name.toLowerCase().indexOf(search) >= 0; });
         filtered.sort(function(a, b) {
             var cmp = 0;
             if (orSortKey === "name") cmp = a.name.localeCompare(b.name);
@@ -4140,8 +3177,7 @@
             return cmp * orSortDir;
         });
 
-        var html = '<table style="width:100%;border-collapse:collapse;font-size:0.8rem;">';
-        html += '<thead><tr style="background:#1a1a2e;position:sticky;top:0;">';
+        var html = '<table style="width:100%;border-collapse:collapse;font-size:0.8rem;"><thead><tr style="background:#1a1a2e;position:sticky;top:0;">';
         html += '<th style="text-align:left;padding:0.5rem 0.75rem;">Model</th><th style="text-align:right;padding:0.5rem 0.75rem;">Input</th><th style="text-align:right;padding:0.5rem 0.75rem;">Output</th>';
         html += '</tr></thead><tbody>';
 
@@ -4151,8 +3187,7 @@
             html += '<tr data-model-id="' + escapeHtml(m.id) + '" style="cursor:pointer;border-bottom:1px solid var(--border);' + bg + '" class="or-model-row">';
             html += '<td style="padding:0.5rem 0.75rem;"><div style="font-weight:600;">' + escapeHtml(m.name) + '</div><div style="color:var(--text-dim);font-size:0.7rem;">' + escapeHtml(m.id) + '</div></td>';
             html += '<td style="text-align:right;padding:0.5rem 0.75rem;font-family:monospace;">$' + (m.input*1000000).toFixed(2) + '</td>';
-            html += '<td style="text-align:right;padding:0.5rem 0.75rem;font-family:monospace;">$' + (m.output*1000000).toFixed(2) + '</td>';
-            html += '</tr>';
+            html += '<td style="text-align:right;padding:0.5rem 0.75rem;font-family:monospace;">$' + (m.output*1000000).toFixed(2) + '</td></tr>';
         });
 
         html += '</tbody></table>';
@@ -4161,13 +3196,7 @@
 
     document.getElementById("or-model-list").addEventListener("click", function(e) {
         var row = e.target.closest ? e.target.closest(".or-model-row") : null;
-        if (!row) {
-            var el = e.target;
-            while (el && el !== this) {
-                if (el.classList && el.classList.contains("or-model-row")) { row = el; break; }
-                el = el.parentElement;
-            }
-        }
+        if (!row) { var el = e.target; while (el && el !== this) { if (el.classList && el.classList.contains("or-model-row")) { row = el; break; } el = el.parentElement; } }
         if (row) window.selectORModel(row.getAttribute("data-model-id"));
     });
 
@@ -4193,14 +3222,11 @@
             if (!resp.ok) throw new Error("HTTP " + resp.status);
             var data = await resp.json();
             var ver = data.tag_name || "v-unknown";
-            var el = document.getElementById("app-version");
-            if (el) el.textContent = ver;
-            var aboutVer = document.getElementById("about-version");
-            if (aboutVer) aboutVer.textContent = ver;
+            var el = document.getElementById("app-version"); if (el) el.textContent = ver;
+            var aboutVer = document.getElementById("about-version"); if (aboutVer) aboutVer.textContent = ver;
         } catch(e) {}
     }
 
-    // MAIN BOOT SEQUENCE
     async function boot() {
         try {
             var installedFlag = localStorage.getItem("bambooclaw-installed");
@@ -4210,15 +3236,7 @@
                 loadPersonas();
                 testImageConnectivity();
                 if (!currentConfig.settings) {
-                    currentConfig.settings = {
-                        autonomy: "autonomous",
-                        port: "7331",
-                        tunnel: "none",
-                        identity: "bamboo",
-                        runtime: "native",
-                        loglevel: "info",
-                        maxToolIterations: 10
-                    };
+                    currentConfig.settings = { autonomy: "autonomous", port: "7331", tunnel: "none", identity: "-1", runtime: "native", loglevel: "info", maxToolIterations: 10 };
                     saveAllConfig();
                 }
                 if (currentConfig.settings && currentConfig.settings.maxToolIterations) {
@@ -4241,30 +3259,18 @@
                     setTimeout(function() { saveComposioKey(); }, 1000);
                 }
                 setTimeout(function() { renderActiveToolsSummary(); renderEnabledIntegrations(); }, 2000);
-                setTimeout(function() {
-                    if (currentConfig.llm && currentConfig.llm.api_key && !daemonRunning) {
-                        toggleDaemon();
-                    }
-                }, 500);
-            } else {
-                runSystemChecks();
-            }
+                setTimeout(function() { if (currentConfig.llm && currentConfig.llm.api_key && !daemonRunning) toggleDaemon(); }, 500);
+            } else { runSystemChecks(); }
         } catch(e) {}
     }
 
     (function waitForTauri() {
         try {
-            var startTime = Date.now();
             var waited = 0;
             var interval = setInterval(function() {
                 waited += 50;
-                if (window.__TAURI__) {
-                    clearInterval(interval);
-                    boot();
-                } else if (waited >= 3000) {
-                    clearInterval(interval);
-                    boot();
-                }
+                if (window.__TAURI__) { clearInterval(interval); boot(); }
+                else if (waited >= 3000) { clearInterval(interval); boot(); }
             }, 50);
         } catch(e) {}
     })();
