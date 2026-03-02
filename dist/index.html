@@ -510,8 +510,11 @@
     var daemonRunning = false;
     var currentConfig = {
         llm: { provider: "openai", api_key: "", model: "", system_prompt: "" },
-        api_keys: {}, // Stores keys per provider { "openai": "sk-...", "openrouter": "sk-or-..." }
-        settings: { autonomy: "autonomous", identity: "-1", maxToolIterations: 10 }
+        api_keys: {}, // Stores keys per provider
+        settings: { autonomy: "autonomous", identity: "-1", maxToolIterations: 10 },
+        channels: {},
+        enabledSkills: {},
+        composioApiKey: ""
     };
     var PROXY_URL = "https://mjmdhqglpratbyzmgndm.supabase.co/functions/v1/github-release-proxy";
     var MAX_TOOL_ITERATIONS = 10;
@@ -521,10 +524,21 @@
     var editingPersonaIndex = -1;
 
     var SESSION_ID = "session-" + Math.random().toString(16).substring(2, 8);
-    document.getElementById("session-id-label").textContent = SESSION_ID;
+    var LOG_FOLDER = "~/.bambooclaw/logs/";
+    var LOG_FILE_PATH = LOG_FOLDER + SESSION_ID + ".log";
+
+    setTimeout(function() {
+        var lbl = document.getElementById("session-id-label"); if (lbl) lbl.textContent = SESSION_ID;
+        var pathEl = document.getElementById("log-path-display"); if (pathEl) pathEl.value = LOG_FILE_PATH;
+        var aboutVer = document.getElementById("about-version");
+        var appVer = document.getElementById("app-version");
+        if (aboutVer && appVer) aboutVer.textContent = appVer.textContent;
+        var copyrightEl = document.getElementById("about-copyright");
+        if (copyrightEl) copyrightEl.textContent = "© " + new Date().getFullYear() + " Bamboo Synergy Technologies, Inc.";
+    }, 0);
 
     // ==========================================
-    // UTILITIES
+    // UTILITIES & LOGGING
     // ==========================================
     function showToast(message, type) {
         var t = document.createElement("div");
@@ -544,19 +558,14 @@
         return Promise.reject(new Error("Tauri invoke not found."));
     }
 
-    function invokeShort(cmd, args) {
-        return Promise.race([
-            tauriInvoke(cmd, args),
-            new Promise(function(_, reject) { setTimeout(function() { reject(new Error("Timeout: " + cmd)); }, 8000); })
-        ]);
-    }
+    function invokeShort(cmd, args) { return Promise.race([tauriInvoke(cmd, args), new Promise(function(_, reject) { setTimeout(function() { reject(new Error("Timeout: " + cmd)); }, 8000); })]); }
+    function invokeLong(cmd, args, ms) { return Promise.race([tauriInvoke(cmd, args), new Promise(function(_, reject) { setTimeout(function() { reject(new Error("Timeout: " + cmd)); }, ms || 600000); })]); }
 
     function appendLog(logId, line) {
         var now = new Date();
         var ts = "[" + ("0"+now.getHours()).slice(-2) + ":" + ("0"+now.getMinutes()).slice(-2) + ":" + ("0"+now.getSeconds()).slice(-2) + "]";
         var el = document.getElementById(logId);
         if (el) { el.textContent += ts + " " + line + "\n"; el.scrollTop = el.scrollHeight; }
-        
         var uni = document.getElementById("unified-log");
         if (uni && logId !== "unified-log") { uni.textContent += ts + " " + line + "\n"; uni.scrollTop = uni.scrollHeight; }
     }
@@ -564,8 +573,7 @@
     function copyLog(logId) {
         var el = document.getElementById(logId);
         if (el) {
-            navigator.clipboard.writeText(el.textContent).then(function() { showToast("Log copied", "success"); })
-            .catch(function() { showToast("Failed to copy", "error"); });
+            navigator.clipboard.writeText(el.textContent).then(function() { showToast("Log copied", "success"); }).catch(function() { showToast("Failed to copy", "error"); });
         }
     }
 
@@ -584,12 +592,9 @@
             lines.push("");
         }
 
-        // Save the dictionary of API keys per provider
         if (currentConfig.api_keys && Object.keys(currentConfig.api_keys).length > 0) {
             lines.push("[api_keys]");
-            Object.keys(currentConfig.api_keys).forEach(function(k) {
-                if (currentConfig.api_keys[k]) lines.push(k + ' = ' + JSON.stringify(currentConfig.api_keys[k]));
-            });
+            Object.keys(currentConfig.api_keys).forEach(function(k) { if (currentConfig.api_keys[k]) lines.push(k + ' = ' + JSON.stringify(currentConfig.api_keys[k])); });
             lines.push("");
         }
 
@@ -608,10 +613,10 @@
             if (s.autonomy) lines.push('autonomy = ' + JSON.stringify(s.autonomy));
             if (s.identity !== undefined) lines.push('identity = ' + JSON.stringify(String(s.identity)));
             if (s.maxToolIterations) lines.push('maxToolIterations = ' + JSON.stringify(String(s.maxToolIterations)));
+            if (currentConfig.composioApiKey) lines.push('composio_api_key = ' + JSON.stringify(currentConfig.composioApiKey));
             lines.push("");
         }
 
-        // Save Personas as an Array of Tables
         if (personas && personas.length > 0) {
             personas.forEach(function(p) {
                 lines.push("[[personas]]");
@@ -644,12 +649,8 @@
         } catch(e) {
             var saved = localStorage.getItem("bambooclaw-config");
             var savedP = localStorage.getItem("bambooclaw-personas-fallback");
-            if (saved) {
-                try { currentConfig = JSON.parse(saved); } catch(e2) {}
-            }
-            if (savedP) {
-                try { personas = JSON.parse(savedP); } catch(e2) {}
-            }
+            if (saved) { try { currentConfig = JSON.parse(saved); } catch(e2) {} }
+            if (savedP) { try { personas = JSON.parse(savedP); } catch(e2) {} }
             applyConfigToUI();
             renderPersonas();
         }
@@ -658,17 +659,13 @@
     function parseAndApplyConfig(toml) {
         var lines = toml.split("\n");
         var section = "";
-        personas = []; // Clear personas, they will be loaded from TOML
+        personas = []; 
         
         lines.forEach(function(line) {
             line = line.trim();
             if (!line || line.startsWith("#")) return;
             
-            if (line === "[[personas]]") {
-                section = "personas";
-                personas.push({});
-                return;
-            }
+            if (line === "[[personas]]") { section = "personas"; personas.push({}); return; }
             
             var secMatch = line.match(/^\[(.+)\]$/);
             if (secMatch) { section = secMatch[1]; return; }
@@ -677,28 +674,21 @@
             if (kvMatch) {
                 var key = kvMatch[1], valRaw = kvMatch[2].trim();
                 var val = valRaw;
-                if (valRaw.startsWith('"')) {
-                    try { val = JSON.parse(valRaw); } catch(e) { val = valRaw.replace(/^"|"$/g, ''); }
-                } else if (!isNaN(valRaw)) { val = Number(valRaw); }
+                if (valRaw.startsWith('"')) { try { val = JSON.parse(valRaw); } catch(e) { val = valRaw.replace(/^"|"$/g, ''); } } else if (!isNaN(valRaw)) { val = Number(valRaw); }
                 
-                if (section === "llm") {
-                    if (!currentConfig.llm) currentConfig.llm = {};
-                    currentConfig.llm[key] = String(val);
-                } else if (section === "api_keys") {
-                    if (!currentConfig.api_keys) currentConfig.api_keys = {};
-                    currentConfig.api_keys[key] = String(val);
-                } else if (section.startsWith("channels.")) {
+                if (section === "llm") { if (!currentConfig.llm) currentConfig.llm = {}; currentConfig.llm[key] = String(val); }
+                else if (section === "api_keys") { if (!currentConfig.api_keys) currentConfig.api_keys = {}; currentConfig.api_keys[key] = String(val); }
+                else if (section.startsWith("channels.")) {
                     var ch = section.replace("channels.", "");
                     if (!currentConfig.channels) currentConfig.channels = {};
                     if (!currentConfig.channels[ch]) currentConfig.channels[ch] = {};
                     currentConfig.channels[ch][key] = String(val);
-                } else if (section === "agent") {
-                    if (!currentConfig.settings) currentConfig.settings = {};
-                    currentConfig.settings[key] = String(val);
-                } else if (section === "personas") {
-                    var lastP = personas[personas.length - 1];
-                    if (lastP) lastP[key] = String(val);
                 }
+                else if (section === "agent") {
+                    if (key === "composio_api_key") currentConfig.composioApiKey = String(val);
+                    else { if (!currentConfig.settings) currentConfig.settings = {}; currentConfig.settings[key] = String(val); }
+                }
+                else if (section === "personas") { var lastP = personas[personas.length - 1]; if (lastP) lastP[key] = String(val); }
             }
         });
         applyConfigToUI();
@@ -707,17 +697,13 @@
 
     function applyConfigToUI() {
         if (currentConfig.llm) {
-            // Populate API Keys dictionary from legacy config if missing
             if (currentConfig.llm.api_key && currentConfig.llm.provider) {
                 if (!currentConfig.api_keys) currentConfig.api_keys = {};
-                if (!currentConfig.api_keys[currentConfig.llm.provider]) {
-                    currentConfig.api_keys[currentConfig.llm.provider] = currentConfig.llm.api_key;
-                }
+                if (!currentConfig.api_keys[currentConfig.llm.provider]) { currentConfig.api_keys[currentConfig.llm.provider] = currentConfig.llm.api_key; }
             }
-
             if (currentConfig.llm.provider) {
-                document.getElementById("llm-provider").value = currentConfig.llm.provider;
-                document.getElementById("llm-provider").dispatchEvent(new Event("change"));
+                var provEl = document.getElementById("llm-provider");
+                if (provEl) { provEl.value = currentConfig.llm.provider; provEl.dispatchEvent(new Event("change")); }
             }
             if (currentConfig.llm.model) {
                 setTimeout(function() { 
@@ -735,16 +721,15 @@
                 if (sp) sp.value = currentConfig.llm.system_prompt;
             }
         }
-
         if (currentConfig.channels) {
             if (currentConfig.channels.telegram && currentConfig.channels.telegram.token) {
-                document.getElementById("tg-status").textContent = "Token Configured";
+                var tgStatus = document.getElementById("tg-status");
+                if (tgStatus) tgStatus.textContent = "Token Configured";
             }
         }
-
         if (currentConfig.settings) {
             var s = currentConfig.settings;
-            if (s.autonomy) document.getElementById("set-autonomy").value = s.autonomy;
+            if (s.autonomy) { var autEl = document.getElementById("set-autonomy"); if (autEl) autEl.value = s.autonomy; }
             if (s.identity !== undefined) {
                 activePersonaIndex = parseInt(s.identity);
                 if (isNaN(activePersonaIndex)) activePersonaIndex = -1;
@@ -768,38 +753,39 @@
 
     var orModels = [];
     var orSelectedModel = "";
+    var orSortKey = "name";
+    var orSortDir = 1;
 
-    document.getElementById("llm-provider").addEventListener("change", function() {
+    document.getElementById("llm-provider")?.addEventListener("change", function() {
         var provider = this.value;
         var isOR = provider === "openrouter";
         appendLog("dash-log", "[UI] Provider changed to: " + provider);
         
-        // Auto-load the specific key for this provider
         var keyInput = document.getElementById("llm-api-key");
-        if (currentConfig.api_keys && currentConfig.api_keys[provider]) {
-            keyInput.value = currentConfig.api_keys[provider];
-        } else {
-            keyInput.value = "";
+        if (keyInput) {
+            if (currentConfig.api_keys && currentConfig.api_keys[provider]) { keyInput.value = currentConfig.api_keys[provider]; } 
+            else { keyInput.value = ""; }
         }
 
-        document.getElementById("llm-model-group").style.display = isOR ? "none" : "block";
+        var group = document.getElementById("llm-model-group");
+        if (group) group.style.display = isOR ? "none" : "block";
         var orArea = document.getElementById("or-models-area");
         
         if (isOR) {
-            orArea.classList.remove("hidden");
-            if (orModels.length === 0 && keyInput.value.length > 10) window.fetchORModels();
+            if (orArea) orArea.classList.remove("hidden");
+            if (orModels.length === 0 && keyInput && keyInput.value.length > 10) window.fetchORModels();
         } else {
-            orArea.classList.add("hidden");
+            if (orArea) orArea.classList.add("hidden");
             var models = providerModels[provider] || [];
             var sel = document.getElementById("llm-model");
-            sel.innerHTML = "";
-            models.forEach(function(m) {
-                var opt = document.createElement("option"); opt.value = m; opt.textContent = m; sel.appendChild(opt);
-            });
+            if (sel) {
+                sel.innerHTML = "";
+                models.forEach(function(m) { var opt = document.createElement("option"); opt.value = m; opt.textContent = m; sel.appendChild(opt); });
+            }
         }
     });
 
-    document.getElementById("btn-toggle-key").addEventListener("click", function() {
+    document.getElementById("btn-toggle-key")?.addEventListener("click", function() {
         var input = document.getElementById("llm-api-key");
         if (input.type === "password") { input.type = "text"; this.textContent = "🙈"; } 
         else { input.type = "password"; this.textContent = "👁️"; }
@@ -840,28 +826,53 @@
     }
 
     window.fetchORModels = function() {
+        var listEl = document.getElementById("or-model-list");
+        if (listEl) listEl.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--text-dim);"><span class="spinner">⟳</span> Loading...</div>';
         fetch("https://openrouter.ai/api/v1/models").then(function(r) { return r.json(); }).then(function(data) {
-            orModels = (data.data || []).map(function(m) { return { id: m.id, name: m.name }; });
+            orModels = (data.data || []).map(function(m) { return { id: m.id, name: m.name, input: parseFloat(m.pricing.prompt||"0"), output: parseFloat(m.pricing.completion||"0") }; });
             renderORModels();
-        });
+        }).catch(function() { if (listEl) listEl.innerHTML = "Failed to load models"; });
+    };
+
+    window.sortORModels = function(key) {
+        if (orSortKey === key) { orSortDir *= -1; } else { orSortKey = key; orSortDir = 1; }
+        renderORModels();
     };
 
     function renderORModels() {
-        var html = '<table style="width:100%;font-size:0.8rem;text-align:left;">';
-        orModels.slice(0, 50).forEach(function(m) {
-            html += '<tr data-model-id="' + m.id + '" style="cursor:pointer;border-bottom:1px solid var(--border);" class="or-model-row">';
-            html += '<td style="padding:0.5rem;">' + m.name + '<br><span style="color:var(--text-dim);font-size:0.7rem;">' + m.id + '</span></td></tr>';
+        var searchEl = document.getElementById("or-model-search");
+        var search = searchEl ? searchEl.value.toLowerCase() : "";
+        var filtered = orModels.filter(function(m) { return m.id.toLowerCase().indexOf(search) >= 0 || m.name.toLowerCase().indexOf(search) >= 0; });
+        filtered.sort(function(a, b) {
+            var cmp = 0;
+            if (orSortKey === "name") cmp = a.name.localeCompare(b.name);
+            else if (orSortKey === "input") cmp = a.input - b.input;
+            else if (orSortKey === "output") cmp = a.output - b.output;
+            return cmp * orSortDir;
+        });
+
+        var html = '<table style="width:100%;font-size:0.8rem;text-align:left;border-collapse:collapse;">';
+        filtered.slice(0, 100).forEach(function(m) {
+            var sel = m.id === orSelectedModel;
+            var bg = sel ? "background:rgba(16,185,129,0.15);" : "";
+            html += '<tr data-model-id="' + escapeHtml(m.id) + '" style="cursor:pointer;border-bottom:1px solid var(--border);' + bg + '" class="or-model-row">';
+            html += '<td style="padding:0.5rem;">' + escapeHtml(m.name) + '<br><span style="color:var(--text-dim);font-size:0.7rem;">' + escapeHtml(m.id) + '</span></td>';
+            html += '<td style="padding:0.5rem;font-family:monospace;text-align:right;">$' + (m.input*1000000).toFixed(2) + '</td>';
+            html += '<td style="padding:0.5rem;font-family:monospace;text-align:right;">$' + (m.output*1000000).toFixed(2) + '</td></tr>';
         });
         html += '</table>';
-        document.getElementById("or-model-list").innerHTML = html;
+        var listEl = document.getElementById("or-model-list");
+        if (listEl) listEl.innerHTML = html;
     }
 
-    document.getElementById("or-model-list").addEventListener("click", function(e) {
+    document.getElementById("or-model-list")?.addEventListener("click", function(e) {
         var row = e.target.closest(".or-model-row");
         if (row) {
             orSelectedModel = row.getAttribute("data-model-id");
-            document.getElementById("or-active-model-name").textContent = orSelectedModel;
+            var nameEl = document.getElementById("or-active-model-name");
+            if (nameEl) nameEl.textContent = orSelectedModel;
             var reminder = document.getElementById("or-save-reminder"); if (reminder) reminder.classList.add("visible");
+            renderORModels();
         }
     });
 
@@ -873,8 +884,7 @@
         if (sel) {
             sel.innerHTML = '<option value="-1">— BambooClaw Default (System Prompt Only) —</option>';
             personas.forEach(function(p, i) {
-                var opt = document.createElement("option");
-                opt.value = i; opt.textContent = p.name;
+                var opt = document.createElement("option"); opt.value = i; opt.textContent = p.name;
                 if (i === activePersonaIndex) opt.selected = true;
                 sel.appendChild(opt);
             });
@@ -890,7 +900,7 @@
             var isActive = i === activePersonaIndex;
             html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem;border:1px solid ' + (isActive ? 'var(--accent)' : 'var(--border)') + ';margin-bottom:0.5rem;border-radius:6px;background:' + (isActive ? 'rgba(16,185,129,0.05)' : 'transparent') + ';">';
             html += '<div style="flex:1;"><strong>' + escapeHtml(p.name) + '</strong><br><span style="font-size:0.7rem;color:var(--text-dim);">' + escapeHtml(p.prompt.substring(0, 60)) + '...</span></div>';
-            html += '<div><button type="button" class="btn btn-sm btn-outline" onclick="editPersona(' + i + ')">✎</button> <button type="button" class="btn btn-sm btn-outline" style="color:var(--error);" onclick="deletePersona(' + i + ')">✕</button></div>';
+            html += '<div><button type="button" class="btn btn-sm btn-outline" onclick="window.editPersona(' + i + ')">✎</button> <button type="button" class="btn btn-sm btn-outline" style="color:var(--error);" onclick="window.deletePersona(' + i + ')">✕</button></div>';
             html += '</div>';
         });
         listEl.innerHTML = html;
@@ -906,7 +916,7 @@
         document.getElementById("persona-details-block").open = true;
     };
 
-    document.getElementById("btn-cancel-edit-persona").addEventListener("click", function() {
+    document.getElementById("btn-cancel-edit-persona")?.addEventListener("click", function() {
         document.getElementById("new-persona-name").value = "";
         document.getElementById("new-persona-prompt").value = "";
         document.getElementById("btn-create-persona").textContent = "Save Persona";
@@ -914,7 +924,7 @@
         editingPersonaIndex = -1;
     });
 
-    document.getElementById("btn-create-persona").addEventListener("click", function() {
+    document.getElementById("btn-create-persona")?.addEventListener("click", function() {
         var name = document.getElementById("new-persona-name").value.trim();
         var prompt = document.getElementById("new-persona-prompt").value.trim();
         if (!name || !prompt) { showToast("Name and instructions required", "error"); return; }
@@ -924,7 +934,7 @@
             showToast("Persona updated", "success");
         } else {
             personas.push({ name: name, prompt: prompt });
-            activePersonaIndex = personas.length - 1; // Auto-select new persona
+            activePersonaIndex = personas.length - 1; 
             if (!currentConfig.settings) currentConfig.settings = {};
             currentConfig.settings.identity = String(activePersonaIndex);
             showToast("Persona created and activated", "success");
@@ -932,7 +942,7 @@
         
         saveAllConfig();
         renderPersonas();
-        document.getElementById("btn-cancel-edit-persona").click(); // reset form
+        document.getElementById("btn-cancel-edit-persona").click(); 
     });
 
     window.deletePersona = function(idx) {
@@ -954,7 +964,7 @@
         
         currentConfig.settings.autonomy = document.getElementById("set-autonomy").value;
         currentConfig.settings.identity = identVal;
-        currentConfig.settings.maxToolIterations = parseInt(document.getElementById("set-tool-iterations").value) || 10;
+        currentConfig.settings.maxToolIterations = parseInt(document.getElementById("set-tool-iterations")?.value) || 10;
         
         if (!currentConfig.llm) currentConfig.llm = { provider: "openai", api_key: "", model: "", system_prompt: "" };
         currentConfig.llm.system_prompt = document.getElementById("settings-system-prompt").value;
@@ -964,36 +974,618 @@
         var sr = document.getElementById("settings-save-reminder"); if (sr) sr.classList.remove("visible");
     }
 
-    ["set-autonomy", "set-identity", "settings-system-prompt", "set-tool-iterations"].forEach(function(id) {
-        var el = document.getElementById(id);
-        if (el) {
-            el.addEventListener("change", function() {
-                if (id === "set-identity") {
-                    activePersonaIndex = parseInt(el.value);
-                    if (isNaN(activePersonaIndex)) activePersonaIndex = -1;
-                    if (!currentConfig.settings) currentConfig.settings = {};
-                    currentConfig.settings.identity = String(activePersonaIndex);
-                    saveAllConfig();
-                    renderPersonas();
+    // ==========================================
+    // SKILLS & COMPOSIO ENGINE (RESTORED)
+    // ==========================================
+    var COMPOSIO_API_URL = "https://backend.composio.dev/api/v3";
+    var enabledSkills = {};
+    var composioTools = [];
+    var composioToolkits = [];
+    var composioCategories = ["All"];
+    var composioActiveCategory = "All";
+    var composioToolkitDetails = {};
+
+    function sanitizeToolSchema(rawParams) {
+        if (!rawParams || typeof rawParams !== "object") return { type: "object", properties: {}, required: [], additionalProperties: false };
+        var p; try { p = JSON.parse(JSON.stringify(rawParams)); } catch(e) { return { type: "object", properties: {}, required: [], additionalProperties: false }; }
+        function cleanProp(obj) {
+            if (!obj || typeof obj !== "object") return obj;
+            if (Array.isArray(obj)) return obj.map(cleanProp);
+            var badKeys = ["$ref", "$defs", "$schema", "$id", "default", "examples", "example", "title", "format", "readOnly", "writeOnly", "deprecated", "externalDocs", "xml", "discriminator", "minLength", "maxLength", "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "multipleOf", "pattern", "minItems", "maxItems", "uniqueItems", "minProperties", "maxProperties", "const", "contentMediaType", "contentEncoding", "if", "then", "else", "not"];
+            badKeys.forEach(function(k) { delete obj[k]; });
+            if (obj.allOf && Array.isArray(obj.allOf) && obj.allOf.length === 1) { var inner = cleanProp(obj.allOf[0]); delete obj.allOf; Object.keys(inner).forEach(function(k) { if (!obj[k]) obj[k] = inner[k]; }); }
+            else if (obj.allOf) { obj.allOf.forEach(function(item) { var cleaned = cleanProp(item); if (cleaned.properties) { if (!obj.properties) obj.properties = {}; Object.keys(cleaned.properties).forEach(function(pk) { obj.properties[pk] = cleaned.properties[pk]; }); } if (cleaned.required && Array.isArray(cleaned.required)) { if (!obj.required) obj.required = []; cleaned.required.forEach(function(r) { if (obj.required.indexOf(r) < 0) obj.required.push(r); }); } }); delete obj.allOf; }
+            if (obj.properties && typeof obj.properties === "object") { Object.keys(obj.properties).forEach(function(k) { obj.properties[k] = cleanProp(obj.properties[k]); }); }
+            if (obj.items) obj.items = cleanProp(obj.items);
+            if (obj.anyOf && Array.isArray(obj.anyOf) && obj.anyOf.length > 0) { var first = cleanProp(obj.anyOf[0]); delete obj.anyOf; Object.keys(first).forEach(function(fk) { if (!obj[fk]) obj[fk] = first[fk]; }); }
+            if (obj.oneOf && Array.isArray(obj.oneOf) && obj.oneOf.length > 0) { var first2 = cleanProp(obj.oneOf[0]); delete obj.oneOf; Object.keys(first2).forEach(function(fk) { if (!obj[fk]) obj[fk] = first2[fk]; }); }
+            if (Array.isArray(obj.type)) obj.type = obj.type.find(function(t) { return t !== "null"; }) || "string";
+            return obj;
+        }
+        p = cleanProp(p);
+        if (!p.type) p.type = "object";
+        if (!p.properties) p.properties = {};
+        if (!p.required) p.required = [];
+        p.additionalProperties = false;
+        p.required = p.required.filter(function(r) { return p.properties.hasOwnProperty(r); });
+        return p;
+    }
+
+    function renderActiveToolsSummary() {
+        var badge = document.getElementById("active-tools-count-badge");
+        var listEl = document.getElementById("active-tools-list");
+        if (!badge || !listEl) return;
+        var enabledCount = 0, html = "";
+        Object.keys(enabledSkills).forEach(function(k) {
+            if (enabledSkills[k]) {
+                enabledCount++;
+                var isComposio = k.startsWith("composio_");
+                var dotClass = isComposio ? "composio" : "builtin";
+                var label = isComposio ? k.replace("composio_", "") : k;
+                var toolCount = 0;
+                agentTools.forEach(function(t) { if (isComposio) { if (t.function.name.indexOf(k.replace("composio_", "")) > -1) toolCount++; } else if (t._source === k || t.function.name === k) toolCount++; });
+                var suffix = toolCount > 0 ? " (" + toolCount + " tools)" : "";
+                html += '<div class="active-tool-entry"><span class="tool-dot ' + dotClass + '"></span>' + escapeHtml(label) + '<span style="color:var(--text-dim);font-size:0.7rem;margin-left:0.3rem;">' + suffix + '</span></div>';
+            }
+        });
+        badge.textContent = enabledCount;
+        if (!html) html = '<div style="color:var(--text-dim);font-size:0.75rem;padding:0.25rem 0;">No tools loaded</div>';
+        listEl.innerHTML = html;
+    }
+
+    async function checkComposioConnection(slug) {
+        var composioKey = currentConfig.composioApiKey;
+        if (!composioKey) return;
+        try {
+            var endpoint = COMPOSIO_API_URL + "/connected_accounts?toolkit=" + encodeURIComponent(slug);
+            var resultJson = "";
+            if (window.__TAURI__) resultJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, endpoint] });
+            else { var resp = await fetch(endpoint, { headers: { "x-api-key": composioKey } }); resultJson = await resp.text(); }
+            var data = JSON.parse(resultJson);
+            var accounts = data.items || data.results || [];
+            if (Array.isArray(data)) accounts = data;
+            var hasConnection = accounts.length > 0;
+            for (var i = 0; i < composioToolkits.length; i++) { if (composioToolkits[i].slug === slug) { composioToolkits[i].auth_warning = !hasConnection; break; } }
+            renderComposioToolkits();
+        } catch(e) {}
+    }
+
+    function showConnectionModal(slug) {
+        var existing = document.getElementById("conn-modal-overlay");
+        if (existing) existing.remove();
+
+        var tk = null;
+        for (var i = 0; i < composioToolkits.length; i++) { if (composioToolkits[i].slug === slug) { tk = composioToolkits[i]; break; } }
+        var name = tk ? (tk.meta_name || tk.name || slug) : slug;
+
+        var overlay = document.createElement("div");
+        overlay.id = "conn-modal-overlay";
+        overlay.className = "conn-modal-overlay visible";
+        overlay.innerHTML = '<div class="conn-modal"><h3>Connect ' + escapeHtml(name) + '</h3><p>Link your account so the agent can use its tools on your behalf.</p><label for="conn-api-key">API Key / Access Token</label><input type="password" id="conn-api-key" placeholder="Paste your API key or token here" /><div class="conn-modal-actions" style="margin-bottom:0.75rem;"><button type="button" class="btn-connect" id="conn-btn-save-key">Connect with API Key</button></div><div class="conn-or">— or —</div><button type="button" class="btn-oauth" id="conn-btn-oauth">🔗 Connect via OAuth (opens browser)</button><div class="conn-modal-actions" style="margin-top:1rem;"><button type="button" class="btn-cancel" id="conn-btn-cancel">Cancel</button></div></div>';
+        document.body.appendChild(overlay);
+
+        overlay.addEventListener("click", function(e) { if (e.target === overlay) overlay.remove(); });
+        document.getElementById("conn-btn-cancel").addEventListener("click", function() { overlay.remove(); });
+
+        document.getElementById("conn-btn-save-key").addEventListener("click", async function() {
+            var apiKeyInput = document.getElementById("conn-api-key");
+            var key = apiKeyInput ? apiKeyInput.value.trim() : "";
+            if (!key) { showToast("Please enter an API key or token", "error"); return; }
+            var composioKey = currentConfig.composioApiKey;
+            if (!composioKey) { showToast("Set your Composio API key first", "error"); return; }
+            showToast("Connecting " + slug + "...", "info");
+            try {
+                var intEndpoint = COMPOSIO_API_URL + "/integrations?appName=" + encodeURIComponent(slug);
+                var intJson = "";
+                if (window.__TAURI__) intJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, intEndpoint] });
+                else { var intResp = await fetch(intEndpoint, { headers: { "x-api-key": composioKey } }); intJson = await intResp.text(); }
+                var intData = JSON.parse(intJson);
+                var integrations = intData.items || intData || [];
+                if (!integrations.length) { showToast("No integration found for " + slug + ".", "error"); return; }
+                var connEndpoint = COMPOSIO_API_URL + "/connectedAccounts";
+                var connBody = JSON.stringify({ integrationId: integrations[0].id, entityId: "default", data: { api_key: key, token: key, access_token: key } });
+                var connJson = "";
+                if (window.__TAURI__) connJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-X", "POST", "-H", "x-api-key: " + composioKey, "-H", "Content-Type: application/json", "-d", connBody, connEndpoint] });
+                else { var connResp = await fetch(connEndpoint, { method: "POST", headers: { "x-api-key": composioKey, "Content-Type": "application/json" }, body: connBody }); connJson = await connResp.text(); }
+                var connData = JSON.parse(connJson);
+                if (connData.connectionStatus === "ACTIVE" || connData.status === "ACTIVE" || connData.id) {
+                    showToast(slug + " connected successfully!", "success");
+                    for (var i = 0; i < composioToolkits.length; i++) { if (composioToolkits[i].slug === slug) { composioToolkits[i].auth_warning = false; break; } }
+                    renderComposioToolkits(); renderEnabledIntegrations(); overlay.remove();
+                } else if (connData.redirectUrl) {
+                    showToast("This service requires OAuth. Opening authorization page...", "info");
+                    if (window.__TAURI__) { try { var opener = (window.__TAURI__.opener && window.__TAURI__.opener.openUrl) || (window.__TAURI__.shell && window.__TAURI__.shell.open); if (opener) opener(connData.redirectUrl); } catch(e) {} } else window.open(connData.redirectUrl, "_blank");
+                    setTimeout(function() { checkComposioConnection(slug); }, 15000); overlay.remove();
+                } else { showToast("Connection attempt returned unexpected response.", "error"); }
+            } catch(e) { showToast("Connection error", "error"); }
+        });
+
+        document.getElementById("conn-btn-oauth").addEventListener("click", function() { overlay.remove(); performComposioOAuth(slug); });
+    }
+
+    async function performComposioOAuth(slug) {
+        var composioKey = currentConfig.composioApiKey;
+        if (!composioKey) { showToast("Set your Composio API key first", "error"); return; }
+        showToast("Connecting " + slug + "...", "info");
+        try {
+            var intEndpoint = COMPOSIO_API_URL + "/integrations?appName=" + encodeURIComponent(slug);
+            var intJson = "";
+            if (window.__TAURI__) intJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, intEndpoint] });
+            else { var intResp = await fetch(intEndpoint, { headers: { "x-api-key": composioKey } }); intJson = await intResp.text(); }
+            var intData = JSON.parse(intJson);
+            var integrations = intData.items || intData || [];
+            if (!integrations.length) {
+                showToast("No integration found for " + slug + ".", "error");
+                var fallbackUrl = "https://app.composio.dev/apps/" + slug;
+                if (window.__TAURI__) { try { var opener = (window.__TAURI__.opener && window.__TAURI__.opener.openUrl) || (window.__TAURI__.shell && window.__TAURI__.shell.open); if (opener) opener(fallbackUrl); } catch(e) {} } else window.open(fallbackUrl, "_blank");
+                return;
+            }
+            var connEndpoint = COMPOSIO_API_URL + "/connectedAccounts";
+            var connBody = JSON.stringify({ integrationId: integrations[0].id, entityId: "default" });
+            var connJson = "";
+            if (window.__TAURI__) connJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-X", "POST", "-H", "x-api-key: " + composioKey, "-H", "Content-Type: application/json", "-d", connBody, connEndpoint] });
+            else { var connResp = await fetch(connEndpoint, { method: "POST", headers: { "x-api-key": composioKey, "Content-Type": "application/json" }, body: connBody }); connJson = await connResp.text(); }
+            var connData = JSON.parse(connJson);
+            if (connData.redirectUrl) {
+                showToast("Opening authorization page for " + slug + "...", "success");
+                if (window.__TAURI__) { try { var opener = (window.__TAURI__.opener && window.__TAURI__.opener.openUrl) || (window.__TAURI__.shell && window.__TAURI__.shell.open); if (opener) opener(connData.redirectUrl); } catch(e) {} } else window.open(connData.redirectUrl, "_blank");
+                setTimeout(function() { checkComposioConnection(slug); }, 15000);
+            } else if (connData.connectionStatus === "ACTIVE") {
+                showToast(slug + " already connected!", "success");
+                for (var i = 0; i < composioToolkits.length; i++) { if (composioToolkits[i].slug === slug) { composioToolkits[i].auth_warning = false; break; } }
+                renderComposioToolkits();
+            } else { showToast("Could not initiate connection.", "error"); }
+        } catch(e) { showToast("Connection error", "error"); }
+    }
+
+    async function fetchToolkitTriggers(slug) {
+        var composioKey = currentConfig.composioApiKey;
+        if (!composioKey) return;
+        try {
+            var endpoint = COMPOSIO_API_URL + "/triggers?toolkit=" + encodeURIComponent(slug) + "&limit=50";
+            var resultJson = "";
+            if (window.__TAURI__) resultJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, endpoint] });
+            else { var resp = await fetch(endpoint, { headers: { "x-api-key": composioKey } }); resultJson = await resp.text(); }
+            var data = JSON.parse(resultJson);
+            composioToolkitDetails[slug + "_triggers"] = data.items || [];
+            renderToolkitTriggers(slug);
+        } catch(e) {}
+    }
+
+    function renderToolkitTriggers(slug) {
+        var el = document.getElementById("toolkit-triggers-" + slug);
+        if (!el) return;
+        var triggers = composioToolkitDetails[slug + "_triggers"];
+        if (!triggers || triggers.length === 0) { el.innerHTML = ""; return; }
+        var html = '<div style="font-size:0.7rem;font-weight:600;color:var(--warning);margin-top:0.75rem;margin-bottom:0.3rem;">⚡ Triggers (' + triggers.length + '):</div>';
+        triggers.forEach(function(tr) { html += '<div class="trigger-entry"><div class="trigger-name">' + escapeHtml(tr.name || tr.slug || "Unknown") + '</div>' + (tr.description ? '<div class="trigger-desc">' + escapeHtml(tr.description.substring(0, 150)) + (tr.description.length > 150 ? "…" : "") + '</div>' : '') + '</div>'; });
+        html += '<div class="trigger-info-banner">⚡ Triggers require a local webhook endpoint. This feature is coming in a future update.</div>';
+        el.innerHTML = html;
+    }
+
+    var builtinSkills = [
+        { id: "web_browser", icon: "🌐", name: "Web Browser", desc: "Navigate and scrape websites via Playwright" },
+        { id: "web_search", icon: "🔍", name: "Web Search", desc: "Search Google, DuckDuckGo, or Bing" },
+        { id: "docker", icon: "🐳", name: "Docker", desc: "Manage containers, images, and volumes" },
+        { id: "ssh_remote", icon: "🔑", name: "SSH Remote", desc: "Execute commands on remote servers" },
+        { id: "mqtt_bridge", icon: "📡", name: "MQTT Bridge", desc: "Publish/subscribe to MQTT topics" },
+        { id: "serial_port", icon: "🔌", name: "Serial Port", desc: "Read/write to serial devices (Arduino, ESP32)" },
+        { id: "b500_telemetry", icon: "🎋", name: "B500 Telemetry", desc: "Monitor BambooCore B500 facility sensors" }
+    ];
+
+    function renderBuiltinSkills() {
+        var el = document.getElementById("skills-builtin");
+        if (!el) return;
+        var html = "";
+        builtinSkills.forEach(function(s) {
+            html += '<div class="skill-card enabled" data-skill-id="' + s.id + '" data-skill-type="builtin"><span class="skill-always-on">Always On</span><div class="skill-icon">' + s.icon + '</div><div class="skill-name">' + escapeHtml(s.name) + '</div><div class="skill-meta"><span style="font-size:0.65rem;color:var(--text-dim);">● Built-in</span><button type="button" class="skill-info-btn" title="Show details">i</button></div><div class="skill-desc-full">' + escapeHtml(s.desc) + '</div></div>';
+        });
+        el.innerHTML = html;
+    }
+
+    function renderComposioToolkits() {
+        var el = document.getElementById("skills-composio");
+        if (!el) return;
+        var search = (document.getElementById("skill-search") ? document.getElementById("skill-search").value : "").toLowerCase();
+        var html = "";
+        var filtered = composioToolkits.filter(function(tk) {
+            if (search && tk.name.toLowerCase().indexOf(search) < 0 && (tk.description || "").toLowerCase().indexOf(search) < 0 && tk.slug.toLowerCase().indexOf(search) < 0) return false;
+            if (composioActiveCategory !== "All") { var cats = tk.categories || []; if (cats.indexOf(composioActiveCategory) < 0) return false; }
+            return true;
+        });
+        filtered.forEach(function(tk) {
+            var isEnabled = enabledSkills["composio_" + tk.slug] || false;
+            var toolCount = tk.tools_count || 0;
+            var triggerCount = tk.triggers_count || 0;
+            var descDisplay = tk.description || "No description available";
+            html += '<div class="skill-card ' + (isEnabled ? 'enabled' : '') + '" data-skill-id="composio_' + tk.slug + '" data-skill-type="composio" data-toolkit-slug="' + tk.slug + '">';
+            html += '<button type="button" class="skill-toggle" title="' + (isEnabled ? 'Disable' : 'Enable') + '"></button>';
+            var imgSrc = "";
+            if (tk.local_logo && window.__TAURI__) {
+                var convertFn = (window.__TAURI__.core && window.__TAURI__.core.convertFileSrc) || (window.__TAURI__.tauri && window.__TAURI__.tauri.convertFileSrc) || window.__TAURI__.convertFileSrc;
+                if (convertFn) { try { imgSrc = convertFn(tk.local_logo); } catch(ce) {} }
+            }
+            if (!imgSrc && tk.logo) imgSrc = tk.logo;
+            if (imgSrc) html += '<div class="skill-icon"><img src="' + escapeHtml(imgSrc) + '" data-slug="' + escapeHtml(tk.slug) + '" onerror="this.outerHTML=\'<span class=skill-icon>🧩</span>\'" /></div>';
+            else html += '<div class="skill-icon">🧩</div>';
+            html += '<div class="skill-name">' + escapeHtml(tk.name) + '</div><div class="skill-meta">';
+            if (toolCount > 0) html += '<span style="font-size:0.65rem;color:var(--accent);">● ' + toolCount + ' tools</span>';
+            if (triggerCount > 0) html += '<span style="font-size:0.65rem;color:var(--warning);">⚡ ' + triggerCount + ' triggers</span>';
+            html += '<button type="button" class="skill-info-btn" title="Show details">i</button></div>';
+            if (tk.auth_warning) html += '<div class="auth-warning-badge">⚠ Not connected — <span style="cursor:pointer;text-decoration:underline;" data-connect-slug="' + escapeHtml(tk.slug) + '">link account</span></div>';
+            html += '<div class="skill-desc-full" data-toolkit-slug="' + tk.slug + '"><div>' + escapeHtml(descDisplay) + '</div><div class="toolkit-tools-list" id="toolkit-tools-' + tk.slug + '"><div style="color:var(--text-dim);font-size:0.65rem;padding:0.3rem 0;">Click to load tools...</div></div><div id="toolkit-triggers-' + tk.slug + '"></div></div></div>';
+        });
+        if (!html) html = '<div style="color:var(--text-dim);font-size:0.85rem;padding:0.5rem;">No matching toolkits</div>';
+        el.innerHTML = html;
+        el.querySelectorAll("span[data-connect-slug]").forEach(function(span) { span.addEventListener("click", function(e) { e.stopPropagation(); showConnectionModal(span.dataset.connectSlug); }); });
+    }
+
+    function renderComposioCategories() {
+        var el = document.getElementById("composio-category-tabs");
+        if (!el) return;
+        var html = "";
+        composioCategories.forEach(function(cat) {
+            var active = cat === composioActiveCategory;
+            html += '<button type="button" class="btn btn-sm ' + (active ? '' : 'btn-outline') + '" style="font-size:0.75rem;" data-composio-cat="' + escapeHtml(cat) + '">' + escapeHtml(cat) + '</button>';
+        });
+        el.innerHTML = html;
+    }
+
+    function renderAllSkills() { renderBuiltinSkills(); renderComposioToolkits(); renderComposioCategories(); renderEnabledIntegrations(); }
+
+    function renderEnabledIntegrations() {
+        var section = document.getElementById("enabled-integrations-section");
+        var grid = document.getElementById("skills-enabled-integrations");
+        if (!section || !grid) return;
+        var html = "", count = 0;
+        Object.keys(enabledSkills).forEach(function(k) {
+            if (!enabledSkills[k] || !k.startsWith("composio_")) return;
+            count++;
+            var slug = k.replace("composio_", "");
+            var tk = null;
+            for (var i = 0; i < composioToolkits.length; i++) { if (composioToolkits[i].slug === slug) { tk = composioToolkits[i]; break; } }
+            var name = tk ? (tk.meta_name || tk.name || slug) : slug;
+            var imgSrc = "";
+            if (tk && tk.local_logo && window.__TAURI__) {
+                var convertFn = (window.__TAURI__.core && window.__TAURI__.core.convertFileSrc) || (window.__TAURI__.tauri && window.__TAURI__.tauri.convertFileSrc) || window.__TAURI__.convertFileSrc;
+                if (convertFn) { try { imgSrc = convertFn(tk.local_logo); } catch(ce) {} }
+            }
+            if (!imgSrc && tk && tk.logo) imgSrc = tk.logo;
+            var logoHtml = imgSrc ? '<div class="skill-icon"><img src="' + escapeHtml(imgSrc) + '" onerror="this.outerHTML=\'<span class=skill-icon>🧩</span>\'" /></div>' : '<div class="skill-icon">🧩</div>';
+            var toolCount = 0;
+            agentTools.forEach(function(t) { if (t.function.name.indexOf(slug) > -1) toolCount++; });
+            var countLabel = toolCount > 0 ? '<span style="font-size:0.7rem;color:var(--text-dim);">' + toolCount + ' tools</span>' : '';
+            html += '<div class="skill-card" style="cursor:pointer;" onclick="window.toggleSkill(\'' + k + '\')"><div style="display:flex;align-items:center;gap:0.5rem;">' + logoHtml + '<div style="flex:1;"><div style="font-size:0.85rem;font-weight:600;">' + escapeHtml(name) + '</div>' + countLabel + '</div><span style="color:#ef4444;font-size:0.7rem;cursor:pointer;" title="Click to disable">✕</span></div>';
+            if (tk && tk.auth_warning) html += '<div class="auth-warning-badge">⚠ Not connected — <span style="cursor:pointer;text-decoration:underline;" data-connect-slug="' + escapeHtml(slug) + '">link account</span></div>';
+            html += '</div>';
+        });
+        if (count > 0) {
+            section.style.display = ""; grid.innerHTML = html;
+            grid.querySelectorAll("span[data-connect-slug]").forEach(function(span) { span.addEventListener("click", function(e) { e.stopPropagation(); showConnectionModal(span.dataset.connectSlug); }); });
+        } else { section.style.display = "none"; grid.innerHTML = ""; }
+    }
+
+    var logosDir = "";
+    async function ensureLogosDir() {
+        if (logosDir) return logosDir;
+        if (!window.__TAURI__) return "";
+        try {
+            var home = await tauriInvoke("get_home_dir", {});
+            if (!home) return "";
+            var sep = (detectedOS === "windows") ? "\\" : "/";
+            logosDir = home.replace(/[\\/]+$/, "") + sep + "bambooclaw" + sep + "logos";
+            await tauriInvoke("run_shell_command", { commandName: (detectedOS === "windows") ? "cmd" : "sh", args: (detectedOS === "windows") ? ["/c", "mkdir", logosDir, "2>nul"] : ["-c", "mkdir -p \"" + logosDir + "\""] }).catch(function() {});
+            return logosDir;
+        } catch(e) { return ""; }
+    }
+
+    async function cacheToolkitLogos() {
+        var dir = await ensureLogosDir();
+        if (!dir) return;
+        var sep = (detectedOS === "windows") ? "\\" : "/";
+        var toDownload = [];
+        for (var i = 0; i < composioToolkits.length; i++) {
+            var tk = composioToolkits[i];
+            if (!tk.logo) continue;
+            var ext = tk.logo.indexOf(".svg") > -1 ? ".svg" : ".png";
+            var localPath = dir + sep + tk.slug + ext;
+            tk.local_logo_path = localPath;
+            toDownload.push({ idx: i, slug: tk.slug, url: tk.logo, path: localPath });
+        }
+        var batchSize = 15;
+        for (var b = 0; b < toDownload.length; b += batchSize) {
+            var batch = toDownload.slice(b, b + batchSize);
+            var promises = batch.map(function(item) {
+                return invokeShort("run_shell_command", {
+                    commandName: (detectedOS === "windows") ? "cmd" : "sh",
+                    args: (detectedOS === "windows") ? ["/c", "if", "exist", item.path, "(echo", "EXISTS)", "else", "(echo", "MISSING)"] : ["-c", "test -f \"" + item.path + "\" && echo EXISTS || echo MISSING"]
+                }).then(function(result) {
+                    if (result && result.indexOf("EXISTS") > -1) { composioToolkits[item.idx].local_logo = item.path; return; }
+                    return invokeShort("run_shell_command", { commandName: "curl", args: ["-sL", "-o", item.path, item.url] }).then(function() { composioToolkits[item.idx].local_logo = item.path; }).catch(function(e) {});
+                }).catch(function(e) {});
+            });
+            await Promise.allSettled(promises);
+        }
+        renderComposioToolkits();
+    }
+
+    async function testImageConnectivity() { if (!window.__TAURI__) return; var img = new Image(); img.src = "https://assets.composio.dev/logos/slack.png"; }
+
+    window.toggleSkill = function(skillId) {
+        enabledSkills[skillId] = !enabledSkills[skillId];
+        currentConfig.enabledSkills = enabledSkills;
+        saveAllConfig();
+        renderAllSkills();
+
+        if (enabledSkills[skillId]) {
+            if (skillId.startsWith("composio_")) fetchToolkitTools(skillId.replace("composio_", ""));
+            else rebuildBuiltinTools();
+            var name = skillId.startsWith("composio_") ? skillId.replace("composio_", "") : skillId;
+            showToast(name + " enabled", "success");
+        } else {
+            agentTools = agentTools.filter(function(t) { return !t.function.name.startsWith("composio_"); });
+            Object.keys(enabledSkills).forEach(function(sk) {
+                if (!enabledSkills[sk] || !sk.startsWith("composio_")) return;
+                var skSlug = sk.replace("composio_", "");
+                var cached = composioToolkitDetails[skSlug];
+                if (cached) {
+                    cached.forEach(function(tool) {
+                        var rawP = tool.input_parameters || tool.parameters || { type: "object", properties: {}, required: [] };
+                        var params = sanitizeToolSchema(rawP);
+                        var realSlug = tool.slug || tool.name || "";
+                        var safeName = ("composio_" + realSlug.replace(/[^a-zA-Z0-9_-]/g, "_")).substring(0, 64);
+                        window.composioToolMap = window.composioToolMap || {};
+                        window.composioToolMap[safeName] = realSlug;
+                        agentTools.push({ type: "function", function: { name: safeName, description: (tool.description || tool.name || skSlug + " tool").substring(0, 1024), parameters: params } });
+                    });
                 }
-                var sr = document.getElementById("settings-save-reminder"); if (sr) sr.classList.add("visible");
             });
-            el.addEventListener("input", function() {
-                var sr = document.getElementById("settings-save-reminder"); if (sr) sr.classList.add("visible");
+            rebuildBuiltinTools();
+            var name = skillId.startsWith("composio_") ? skillId.replace("composio_", "") : skillId;
+            showToast(name + " disabled", "info");
+        }
+        renderActiveToolsSummary();
+        renderEnabledIntegrations();
+    };
+
+    async function fetchToolkitTools(slug) {
+        var composioKey = currentConfig.composioApiKey;
+        if (!composioKey) return;
+        try {
+            var toolsJson = "";
+            var endpoint = COMPOSIO_API_URL + "/tools?toolkit=" + encodeURIComponent(slug) + "&limit=200";
+            if (window.__TAURI__) toolsJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, endpoint] });
+            else { var resp = await fetch(endpoint, { headers: { "x-api-key": composioKey } }); toolsJson = await resp.text(); }
+            var data = JSON.parse(toolsJson);
+            var tools = data.items || [];
+            composioToolkitDetails[slug] = tools;
+
+            agentTools = agentTools.filter(function(t) { return !t.function.name.startsWith("composio_"); });
+
+            Object.keys(enabledSkills).forEach(function(skillId) {
+                if (!enabledSkills[skillId] || !skillId.startsWith("composio_")) return;
+                var sk = skillId.replace("composio_", "");
+                var cachedTools = composioToolkitDetails[sk];
+                if (cachedTools) {
+                    cachedTools.forEach(function(tool) {
+                        var rawParams = tool.input_parameters || tool.parameters || { type: "object", properties: {}, required: [] };
+                        var params = sanitizeToolSchema(rawParams);
+                        var realSlug = tool.slug || tool.name || "";
+                        var safeName = ("composio_" + realSlug.replace(/[^a-zA-Z0-9_-]/g, "_")).substring(0, 64);
+                        window.composioToolMap = window.composioToolMap || {};
+                        window.composioToolMap[safeName] = realSlug;
+                        agentTools.push({ type: "function", function: { name: safeName, description: (tool.description || tool.name || sk + " tool").substring(0, 1024) + " [via Composio " + sk + "]", parameters: params } });
+                    });
+                }
             });
+
+            showToast(slug + ": " + tools.length + " tools added to agent", "success");
+            renderActiveToolsSummary();
+            renderEnabledIntegrations();
+            checkComposioConnection(slug);
+            fetchToolkitTriggers(slug);
+            renderToolkitToolsList(slug);
+        } catch(e) {
+            agentTools.push({ type: "function", function: { name: "composio_" + slug, description: "Use " + slug + " via Composio. Describe the action you want to perform.", parameters: { type: "object", properties: { action: { type: "string", description: "What to do (natural language)" } }, required: ["action"], additionalProperties: false } } });
+        }
+    }
+
+    function renderToolkitToolsList(slug) {
+        var el = document.getElementById("toolkit-tools-" + slug);
+        if (!el) return;
+        var tools = composioToolkitDetails[slug];
+        if (!tools || tools.length === 0) { el.innerHTML = '<div style="color:var(--text-dim);font-size:0.65rem;padding:0.3rem 0;">No tools found for this toolkit.</div>'; return; }
+        var html = '<div style="font-size:0.7rem;font-weight:600;color:var(--text);margin-bottom:0.3rem;">Tools (' + tools.length + '):</div>';
+        tools.forEach(function(tool, idx) {
+            var toolSlug = tool.slug || ""; var toolName = tool.name || toolSlug; var toolDesc = tool.description || "";
+            var params = tool.input_parameters || tool.parameters || {}; var props = params.properties || {}; var reqList = params.required || [];
+            var outParams = tool.output_parameters || {}; var outProps = outParams.properties || {};
+
+            html += '<div class="toolkit-tool-row" data-tool-idx="' + idx + '" data-toolkit-slug="' + slug + '"><div class="tool-header"><span class="tool-name">▸ ' + escapeHtml(toolName) + '</span></div><div class="tool-slug">' + escapeHtml(toolSlug) + '</div>';
+            if (toolDesc) html += '<div class="tool-desc">' + escapeHtml(toolDesc.substring(0, 120)) + (toolDesc.length > 120 ? "…" : "") + '</div>';
+            html += '<div class="toolkit-tool-params" id="tool-params-' + slug + '-' + idx + '">';
+            var propKeys = Object.keys(props);
+            if (propKeys.length > 0) {
+                html += '<div style="color:var(--accent);margin-bottom:0.2rem;">Input Parameters:</div>';
+                propKeys.forEach(function(pName) {
+                    var p = props[pName]; var isReq = reqList.indexOf(pName) >= 0;
+                    html += '<div class="param-row"><span class="param-name">' + escapeHtml(pName) + '</span><span class="param-type">' + escapeHtml(p.type || "any") + '</span>';
+                    if (isReq) html += '<span class="param-req">required</span>';
+                    html += '</div>';
+                    if (p.description) html += '<div style="color:var(--text-dim);font-size:0.55rem;padding-left:0.5rem;margin-bottom:0.15rem;">' + escapeHtml(p.description.substring(0, 100)) + '</div>';
+                });
+            }
+            var outKeys = Object.keys(outProps);
+            if (outKeys.length > 0) {
+                html += '<div style="color:var(--warning);margin-top:0.3rem;margin-bottom:0.2rem;">Output Parameters:</div>';
+                outKeys.forEach(function(pName) { html += '<div class="param-row"><span class="param-name">' + escapeHtml(pName) + '</span><span class="param-type">' + escapeHtml(outProps[pName].type || "any") + '</span></div>'; });
+            }
+            if (propKeys.length === 0 && outKeys.length === 0) html += '<div style="color:var(--text-dim);">No parameters defined</div>';
+            html += '</div></div>';
+        });
+        el.innerHTML = html;
+    }
+
+    async function loadToolkitToolsOnDemand(slug) {
+        if (composioToolkitDetails[slug]) { renderToolkitToolsList(slug); return; }
+        var el = document.getElementById("toolkit-tools-" + slug);
+        if (el) el.innerHTML = '<div style="color:var(--text-dim);font-size:0.65rem;padding:0.3rem 0;">Loading tools...</div>';
+        var composioKey = currentConfig.composioApiKey;
+        if (!composioKey) return;
+        try {
+            var toolsJson = "";
+            var endpoint = COMPOSIO_API_URL + "/tools?toolkit=" + encodeURIComponent(slug) + "&limit=200";
+            if (window.__TAURI__) toolsJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, endpoint] });
+            else { var resp = await fetch(endpoint, { headers: { "x-api-key": composioKey } }); toolsJson = await resp.text(); }
+            var data = JSON.parse(toolsJson);
+            composioToolkitDetails[slug] = data.items || [];
+            renderToolkitToolsList(slug);
+            if (!composioToolkitDetails[slug + "_triggers"]) fetchToolkitTriggers(slug);
+            else renderToolkitTriggers(slug);
+        } catch(e) { if (el) el.innerHTML = '<div style="color:var(--error);font-size:0.65rem;">Failed to load tools</div>'; }
+    }
+
+    function rebuildBuiltinTools() {
+        agentTools = agentTools.filter(function(t) { return !["web_browse","web_search","docker_command","ssh_execute","mqtt_publish"].includes(t.function.name); });
+        builtinSkills.forEach(function(s) {
+            if (!enabledSkills[s.id]) return;
+            if (s.id === "web_browser") agentTools.push({ type: "function", function: { name: "web_browse", description: "Open URL in headless browser", parameters: { type: "object", properties: { url: { type: "string" } }, required: ["url"], additionalProperties: false } }});
+            else if (s.id === "web_search") agentTools.push({ type: "function", function: { name: "web_search", description: "Search the web", parameters: { type: "object", properties: { query: { type: "string" }, engine: { type: "string" } }, required: ["query"], additionalProperties: false } }});
+            else if (s.id === "docker") agentTools.push({ type: "function", function: { name: "docker_command", description: "Docker commands", parameters: { type: "object", properties: { args: { type: "array", items: { type: "string" } } }, required: ["args"], additionalProperties: false } }});
+            else if (s.id === "ssh_remote") agentTools.push({ type: "function", function: { name: "ssh_execute", description: "SSH commands", parameters: { type: "object", properties: { host: { type: "string" }, user: { type: "string" }, command: { type: "string" }, port: { type: "number" } }, required: ["host", "user", "command"], additionalProperties: false } }});
+            else if (s.id === "mqtt_bridge") agentTools.push({ type: "function", function: { name: "mqtt_publish", description: "MQTT publish", parameters: { type: "object", properties: { broker: { type: "string" }, topic: { type: "string" }, message: { type: "string" } }, required: ["broker", "topic", "message"], additionalProperties: false } }});
+        });
+        renderActiveToolsSummary();
+        renderEnabledIntegrations();
+    }
+
+    async function saveComposioKey() {
+        var key = document.getElementById("composio-api-key").value.trim();
+        if (!key) { showToast("Please enter a Composio API key", "error"); return; }
+        currentConfig.composioApiKey = key;
+        saveAllConfig();
+
+        var statusEl = document.getElementById("composio-status");
+        statusEl.style.display = "block";
+        statusEl.innerHTML = '<span style="color:var(--text-dim);">⟳ Validating key and fetching toolkits...</span>';
+
+        var validated = false;
+        var toolkitsData = null;
+
+        if (window.__TAURI__) {
+            try {
+                var curlResult = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + key, COMPOSIO_API_URL + "/toolkits?limit=500"] });
+                try {
+                    toolkitsData = JSON.parse(curlResult);
+                    if (toolkitsData.items) validated = true;
+                    else if (toolkitsData.error || toolkitsData.status === 401) { statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key</span>'; return; }
+                } catch(parseErr) { if ((curlResult || "").indexOf("401") >= 0) { statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key</span>'; return; } }
+            } catch(e) {}
+        }
+
+        if (!validated) {
+            try {
+                var resp = await fetch(COMPOSIO_API_URL + "/toolkits?limit=500", { headers: { "x-api-key": key } });
+                if (resp.ok) { toolkitsData = await resp.json(); if (toolkitsData.items) validated = true; }
+                else if (resp.status === 401 || resp.status === 403) { statusEl.innerHTML = '<span style="color:var(--error);">✗ Invalid API key</span>'; return; }
+            } catch(e) {}
+        }
+
+        if (!validated || !toolkitsData) { statusEl.innerHTML = '<span style="color:var(--warning);">⚠ Cannot validate from browser (CORS). Key saved for desktop use.</span>'; return; }
+
+        var rawToolkits = toolkitsData.items || [];
+        composioToolkits = rawToolkits.map(function(tk) {
+            var m = tk.meta || {};
+            return {
+                slug: tk.slug, name: tk.name || tk.slug, description: m.description || tk.description || "",
+                logo: m.logo || tk.logo || "", categories: (m.categories || tk.categories || []).map(function(c) { return (typeof c === "object" && c.name) ? c.name : String(c); }),
+                tools_count: m.tools_count || tk.tools_count || 0, triggers_count: m.triggers_count || tk.triggers_count || 0
+            };
+        });
+        
+        statusEl.innerHTML = '<span style="color:var(--accent);">✓ Connected to Composio</span>';
+        
+        var catSet = {};
+        composioToolkits.forEach(function(tk) { (tk.categories || []).forEach(function(c) { catSet[c] = true; }); });
+        composioCategories = ["All"].concat(Object.keys(catSet).sort());
+
+        document.getElementById("composio-placeholder")?.classList.add("hidden");
+        document.getElementById("composio-connected-area")?.classList.remove("hidden");
+        renderAllSkills();
+        cacheToolkitLogos();
+    }
+
+    // Skills Click Delegations
+    document.getElementById("skills-builtin")?.addEventListener("click", function(e) {
+        var infoBtn = e.target.closest ? e.target.closest(".skill-info-btn") : null;
+        if (!infoBtn && e.target.classList && e.target.classList.contains("skill-info-btn")) infoBtn = e.target;
+        if (infoBtn) {
+            e.stopPropagation();
+            var card = infoBtn.closest ? infoBtn.closest(".skill-card") : infoBtn.parentElement.parentElement;
+            if (card) { var descEl = card.querySelector(".skill-desc-full"); if (descEl) descEl.classList.toggle("visible"); }
         }
     });
 
+    document.getElementById("skills-composio")?.addEventListener("click", function(e) {
+        var toolRow = e.target.closest ? e.target.closest(".toolkit-tool-row") : null;
+        if (toolRow) {
+            e.stopPropagation();
+            var idx = toolRow.getAttribute("data-tool-idx");
+            var tkSlug = toolRow.getAttribute("data-toolkit-slug");
+            var paramsEl = document.getElementById("tool-params-" + tkSlug + "-" + idx);
+            if (paramsEl) paramsEl.classList.toggle("visible");
+            return;
+        }
+
+        var infoBtn = e.target.closest ? e.target.closest(".skill-info-btn") : null;
+        if (!infoBtn && e.target.classList && e.target.classList.contains("skill-info-btn")) infoBtn = e.target;
+        if (infoBtn) {
+            e.stopPropagation();
+            var card = infoBtn.closest ? infoBtn.closest(".skill-card") : infoBtn.parentElement.parentElement;
+            if (card) {
+                var descEl = card.querySelector(".skill-desc-full");
+                if (descEl) {
+                    var wasVisible = descEl.classList.contains("visible");
+                    descEl.classList.toggle("visible");
+                    if (!wasVisible) { var tkSlug2 = descEl.getAttribute("data-toolkit-slug"); if (tkSlug2) loadToolkitToolsOnDemand(tkSlug2); }
+                }
+            }
+            return;
+        }
+
+        var card2 = e.target.closest ? e.target.closest(".skill-card") : null;
+        if (!card2) { var el = e.target; while (el && el !== this) { if (el.classList && el.classList.contains("skill-card")) { card2 = el; break; } el = el.parentElement; } }
+        if (card2) { var skillId = card2.getAttribute("data-skill-id"); if (skillId) window.toggleSkill(skillId); }
+    });
+
+    document.getElementById("composio-category-tabs")?.addEventListener("click", function(e) {
+        var btn = e.target.closest ? e.target.closest("[data-composio-cat]") : null;
+        if (!btn) { var el = e.target; while (el && el !== this) { if (el.getAttribute && el.getAttribute("data-composio-cat")) { btn = el; break; } el = el.parentElement; } }
+        if (btn) { composioActiveCategory = btn.getAttribute("data-composio-cat"); renderAllSkills(); }
+    });
+
+
     // ==========================================
-    // ==========================================
-    // EVENT BINDINGS
+    // EVENT BINDINGS (SAFE WRAPPERS)
     // ==========================================
     function safeBind(id, event, fn) {
         var el = document.getElementById(id);
         if (el) el.addEventListener(event, fn);
     }
 
-    // Logging & Wizard
+    window.filterHelp = function(query) {
+        query = query.toLowerCase();
+        document.querySelectorAll(".help-section").forEach(function(sec) {
+            var text = sec.textContent.toLowerCase();
+            sec.style.display = text.includes(query) ? "block" : "none";
+        });
+    };
+
+    window.toggleActiveToolsList = function() {
+        var list = document.getElementById("active-tools-list");
+        if (list) list.classList.toggle("visible");
+    };
+
     safeBind("btn-copy-boot-log", "click", function() { copyLog('boot-log'); });
     safeBind("btn-copy-install-log", "click", function() { copyLog('install-log'); });
     safeBind("btn-copy-cap-log", "click", function() { copyLog('capability-log'); });
@@ -1005,41 +1597,38 @@
     safeBind("btn-step1-next", "click", function() { wizardGo(2); });
     safeBind("btn-enter-dashboard", "click", function() { window.enterDashboard(); });
 
-    // Settings & LLM
     safeBind("btn-apply-llm", "click", applyLLMConfig);
     safeBind("btn-test-llm", "click", testLLMConfig);
     safeBind("btn-save-settings", "click", saveSettings);
     safeBind("btn-reset-settings", "click", resetSettings);
 
-    // OpenRouter Models
     safeBind("or-model-search", "input", renderORModels);
     safeBind("or-sort-name", "click", function() { window.sortORModels("name"); });
     safeBind("or-sort-input", "click", function() { window.sortORModels("input"); });
     safeBind("or-sort-output", "click", function() { window.sortORModels("output"); });
     safeBind("btn-fetch-models", "click", function() { window.fetchORModels(); });
 
-    // Channels
     safeBind("btn-setup-tg", "click", setupTelegram);
     safeBind("btn-setup-dc", "click", setupDiscord);
     safeBind("btn-setup-wa", "click", setupWhatsApp);
     safeBind("btn-setup-sl", "click", setupSlack);
     safeBind("btn-close-channel", "click", closeChannelSetup);
 
-    // Agent Control
     safeBind("btn-daemon-toggle", "click", toggleDaemon);
     safeBind("btn-emergency-flush", "click", emergencyFlush);
     safeBind("btn-send-chat", "click", sendAgentMessage);
     var chatInput = document.getElementById("agent-chat-input");
     if (chatInput) { chatInput.addEventListener("keydown", function(e) { if (e.key === "Enter") { sendAgentMessage(e); } }); }
 
-    // Skills & Composio
     safeBind("btn-save-composio", "click", saveComposioKey);
-    safeBind("btn-toggle-tools-list", "click", function() { window.toggleActiveToolsList(); });
+    safeBind("btn-toggle-tools-list", "click", window.toggleActiveToolsList);
+    
     safeBind("btn-open-composio", "click", function() {
         if (window.__TAURI__) {
             try { var opener = (window.__TAURI__.opener && window.__TAURI__.opener.openUrl) || (window.__TAURI__.shell && window.__TAURI__.shell.open); if (opener) opener("https://app.composio.dev/settings"); } catch(e) {}
         } else window.open("https://app.composio.dev/settings", "_blank");
     });
+    
     safeBind("btn-open-log-folder", "click", function() {
         if (window.__TAURI__) {
             try {
@@ -1055,7 +1644,6 @@
     var skillSearchEl = document.getElementById("skill-search");
     if (skillSearchEl) { skillSearchEl.addEventListener("input", function() { renderComposioToolkits(); }); }
 
-    // Tabs
     document.querySelectorAll(".tab").forEach(function(tab) {
         tab.addEventListener("click", function() {
             document.querySelectorAll(".tab").forEach(function(t) { t.classList.remove("active"); });
@@ -1064,6 +1652,7 @@
             document.getElementById(this.getAttribute("data-tab")).classList.remove("hidden");
         });
     });
+
 
     // ==========================================
     // AGENT EXECUTION
@@ -1200,7 +1789,7 @@
                 }
                 
                 setTimeout(function() { renderActiveToolsSummary(); renderEnabledIntegrations(); }, 2000);
-                setTimeout(function() { if (currentConfig.llm && currentConfig.llm.api_key && !daemonRunning) toggleDaemon(); }, 500);
+                setTimeout(function() { if (currentConfig.llm && currentConfig.llm.api_key && !daemonRunning) window.toggleDaemon(); }, 500);
                 
             } else {
                 runSystemChecks();
