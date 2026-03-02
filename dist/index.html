@@ -3963,7 +3963,10 @@
     document.getElementById("btn-copy-payload").addEventListener("click", function() { copyLog('llm-payload-display'); });
     document.getElementById("btn-back-step1").addEventListener("click", function() { wizardGo(0); });
     document.getElementById("btn-back-step2").addEventListener("click", function() { wizardGo(1); });
-    
+    document.getElementById("btn-step0-next").addEventListener("click", function() { wizardGo(1); });
+    document.getElementById("btn-step1-next").addEventListener("click", function() { wizardGo(2); });
+    document.getElementById("btn-enter-dashboard").addEventListener("click", function() { window.enterDashboard(); });
+
     var toggleBtn = document.getElementById("btn-toggle-tools-list");
     if (toggleBtn) toggleBtn.addEventListener("click", function() { window.toggleActiveToolsList(); });
 
@@ -3995,6 +3998,22 @@
     document.getElementById("btn-save-settings").addEventListener("click", saveSettings);
     document.getElementById("btn-reset-settings").addEventListener("click", resetSettings);
     document.getElementById("btn-save-composio").addEventListener("click", saveComposioKey);
+
+    // Help Center Search Listener
+    var helpSearchEl = document.getElementById("help-search");
+    if (helpSearchEl) {
+        helpSearchEl.addEventListener("input", function(e) { 
+            window.filterHelp(e.target.value); 
+        });
+    }
+
+    // Composio Skills Search Listener
+    var skillSearchEl = document.getElementById("skill-search");
+    if (skillSearchEl) {
+        skillSearchEl.addEventListener("input", function() { 
+            renderComposioToolkits(); 
+        });
+    }
 
     async function saveAllConfig() {
         var toml = buildConfigToml();
