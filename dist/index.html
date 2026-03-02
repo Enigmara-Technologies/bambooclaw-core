@@ -2705,8 +2705,12 @@
                 return result || "(no output)";
             } else if (toolName === "read_file") {
                 var platform = await invokeShort("get_platform");
-                var catCmd = platform === "windows" ? "type" : "cat";
-                var result = await invokeShort("run_shell_command", { commandName: catCmd, args: [args.path] });
+                var result;
+                if (platform === "windows") {
+                    result = await invokeShort("run_shell_command", { commandName: "cmd", args: ["/c", "type", args.path] });
+                } else {
+                    result = await invokeShort("run_shell_command", { commandName: "cat", args: [args.path] });
+                }
                 appendLog("unified-log", "[AGENT] [TOOL] read_file result: " + (result || "").substring(0, 200));
                 return result || "(empty file)";
             } else if (toolName === "write_file") {
@@ -2975,8 +2979,8 @@
     }
 
     // =========== TELEGRAM POLLING ===========
-        var tgPollingTimeout = null;
-        var tgLastUpdateId = 0;
+    var tgPollingTimeout = null;
+    var tgLastUpdateId = 0;
 
     function startTelegramPolling() {
         if (tgPollingTimeout) return; // already polling
