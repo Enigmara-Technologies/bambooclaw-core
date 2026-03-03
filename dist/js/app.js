@@ -43,6 +43,20 @@
         }, 3000);
     }
 
+    // =========== UI HELPERS ===========
+    window.toggleKeyVisibility = function(inputId, btnElement) {
+        var input = document.getElementById(inputId);
+        if (input) {
+            if (input.type === "password") {
+                input.type = "text";
+                btnElement.textContent = "🙈";
+            } else {
+                input.type = "password";
+                btnElement.textContent = "👁️";
+            }
+        }
+    };
+
     // =========== TAURI HELPERS ===========
     function tauriInvoke(cmd, args) {
         if (!window.__TAURI__) return Promise.reject(new Error("Tauri not available (running in browser)"));
@@ -877,23 +891,20 @@
     }
 
     function setupTelegram() {
-        appendLog("dash-log", "[CH] setupTelegram() called");
         var savedToken = (currentConfig.channels && currentConfig.channels.telegram && currentConfig.channels.telegram.token) || "";
         document.getElementById("channel-setup-title").textContent = "Telegram Bot Setup";
         document.getElementById("channel-setup-body").innerHTML =
             '<p style="margin-bottom:1rem;color:var(--text-dim);">1. Open Telegram and talk to <strong>@BotFather</strong><br>2. Send /newbot and follow the prompts<br>3. Copy the bot token and paste it below</p>' +
-            '<div class="form-group"><label>Bot Token</label><input type="text" id="tg-token" placeholder="123456:ABC-DEF1234ghIkl..." value="' + savedToken.replace(/"/g, '&quot;') + '" /></div>' +
+            '<div class="form-group"><label>Bot Token</label>' +
+            '<div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; background: #050507; overflow: hidden;">' +
+            '<input type="password" id="tg-token" placeholder="123456:ABC-DEF1234ghIkl..." value="' + savedToken.replace(/"/g, '&quot;') + '" style="border: none; border-radius: 0; outline: none; background: transparent; flex: 1; padding: 0.75rem;" />' +
+            '<button type="button" onclick="window.toggleKeyVisibility(\'tg-token\', this)" class="btn btn-outline" style="border: none; border-radius: 0; padding: 0.75rem; height: 100%; border-left: 1px solid var(--border);">👁️</button>' +
+            '</div></div>' +
             '<button class="btn btn-sm" id="btn-save-tg">Save Token</button>' +
             '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" id="btn-test-tg">Test</button>';
         document.getElementById("channel-setup-area").classList.remove("hidden");
         document.getElementById("btn-save-tg").addEventListener("click", function() { window.saveTelegramToken(); });
         document.getElementById("btn-test-tg").addEventListener("click", function() { window.testChannel("telegram"); });
-        try {
-            if (window.__TAURI__) {
-                var opener = (window.__TAURI__.opener && window.__TAURI__.opener.openUrl) || (window.__TAURI__.shell && window.__TAURI__.shell.open);
-                if (opener) opener("https://t.me/BotFather");
-            }
-        } catch(e) {}
     }
 
     function saveTelegramToken() {
@@ -901,7 +912,7 @@
         if (!token) { showToast("Please enter a bot token", "error"); return; }
         if (!currentConfig.channels) currentConfig.channels = {};
         currentConfig.channels.telegram = { token: token };
-        document.getElementById("tg-status").textContent = "Token: " + token.substring(0, 8) + "...";
+        document.getElementById("tg-status").textContent = "Token Configured";
         saveAllConfig();
         showToast("Telegram bot token saved", "success");
         closeChannelSetup();
@@ -913,8 +924,12 @@
         document.getElementById("channel-setup-title").textContent = "Discord App Setup";
         document.getElementById("channel-setup-body").innerHTML =
             '<p style="margin-bottom:1rem;color:var(--text-dim);">1. Go to <strong>discord.com/developers/applications</strong><br>2. Create a new application → Bot → Reset Token<br>3. Enable MESSAGE CONTENT INTENT<br>4. Paste the bot token below</p>' +
-            '<div class="form-group"><label>Bot Token</label><input type="text" id="dc-token" placeholder="MTA..." value="' + savedToken.replace(/"/g, '&quot;') + '" /></div>' +
-            '<div class="form-group"><label>Guild ID (optional)</label><input type="text" id="dc-guild" placeholder="Server ID for slash commands" value="' + savedGuild.replace(/"/g, '&quot;') + '" /></div>' +
+            '<div class="form-group"><label>Bot Token</label>' +
+            '<div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; background: #050507; overflow: hidden;">' +
+            '<input type="password" id="dc-token" placeholder="MTA..." value="' + savedToken.replace(/"/g, '&quot;') + '" style="border: none; border-radius: 0; outline: none; background: transparent; flex: 1; padding: 0.75rem;" />' +
+            '<button type="button" onclick="window.toggleKeyVisibility(\'dc-token\', this)" class="btn btn-outline" style="border: none; border-radius: 0; padding: 0.75rem; height: 100%; border-left: 1px solid var(--border);">👁️</button>' +
+            '</div></div>' +
+            '<div class="form-group"><label>Guild ID (optional)</label><input type="text" id="dc-guild" placeholder="Server ID for slash commands" value="' + savedGuild.replace(/"/g, '&quot;') + '" style="background:#050507;border:1px solid var(--border);padding:0.75rem;border-radius:6px;width:100%;color:var(--text);" /></div>' +
             '<button class="btn btn-sm" id="btn-save-dc">Save Token</button>' +
             '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" id="btn-test-dc">Test</button>';
         document.getElementById("channel-setup-area").classList.remove("hidden");
@@ -927,7 +942,7 @@
         if (!token) { showToast("Please enter a bot token", "error"); return; }
         if (!currentConfig.channels) currentConfig.channels = {};
         currentConfig.channels.discord = { token: token, guild_id: document.getElementById("dc-guild").value.trim() };
-        document.getElementById("dc-status").textContent = "Token: " + token.substring(0, 8) + "...";
+        document.getElementById("dc-status").textContent = "Token Configured";
         saveAllConfig();
         showToast("Discord bot token saved", "success");
         closeChannelSetup();
@@ -937,9 +952,13 @@
         document.getElementById("channel-setup-title").textContent = "WhatsApp Business Setup";
         document.getElementById("channel-setup-body").innerHTML =
             '<p style="margin-bottom:1rem;color:var(--text-dim);">WhatsApp Business Cloud API requires a Meta Business account and approved app.</p>' +
-            '<div class="form-group"><label>Phone Number ID</label><input type="text" id="wa-phone-id" placeholder="From Meta Developer Console" /></div>' +
-            '<div class="form-group"><label>Access Token</label><input type="text" id="wa-token" placeholder="EAA..." /></div>' +
-            '<div class="form-group"><label>Webhook Verify Token</label><input type="text" id="wa-verify" placeholder="Your custom verify string" /></div>' +
+            '<div class="form-group"><label>Phone Number ID</label><input type="text" id="wa-phone-id" placeholder="From Meta Developer Console" style="background:#050507;border:1px solid var(--border);padding:0.75rem;border-radius:6px;width:100%;color:var(--text);"/></div>' +
+            '<div class="form-group"><label>Access Token</label>' +
+            '<div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; background: #050507; overflow: hidden;">' +
+            '<input type="password" id="wa-token" placeholder="EAA..." style="border: none; border-radius: 0; outline: none; background: transparent; flex: 1; padding: 0.75rem;" />' +
+            '<button type="button" onclick="window.toggleKeyVisibility(\'wa-token\', this)" class="btn btn-outline" style="border: none; border-radius: 0; padding: 0.75rem; height: 100%; border-left: 1px solid var(--border);">👁️</button>' +
+            '</div></div>' +
+            '<div class="form-group"><label>Webhook Verify Token</label><input type="text" id="wa-verify" placeholder="Your custom verify string" style="background:#050507;border:1px solid var(--border);padding:0.75rem;border-radius:6px;width:100%;color:var(--text);" /></div>' +
             '<button class="btn btn-sm" id="btn-save-wa">Save Configuration</button>' +
             '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" id="btn-test-wa">Test</button>';
         document.getElementById("channel-setup-area").classList.remove("hidden");
@@ -964,8 +983,16 @@
         document.getElementById("channel-setup-title").textContent = "Slack App Setup";
         document.getElementById("channel-setup-body").innerHTML =
             '<p style="margin-bottom:1rem;color:var(--text-dim);">1. Go to <strong>api.slack.com/apps</strong> and create a new app<br>2. Enable Socket Mode and Event Subscriptions<br>3. Add bot scopes: chat:write, app_mentions:read, channels:history</p>' +
-            '<div class="form-group"><label>Bot Token</label><input type="text" id="sl-bot-token" placeholder="xoxb-..." /></div>' +
-            '<div class="form-group"><label>App Token</label><input type="text" id="sl-app-token" placeholder="xapp-..." /></div>' +
+            '<div class="form-group"><label>Bot Token</label>' +
+            '<div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; background: #050507; overflow: hidden;">' +
+            '<input type="password" id="sl-bot-token" placeholder="xoxb-..." style="border: none; border-radius: 0; outline: none; background: transparent; flex: 1; padding: 0.75rem;" />' +
+            '<button type="button" onclick="window.toggleKeyVisibility(\'sl-bot-token\', this)" class="btn btn-outline" style="border: none; border-radius: 0; padding: 0.75rem; height: 100%; border-left: 1px solid var(--border);">👁️</button>' +
+            '</div></div>' +
+            '<div class="form-group"><label>App Token</label>' +
+            '<div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; background: #050507; overflow: hidden;">' +
+            '<input type="password" id="sl-app-token" placeholder="xapp-..." style="border: none; border-radius: 0; outline: none; background: transparent; flex: 1; padding: 0.75rem;" />' +
+            '<button type="button" onclick="window.toggleKeyVisibility(\'sl-app-token\', this)" class="btn btn-outline" style="border: none; border-radius: 0; padding: 0.75rem; height: 100%; border-left: 1px solid var(--border);">👁️</button>' +
+            '</div></div>' +
             '<button class="btn btn-sm" id="btn-save-sl">Save Configuration</button>' +
             '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" id="btn-test-sl">Test</button>';
         document.getElementById("channel-setup-area").classList.remove("hidden");
@@ -979,7 +1006,7 @@
         if (!botToken) { showToast("Bot token is required", "error"); return; }
         if (!currentConfig.channels) currentConfig.channels = {};
         currentConfig.channels.slack = { bot_token: botToken, app_token: appToken };
-        document.getElementById("sl-status").textContent = "Token: " + botToken.substring(0, 10) + "...";
+        document.getElementById("sl-status").textContent = "Token Configured";
         saveAllConfig();
         showToast("Slack configuration saved", "success");
         closeChannelSetup();
@@ -1023,6 +1050,77 @@
             }
         } catch(e) {
             showToast(channel + " test error: " + (e.message || e), "error");
+        }
+    }
+
+    // =========== AI PERSONA GENERATOR ===========
+    async function generatePersonaWithAI() {
+        var intent = document.getElementById("ai-persona-intent").value.trim();
+        if (!intent) { showToast("Please describe the persona goal first", "error"); return; }
+        
+        var cfg = currentConfig.llm;
+        if (!cfg || !cfg.api_key) { showToast("Configure an LLM provider and API key first.", "error"); return; }
+
+        var btn = document.getElementById("btn-generate-persona");
+        btn.innerHTML = '<span class="spinner">⟳</span> Generating...';
+        btn.disabled = true;
+
+        try {
+            var provider = cfg.provider;
+            var model = cfg.model;
+            var apiKey = cfg.api_key;
+            var apiUrl, headers, body;
+
+            var sysMsg = "You are an expert AI prompt engineer. Write strict, detailed operator instructions for an autonomous desktop AI agent to adopt a specific persona or role based on the user's intent. Output ONLY the raw prompt instructions. Do not use markdown formatting like ```. Do not include any conversational filler, greetings, or explanations.";
+            var userMsg = "Create a persona for: " + intent;
+            var msgs = [{role: "system", content: sysMsg}, {role: "user", content: userMsg}];
+
+            if (provider === "openrouter") {
+                apiUrl = "[https://openrouter.ai/api/v1/chat/completions](https://openrouter.ai/api/v1/chat/completions)";
+                headers = { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" };
+                body = JSON.stringify({ model: model, messages: msgs });
+            } else if (["openai", "groq", "deepseek", "mistral", "inception"].includes(provider)) {
+                var bases = {
+                    openai: "[https://api.openai.com/v1/chat/completions](https://api.openai.com/v1/chat/completions)",
+                    groq: "[https://api.groq.com/openai/v1/chat/completions](https://api.groq.com/openai/v1/chat/completions)",
+                    deepseek: "[https://api.deepseek.com/chat/completions](https://api.deepseek.com/chat/completions)",
+                    mistral: "[https://api.mistral.ai/v1/chat/completions](https://api.mistral.ai/v1/chat/completions)",
+                    inception: "[https://api.inceptionlabs.ai/v1/chat/completions](https://api.inceptionlabs.ai/v1/chat/completions)"
+                };
+                apiUrl = bases[provider];
+                headers = { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" };
+                body = JSON.stringify({ model: model, messages: msgs });
+            } else if (provider === "anthropic") {
+                apiUrl = "[https://api.anthropic.com/v1/messages](https://api.anthropic.com/v1/messages)";
+                headers = { "x-api-key": apiKey, "Content-Type": "application/json", "anthropic-version": "2023-06-01" };
+                body = JSON.stringify({ model: model, max_tokens: 2048, system: sysMsg, messages: [{role: "user", content: userMsg}] });
+            } else if (provider === "google") {
+                apiUrl = "[https://generativelanguage.googleapis.com/v1beta/models/](https://generativelanguage.googleapis.com/v1beta/models/)" + model + ":generateContent?key=" + apiKey;
+                headers = { "Content-Type": "application/json" };
+                body = JSON.stringify({ contents: [{role: "user", parts: [{ text: sysMsg + "\n\n" + userMsg }]}] });
+            } else if (provider === "ollama") {
+                apiUrl = "http://localhost:11434/api/chat";
+                headers = { "Content-Type": "application/json" };
+                body = JSON.stringify({ model: model, messages: msgs, stream: false });
+            }
+
+            var resp = await fetch(apiUrl, { method: "POST", headers: headers, body: body });
+            if (!resp.ok) throw new Error("API error " + resp.status);
+            var data = await resp.json();
+            
+            var reply = "";
+            if (provider === "anthropic") reply = data.content[0].text;
+            else if (provider === "google") reply = data.candidates[0].content.parts[0].text;
+            else if (provider === "ollama") reply = data.message.content;
+            else reply = data.choices[0].message.content;
+
+            document.getElementById("new-persona-prompt").value = reply.trim();
+            showToast("Persona generated successfully!", "success");
+        } catch(e) {
+            showToast("Generation failed: " + e.message, "error");
+        } finally {
+            btn.innerHTML = '✨ Auto-Generate Instructions';
+            btn.disabled = false;
         }
     }
 
@@ -2779,6 +2877,8 @@
     document.getElementById("agent-chat-input").addEventListener("keydown", function(e) { if (e.key === "Enter") { sendAgentMessage(e); } });
     document.getElementById("btn-save-settings").addEventListener("click", saveSettings);
     document.getElementById("btn-reset-settings").addEventListener("click", resetSettings);
+    var genBtn = document.getElementById("btn-generate-persona");
+    if (genBtn) genBtn.addEventListener("click", generatePersonaWithAI);
     document.getElementById("btn-save-composio").addEventListener("click", saveComposioKey);
 
     // Help Center Search Listener
@@ -2960,11 +3060,13 @@
                     if (slider) slider.value = MAX_TOOL_ITERATIONS;
                     if (label) label.textContent = MAX_TOOL_ITERATIONS;
                 }
+                // Render local tools unconditionally 
+                renderBuiltinSkills();
+                rebuildBuiltinTools();
+                renderActiveToolsSummary();
+
                 if (currentConfig.enabledSkills) {
                     enabledSkills = currentConfig.enabledSkills;
-                    renderBuiltinSkills();
-                    rebuildBuiltinTools();
-                    renderActiveToolsSummary();
                     renderEnabledIntegrations();
                 }
                 if (currentConfig.composioApiKey) {

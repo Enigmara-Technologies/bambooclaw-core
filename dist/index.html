@@ -224,7 +224,10 @@
                     </div>
                     <div class="form-group">
                         <label>Secret API Key</label>
-                        <input type="password" id="llm-api-key" placeholder="sk-..." />
+                        <div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; background: #050507; overflow: hidden;">
+                            <input type="password" id="llm-api-key" placeholder="sk-..." style="border: none; border-radius: 0; outline: none; background: transparent; flex: 1; padding: 0.75rem;" />
+                            <button type="button" onclick="window.toggleKeyVisibility('llm-api-key', this)" class="btn btn-outline" style="border: none; border-radius: 0; padding: 0.75rem; height: 100%; border-left: 1px solid var(--border);">👁️</button>
+                        </div>
                     </div>
                     <div class="form-group" id="llm-model-group">
                         <label>Model</label>
@@ -353,7 +356,10 @@
                         <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
                             <div class="form-group" style="flex:1; margin-bottom: 0;">
                                 <label>Composio API Key</label>
-                                <input type="password" id="composio-api-key" placeholder="Your Composio API key..." />
+                                <div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; background: #050507; overflow: hidden;">
+                                    <input type="password" id="composio-api-key" placeholder="Your Composio API key..." style="border: none; border-radius: 0; outline: none; background: transparent; flex: 1; padding: 0.75rem;" />
+                                    <button type="button" onclick="window.toggleKeyVisibility('composio-api-key', this)" class="btn btn-outline" style="border: none; border-radius: 0; padding: 0.75rem; height: 100%; border-left: 1px solid var(--border);">👁️</button>
+                                </div>
                             </div>
                             <button class="btn btn-sm" id="btn-save-composio" style="height: 38px;">Connect</button>
                         </div>
@@ -411,7 +417,7 @@
                         <div class="form-group">
                             <label>Active Persona</label>
                             <select id="set-identity">
-                                <option value="-1">— BambooClaw Default (System Prompt Only) —</option>
+                                <option value="-1">— BambooClaw Default (No Persona) —</option>
                             </select>
                             <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.4rem;">
                                 Select a persona to inject specific behavioral rules. Manage personas below.
@@ -444,7 +450,38 @@
                         </div>
                     </div>
 
-                    <div class="form-group" style="margin-top: 1.5rem;">
+                    <div style="margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1.5rem;">
+                        <h2 style="font-size: 1.1rem; margin-bottom: 0.5rem;">🎭 Manage Personas</h2>
+                        <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Create specialized roles for your agent.</p>
+
+                        <div id="persona-list" style="margin-bottom: 1rem;"></div>
+
+                        <details id="persona-details-block" style="border: 1px solid var(--border); border-radius: 8px; padding: 0; background: #050507;">
+                            <summary style="padding: 0.75rem 1rem; cursor: pointer; font-weight: 600; font-size: 0.9rem; color: var(--accent); user-select: none; list-style: none;">+ Create / Edit Persona</summary>
+                            <div style="padding: 1rem;">
+                                
+                                <div style="background: rgba(16, 185, 129, 0.05); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px dashed var(--accent-glow);">
+                                    <label style="color: var(--accent);">✨ AI Prompt Engineer</label>
+                                    <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:0.5rem;">Describe your goal, and the selected LLM will write the perfect operator instructions for you.</p>
+                                    <textarea id="ai-persona-intent" rows="2" placeholder="e.g., 'Act as a senior Python developer who writes highly optimized code'..." style="margin-bottom: 0.75rem;"></textarea>
+                                    <button type="button" class="btn btn-sm" id="btn-generate-persona">✨ Auto-Generate Instructions</button>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Persona Name</label>
+                                    <input type="text" id="new-persona-name" placeholder="e.g. Expert Python Developer..." />
+                                </div>
+                                <div class="form-group">
+                                    <label>Persona Instructions</label>
+                                    <textarea id="new-persona-prompt" rows="12" placeholder="Define how the agent should behave..." style="resize:vertical;"></textarea>
+                                </div>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button type="button" class="btn btn-sm" id="btn-create-persona">Save Persona</button>
+                                    <button type="button" class="btn btn-sm btn-outline hidden" id="btn-cancel-edit-persona">Cancel</button>
+                                </div>
+                            </div>
+                        </details>
+                    </div>
                         <label>System Prompt</label>
                         <textarea id="settings-system-prompt" rows="20" placeholder="Custom instructions for the agent. These are injected as highest-priority operator instructions..." style="min-height:400px;overflow-y:auto;resize:vertical;"></textarea>
                         <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.4rem;">
