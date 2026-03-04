@@ -1955,7 +1955,7 @@
             '<h3>Connect ' + escapeHtml(name) + '</h3>' +
             '<p>Link your ' + escapeHtml(name) + ' account so the agent can use its tools on your behalf.</p>' +
             '<label for="conn-api-key">API Key / Access Token</label>' +
-            '<input type="password" id="conn-api-key" placeholder="Paste your API key or token here" />' +
+            '<div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; background: #050507; overflow: hidden; margin-bottom: 0.75rem;"><input type="password" id="conn-api-key" placeholder="Paste your API key or token here" style="border: none; border-radius: 0; outline: none; background: transparent; flex: 1; padding: 0.75rem;" /><button type="button" onclick="window.toggleKeyVisibility(\'conn-api-key\', this)" class="btn btn-outline" style="border: none; border-radius: 0; padding: 0.75rem; height: 100%; border-left: 1px solid var(--border);">👁️</button></div>' +
             '<div class="conn-modal-actions" style="margin-bottom:0.75rem;">' +
                 '<button class="btn-connect" id="conn-btn-save-key">Connect with API Key</button>' +
             '</div>' +
