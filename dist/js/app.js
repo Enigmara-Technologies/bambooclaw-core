@@ -6,6 +6,19 @@
     var currentConfig = {};
     var PROXY_URL = "https://mjmdhqglpratbyzmgndm.supabase.co/functions/v1/github-release-proxy";
 
+    window.toggleKeyVisibility = function(inputId, btnElement) {
+        var input = document.getElementById(inputId);
+        if (input) {
+            if (input.type === "password") {
+                input.type = "text";
+                btnElement.textContent = "🙈";
+            } else {
+                input.type = "password";
+                btnElement.textContent = "👁️";
+            }
+        }
+    };
+
     // =========== SESSION ID ===========
     var SESSION_ID = (function() {
         var d = new Date();
@@ -882,7 +895,7 @@
         document.getElementById("channel-setup-title").textContent = "Telegram Bot Setup";
         document.getElementById("channel-setup-body").innerHTML =
             '<p style="margin-bottom:1rem;color:var(--text-dim);">1. Open Telegram and talk to <strong>@BotFather</strong><br>2. Send /newbot and follow the prompts<br>3. Copy the bot token and paste it below</p>' +
-            '<div class="form-group"><label>Bot Token</label><input type="text" id="tg-token" placeholder="123456:ABC-DEF1234ghIkl..." value="' + savedToken.replace(/"/g, '&quot;') + '" /></div>' +
+            '<div class="form-group"><label>Bot Token</label><div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; background: #050507; overflow: hidden;"><input type="password" id="tg-token" placeholder="123456:ABC-DEF1234ghIkl..." value="' + savedToken.replace(/"/g, '&quot;') + '" style="border: none; border-radius: 0; outline: none; background: transparent; flex: 1; padding: 0.75rem;" /><button type="button" onclick="window.toggleKeyVisibility(\'tg-token\', this)" class="btn btn-outline" style="border: none; border-radius: 0; padding: 0.75rem; height: 100%; border-left: 1px solid var(--border);">👁️</button></div></div>' +
             '<button class="btn btn-sm" id="btn-save-tg">Save Token</button>' +
             '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" id="btn-test-tg">Test</button>';
         document.getElementById("channel-setup-area").classList.remove("hidden");
@@ -913,7 +926,7 @@
         document.getElementById("channel-setup-title").textContent = "Discord App Setup";
         document.getElementById("channel-setup-body").innerHTML =
             '<p style="margin-bottom:1rem;color:var(--text-dim);">1. Go to <strong>discord.com/developers/applications</strong><br>2. Create a new application → Bot → Reset Token<br>3. Enable MESSAGE CONTENT INTENT<br>4. Paste the bot token below</p>' +
-            '<div class="form-group"><label>Bot Token</label><input type="text" id="dc-token" placeholder="MTA..." value="' + savedToken.replace(/"/g, '&quot;') + '" /></div>' +
+            '<div class="form-group"><label>Bot Token</label><div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; background: #050507; overflow: hidden;"><input type="password" id="dc-token" placeholder="MTA..." value="' + savedToken.replace(/"/g, '&quot;') + '" style="border: none; border-radius: 0; outline: none; background: transparent; flex: 1; padding: 0.75rem;" /><button type="button" onclick="window.toggleKeyVisibility(\'dc-token\', this)" class="btn btn-outline" style="border: none; border-radius: 0; padding: 0.75rem; height: 100%; border-left: 1px solid var(--border);">👁️</button></div></div>' +
             '<div class="form-group"><label>Guild ID (optional)</label><input type="text" id="dc-guild" placeholder="Server ID for slash commands" value="' + savedGuild.replace(/"/g, '&quot;') + '" /></div>' +
             '<button class="btn btn-sm" id="btn-save-dc">Save Token</button>' +
             '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" id="btn-test-dc">Test</button>';
@@ -938,7 +951,7 @@
         document.getElementById("channel-setup-body").innerHTML =
             '<p style="margin-bottom:1rem;color:var(--text-dim);">WhatsApp Business Cloud API requires a Meta Business account and approved app.</p>' +
             '<div class="form-group"><label>Phone Number ID</label><input type="text" id="wa-phone-id" placeholder="From Meta Developer Console" /></div>' +
-            '<div class="form-group"><label>Access Token</label><input type="text" id="wa-token" placeholder="EAA..." /></div>' +
+            '<div class="form-group"><label>Access Token</label><div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; background: #050507; overflow: hidden;"><input type="password" id="wa-token" placeholder="EAA..." style="border: none; border-radius: 0; outline: none; background: transparent; flex: 1; padding: 0.75rem;" /><button type="button" onclick="window.toggleKeyVisibility(\'wa-token\', this)" class="btn btn-outline" style="border: none; border-radius: 0; padding: 0.75rem; height: 100%; border-left: 1px solid var(--border);">👁️</button></div></div>' +
             '<div class="form-group"><label>Webhook Verify Token</label><input type="text" id="wa-verify" placeholder="Your custom verify string" /></div>' +
             '<button class="btn btn-sm" id="btn-save-wa">Save Configuration</button>' +
             '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" id="btn-test-wa">Test</button>';
@@ -964,8 +977,8 @@
         document.getElementById("channel-setup-title").textContent = "Slack App Setup";
         document.getElementById("channel-setup-body").innerHTML =
             '<p style="margin-bottom:1rem;color:var(--text-dim);">1. Go to <strong>api.slack.com/apps</strong> and create a new app<br>2. Enable Socket Mode and Event Subscriptions<br>3. Add bot scopes: chat:write, app_mentions:read, channels:history</p>' +
-            '<div class="form-group"><label>Bot Token</label><input type="text" id="sl-bot-token" placeholder="xoxb-..." /></div>' +
-            '<div class="form-group"><label>App Token</label><input type="text" id="sl-app-token" placeholder="xapp-..." /></div>' +
+            '<div class="form-group"><label>Bot Token</label><div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; background: #050507; overflow: hidden;"><input type="password" id="sl-bot-token" placeholder="xoxb-..." style="border: none; border-radius: 0; outline: none; background: transparent; flex: 1; padding: 0.75rem;" /><button type="button" onclick="window.toggleKeyVisibility(\'sl-bot-token\', this)" class="btn btn-outline" style="border: none; border-radius: 0; padding: 0.75rem; height: 100%; border-left: 1px solid var(--border);">👁️</button></div></div>' +
+            '<div class="form-group"><label>App Token</label><div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; background: #050507; overflow: hidden;"><input type="password" id="sl-app-token" placeholder="xapp-..." style="border: none; border-radius: 0; outline: none; background: transparent; flex: 1; padding: 0.75rem;" /><button type="button" onclick="window.toggleKeyVisibility(\'sl-app-token\', this)" class="btn btn-outline" style="border: none; border-radius: 0; padding: 0.75rem; height: 100%; border-left: 1px solid var(--border);">👁️</button></div></div>' +
             '<button class="btn btn-sm" id="btn-save-sl">Save Configuration</button>' +
             '<button class="btn btn-sm btn-outline" style="margin-left:0.5rem;" id="btn-test-sl">Test</button>';
         document.getElementById("channel-setup-area").classList.remove("hidden");
