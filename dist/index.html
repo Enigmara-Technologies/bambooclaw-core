@@ -225,7 +225,7 @@
                         <label>Secret API Key</label>
                         <div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; background: #050507; overflow: hidden;">
                             <input type="password" id="llm-api-key" placeholder="sk-..." style="border: none; border-radius: 0; outline: none; background: transparent; flex: 1; padding: 0.75rem;" />
-                            <button type="button" onclick="window.toggleKeyVisibility('llm-api-key', this)" class="btn btn-outline" style="border: none; border-radius: 0; padding: 0.75rem; height: 100%; border-left: 1px solid var(--border);">👁️</button>
+                            <button type="button" id="btn-toggle-llm-api-key" class="btn btn-outline" style="border: none; border-radius: 0; padding: 0.75rem; height: 100%; border-left: 1px solid var(--border);">👁️</button>
                         </div>
                     </div>
                     <div class="form-group" id="llm-model-group">
@@ -357,7 +357,7 @@
                                 <label>Composio API Key</label>
                                 <div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; background: #050507; overflow: hidden;">
                                     <input type="password" id="composio-api-key" placeholder="Your Composio API key..." style="border: none; border-radius: 0; outline: none; background: transparent; flex: 1; padding: 0.75rem;" />
-                                    <button type="button" onclick="window.toggleKeyVisibility('composio-api-key', this)" class="btn btn-outline" style="border: none; border-radius: 0; padding: 0.75rem; height: 100%; border-left: 1px solid var(--border);">👁️</button>
+                                    <button type="button" id="btn-toggle-composio-api-key" class="btn btn-outline" style="border: none; border-radius: 0; padding: 0.75rem; height: 100%; border-left: 1px solid var(--border);">👁️</button>
                                 </div>
                             </div>
                             <button class="btn btn-sm" id="btn-save-composio" style="height: 38px;">Connect</button>

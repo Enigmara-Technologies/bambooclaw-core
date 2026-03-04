@@ -176,6 +176,8 @@ document.getElementById("btn-step2-install").addEventListener("click", async fun
     wizardGo(3);
 });
 
+document.getElementById("btn-toggle-llm-api-key").addEventListener("click", function() { window.toggleKeyVisibility("llm-api-key", this); });
+document.getElementById("btn-toggle-composio-api-key").addEventListener("click", function() { window.toggleKeyVisibility("composio-api-key", this); });
 document.getElementById("btn-apply-llm").addEventListener("click", applyLLMConfig);
 document.getElementById("btn-test-llm").addEventListener("click", testLLMConfig);
 document.getElementById("btn-setup-tg").addEventListener("click", setupTelegram);
