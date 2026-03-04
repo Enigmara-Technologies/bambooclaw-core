@@ -341,13 +341,43 @@ async function pollTelegram() {
                 }
                 try {
                     var reply = await callLLM(text);
-                    await fetch("https://api.telegram.org/bot" + token + "/sendMessage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: chatId, text: stripMarkdownForTelegram(reply), parse_mode: "Markdown" }) });
+                    // Show reply in the in-app chat
                     if (chatEl) {
                         chatEl.innerHTML += '<div class="chat-msg assistant"><span class="role">Agent:</span> ' + formatMarkdownToHtml(reply || "(no response)") + '</div>';
                         chatEl.scrollTop = chatEl.scrollHeight;
                     }
+                    // Send plain text to Telegram in chunks (Telegram limit: 4096 chars)
+                    var plainText = stripMarkdownForTelegram(reply);
+                    var chunks = [];
+                    while (plainText.length > 4096) {
+                        var splitAt = plainText.lastIndexOf("\n", 4096);
+                        if (splitAt < 1) splitAt = 4096;
+                        chunks.push(plainText.slice(0, splitAt));
+                        plainText = plainText.slice(splitAt).trim();
+                    }
+                    chunks.push(plainText);
+                    for (var c = 0; c < chunks.length; c++) {
+                        var tgResp = await fetch("https://api.telegram.org/bot" + token + "/sendMessage", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ chat_id: chatId, text: chunks[c] })
+                        });
+                        var tgData = await tgResp.json();
+                        if (!tgData.ok) {
+                            appendLog("unified-log", "[TG-SEND] Failed to deliver reply to Telegram: " + JSON.stringify(tgData.description || tgData));
+                        }
+                    }
                 } catch(e) {
-                    await fetch("https://api.telegram.org/bot" + token + "/sendMessage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: chatId, text: "Sorry, I encountered an error: " + (e.message || "unknown") }) });
+                    appendLog("unified-log", "[TG-SEND] Error: " + (e.message || e));
+                    try {
+                        await fetch("https://api.telegram.org/bot" + token + "/sendMessage", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ chat_id: chatId, text: "Sorry, I encountered an error: " + (e.message || "unknown") })
+                        });
+                    } catch(e2) {
+                        appendLog("unified-log", "[TG-SEND] Could not send error message to Telegram: " + (e2.message || e2));
+                    }
                 }
             }
         }

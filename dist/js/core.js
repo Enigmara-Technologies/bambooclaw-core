@@ -185,7 +185,28 @@ function formatMarkdownToHtml(str) {
 }
 
 function stripMarkdownForTelegram(str) {
-    return str.replace(/^###+ (.+)$/gm, '\u25b8 $1');
+    if (!str) return "";
+    return str
+        .replace(/```[\s\S]*?```/g, function(m) {         // fenced code blocks → keep content, strip fences
+            return m.replace(/```[a-z]*\n?/gi, "").replace(/```/g, "").trim();
+        })
+        .replace(/`([^`]+)`/g, "$1")                      // inline code
+        .replace(/^#{1,6}\s+/gm, "")                      // headings
+        .replace(/\*\*\*(.+?)\*\*\*/g, "$1")              // bold+italic
+        .replace(/\*\*(.+?)\*\*/g, "$1")                  // bold
+        .replace(/\*(.+?)\*/g, "$1")                      // italic *
+        .replace(/_(.+?)_/g, "$1")                        // italic _
+        .replace(/~~(.+?)~~/g, "$1")                      // strikethrough
+        .replace(/^\s*[-*+]\s+/gm, "• ")                  // unordered lists → bullet
+        .replace(/^\s*\d+\.\s+/gm, function(m, o, s) {   // ordered lists → keep number
+            return m.trim() + " ";
+        })
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")          // links → label only
+        .replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")         // images → alt text
+        .replace(/^>\s+/gm, "")                           // blockquotes
+        .replace(/^[-*_]{3,}\s*$/gm, "──────────")        // horizontal rules
+        .replace(/\n{3,}/g, "\n\n")                       // collapse excess blank lines
+        .trim();
 }
 
 // =========== PASSWORD FIELD BUILDER ===========
