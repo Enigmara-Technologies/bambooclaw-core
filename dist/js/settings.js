@@ -20,7 +20,7 @@ function savePersonas() {
 function renderPersonas() {
     var sel = document.getElementById("set-identity");
     if (sel) {
-        sel.innerHTML = '<option value="-1">— BambooClaw Default (System Prompt Only) —</option>';
+        sel.innerHTML = '<option value="-1">— BambooClaw Default —</option>';
         personas.forEach(function(p, i) {
             var opt = document.createElement("option");
             opt.value = i;
@@ -122,9 +122,7 @@ async function saveSettings() {
         loglevel: document.getElementById("set-loglevel").value,
         maxToolIterations: iterVal
     };
-    if (!currentConfig.llm) currentConfig.llm = { provider: "openai", api_key: "", model: "", system_prompt: "" };
-    var settingsPrompt = document.getElementById("settings-system-prompt");
-    currentConfig.llm.system_prompt = settingsPrompt ? settingsPrompt.value : "";
+    if (!currentConfig.llm) currentConfig.llm = { provider: "openai", api_key: "", model: "" };
     saveAllConfig();
     savePersonas();
     showToast("Settings saved", "success");
@@ -142,7 +140,5 @@ function resetSettings() {
     document.getElementById("set-tool-iterations").value = "10";
     document.getElementById("tool-iter-value").textContent = "10";
     MAX_TOOL_ITERATIONS = 10;
-    var sp = document.getElementById("settings-system-prompt");
-    if (sp) sp.value = "";
     showToast("Settings reset to defaults", "info");
 }

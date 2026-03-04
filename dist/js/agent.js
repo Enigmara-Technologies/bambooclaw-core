@@ -208,13 +208,9 @@ async function callLLM(userMessage) {
         systemPrompt += "CRITICAL RULES:\n1. NEVER tell the user to do something manually.\n2. Chain as many tool calls as needed. Max iterations: " + maxIter + "\n3. Complete ALL steps before responding.\n";
     }
 
-    var userSystemPrompt = (cfg && cfg.system_prompt) ? cfg.system_prompt.trim() : "";
     var personaPrompt = (activePersonaIndex >= 0 && activePersonaIndex < personas.length) ? personas[activePersonaIndex].prompt.trim() : "";
-    if (userSystemPrompt || personaPrompt) {
-        systemPrompt += "\n--- OPERATOR INSTRUCTIONS ---\n";
-        if (userSystemPrompt) systemPrompt += userSystemPrompt + "\n";
-        if (personaPrompt) systemPrompt += "\n--- ACTIVE PERSONA ---\n" + personaPrompt + "\n--- END PERSONA ---\n";
-        systemPrompt += "--- END OPERATOR INSTRUCTIONS ---\n";
+    if (personaPrompt) {
+        systemPrompt += "\n--- ACTIVE PERSONA ---\n" + personaPrompt + "\n--- END PERSONA ---\n";
     }
 
     var apiUrl, headers, supportsTools = true;

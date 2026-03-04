@@ -104,8 +104,7 @@ async function applyLLMConfig() {
     var provider = document.getElementById("llm-provider").value;
     var apiKey = document.getElementById("llm-api-key").value.trim();
     var model = provider === "openrouter" ? orSelectedModel : document.getElementById("llm-model").value;
-    var spEl = document.getElementById("settings-system-prompt");
-    var systemPrompt = spEl ? spEl.value : "";
+
 
     if (!apiKey.trim() && provider !== "ollama") {
         showToast("API key is required for " + provider, "error");
@@ -116,7 +115,7 @@ async function applyLLMConfig() {
         return;
     }
 
-    currentConfig.llm = { provider: provider, api_key: apiKey, model: model, system_prompt: systemPrompt };
+    currentConfig.llm = { provider: provider, api_key: apiKey, model: model };
     var tomlContent = buildConfigToml();
 
     try {

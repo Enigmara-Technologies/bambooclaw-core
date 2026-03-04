@@ -192,7 +192,6 @@ function buildConfigToml() {
         if (currentConfig.llm.provider) lines.push('provider = ' + JSON.stringify(currentConfig.llm.provider));
         if (currentConfig.llm.api_key) lines.push('api_key = ' + JSON.stringify(currentConfig.llm.api_key));
         if (currentConfig.llm.model) lines.push('model = ' + JSON.stringify(currentConfig.llm.model));
-        if (currentConfig.llm.system_prompt != null) lines.push('system_prompt = ' + JSON.stringify(currentConfig.llm.system_prompt));
         lines.push("");
     }
 
@@ -311,10 +310,6 @@ function applyConfigToUI() {
                     setTimeout(renderORModels, 200);
                 }
             }, 50);
-        }
-        if (currentConfig.llm.system_prompt != null) {
-            var sp = document.getElementById("settings-system-prompt");
-            if (sp) sp.value = currentConfig.llm.system_prompt;
         }
     }
     if (currentConfig.channels) {

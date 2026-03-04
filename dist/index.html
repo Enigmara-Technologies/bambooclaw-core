@@ -416,7 +416,7 @@
                         <div class="form-group">
                             <label>Active Persona</label>
                             <select id="set-identity">
-                                <option value="-1">— BambooClaw Default (System Prompt Only) —</option>
+                                <option value="-1">— BambooClaw Default —</option>
                             </select>
                             <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.4rem;">
                                 Select a persona to inject specific behavioral rules. Manage personas below.
@@ -449,17 +449,9 @@
                         </div>
                     </div>
 
-                    <div class="form-group" style="margin-top: 1.5rem;">
-                        <label>System Prompt</label>
-                        <textarea id="settings-system-prompt" rows="20" placeholder="Custom instructions for the agent. These are injected as highest-priority operator instructions..." style="min-height:400px;overflow-y:auto;resize:vertical;"></textarea>
-                        <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.4rem;">
-                            Custom instructions injected into every agent conversation as highest-priority operator directives.
-                        </p>
-                    </div>
-
                     <div style="margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1.5rem;">
                         <h2 style="font-size: 1.1rem; margin-bottom: 0.5rem;">🎭 Personas</h2>
-                        <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Create reusable personas. The active persona is selected in the settings grid above and combined with the System Prompt.</p>
+                        <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Create reusable personas. The active persona is selected in the settings grid above and injected as operator instructions into every agent conversation.</p>
 
                         <div id="persona-list" style="margin-bottom: 1rem;"></div>
 
@@ -551,11 +543,6 @@
                                 <div class="help-step"><div class="help-step-num">3</div><div>Select a <strong>Model</strong>. If you chose OpenRouter, click "Fetch Models" to see all available options with pricing.</div></div>
                                 <div class="help-step"><div class="help-step-num">4</div><div>Click <strong>"Apply Configuration"</strong> to save.</div></div>
                                 <div class="help-step"><div class="help-step-num">5</div><div>Click <strong>"Test Connection"</strong> to verify everything works.</div></div>
-                            </div>
-
-                            <div class="help-sub">
-                                <h4>System Prompt (Optional)</h4>
-                                <p>The system prompt tells the AI how to behave. For example: "You are a helpful coding assistant. Be concise." Leave it blank to use the default BambooClaw™ persona.</p>
                             </div>
 
                             <div class="help-tip">💡 <strong>Tip:</strong> If you're new, start with <strong>OpenRouter</strong>. Sign up at openrouter.ai, add $5 credit, copy your key, and you'll have access to hundreds of models instantly.</div>
@@ -775,7 +762,7 @@
                         </div>
                         <div style="margin-bottom: 1rem;">
                             <span style="color: var(--text-dim); font-size: 0.85rem;">Support</span>
-                            <div style="font-size: 0.9rem;"><a href="/cdn-cgi/l/email-protection#93fafdf5fcd3f1f2fef1fcfce0eafdf6e1f4eae7f6f0bdf0fcfe" style="color: var(--accent); text-decoration: none;"><span class="__cf_email__" data-cfemail="472e2921280725262a252828343e292235203e3322246924282a">[email&#160;protected]</span></a></div>
+                            <div style="font-size: 0.9rem;"><a href="mailto:info@bamboosynergytec.com" style="color: var(--accent); text-decoration: none;">info@bamboosynergytec.com</a></div>
                         </div>
                         <div>
                             <span style="font-size: 0.8rem; color: var(--text-dim);" id="about-copyright">© 2025 Bamboo Synergy Technologies, Inc.</span>
@@ -806,7 +793,7 @@
                             <h2 style="font-size:1.1rem;margin:0;">🔍 Last LLM Request Payload</h2>
                             <button class="btn btn-sm btn-outline" id="btn-copy-payload">📋 Copy Payload</button>
                         </div>
-                        <p style="font-size:0.8rem;color:var(--text-dim);margin-bottom:0.75rem;">The complete request body sent to the model on the last call, including system prompt, persona, skills/tools, conversation history, and user message.</p>
+                        <p style="font-size:0.8rem;color:var(--text-dim);margin-bottom:0.75rem;">The complete request body sent to the model on the last call, including the active persona, skills/tools, conversation history, and user message.</p>
                         <div id="llm-payload-display" class="log-body" style="height:400px;background:#050507;border:1px solid var(--border);border-radius:6px;font-size:0.72rem;line-height:1.6;white-space:pre-wrap;word-break:break-all;color:var(--text-dim);padding:1rem;">
                             <span style="color:var(--text-dim);font-style:italic;">No LLM call made yet. Send a message via chat, Telegram, or another channel to see the full payload here.</span>
                         </div>

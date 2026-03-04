@@ -70,7 +70,7 @@ document.getElementById("llm-api-key").addEventListener("input", function() {
 document.getElementById("llm-provider").dispatchEvent(new Event("change"));
 
 // =========== SETTINGS CHANGE LISTENERS ===========
-["set-autonomy","set-port","set-tunnel","set-identity","set-runtime","set-loglevel","set-tool-iterations","settings-system-prompt"].forEach(function(id) {
+["set-autonomy","set-port","set-tunnel","set-identity","set-runtime","set-loglevel","set-tool-iterations"].forEach(function(id) {
     var el = document.getElementById(id);
     if (!el) return;
     el.addEventListener("change", function() {
