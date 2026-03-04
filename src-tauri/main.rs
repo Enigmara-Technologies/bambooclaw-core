@@ -208,18 +208,12 @@ fn main() {
         .setup(|app| {
             let window = app.get_window("main").unwrap();
 
-            // Force the window into the foreground on Windows.
-            //
-            // Windows 10/11 focus-stealing prevention blocks apps launched from
-            // an installer context from claiming the foreground normally, even
-            // with focus:true in tauri.conf.json. The workaround: briefly set
-            // always-on-top (which bypasses the OS restriction), show and focus
-            // the window, then release always-on-top after 500ms so it behaves
-            // like a normal window from that point on.
-            window.set_always_on_top(true).unwrap();
-            window.center().unwrap();
-            window.show().unwrap();
-            window.set_focus().unwrap();
+            // Attempt to force the window to the foreground.
+            // All calls are best-effort — failures are ignored so the app
+            // always launches even if focus-forcing is denied by the OS.
+            let _ = window.set_always_on_top(true);
+            let _ = window.center();
+            let _ = window.set_focus();
 
             let w = window.clone();
             std::thread::spawn(move || {
