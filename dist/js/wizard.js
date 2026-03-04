@@ -194,6 +194,7 @@ function buildConfigToml() {
         var activeKey = (currentConfig.llm.api_keys && currentConfig.llm.api_keys[currentConfig.llm.provider]) || currentConfig.llm.api_key || "";
         if (activeKey) lines.push('api_key = ' + JSON.stringify(activeKey));
         if (currentConfig.llm.model) lines.push('model = ' + JSON.stringify(currentConfig.llm.model));
+        if (currentConfig.llm.local_url) lines.push('local_url = ' + JSON.stringify(currentConfig.llm.local_url));
         lines.push("");
     }
 
@@ -205,6 +206,19 @@ function buildConfigToml() {
             lines.push("[llm_keys]");
             providers.forEach(function(p) {
                 lines.push(p + ' = ' + JSON.stringify(keys[p]));
+            });
+            lines.push("");
+        }
+    }
+
+    // Persist per-provider local URLs
+    if (currentConfig.llm && currentConfig.llm.local_urls) {
+        var lurls = currentConfig.llm.local_urls;
+        var lProviders = Object.keys(lurls).filter(function(p) { return lurls[p]; });
+        if (lProviders.length > 0) {
+            lines.push("[llm_local_urls]");
+            lProviders.forEach(function(p) {
+                lines.push(p + ' = ' + JSON.stringify(lurls[p]));
             });
             lines.push("");
         }
@@ -290,6 +304,11 @@ function parseAndApplyConfig(toml) {
                 if (!currentConfig.llm.api_keys) currentConfig.llm.api_keys = {};
                 currentConfig.llm.api_keys[key] = String(val);
             }
+            if (section === "llm_local_urls") {
+                if (!currentConfig.llm) currentConfig.llm = {};
+                if (!currentConfig.llm.local_urls) currentConfig.llm.local_urls = {};
+                currentConfig.llm.local_urls[key] = String(val);
+            }
             if (section.startsWith("channels.")) {
                 var ch = section.replace("channels.", "");
                 if (!currentConfig.channels) currentConfig.channels = {};
@@ -320,6 +339,11 @@ function applyConfigToUI() {
         var restoredKey = (currentConfig.llm.api_keys && activeProvider && currentConfig.llm.api_keys[activeProvider])
             || currentConfig.llm.api_key || "";
         if (restoredKey) document.getElementById("llm-api-key").value = restoredKey;
+        // Restore local URL for this provider
+        var restoredUrl = (currentConfig.llm.local_urls && activeProvider && currentConfig.llm.local_urls[activeProvider])
+            || currentConfig.llm.local_url || "";
+        var localUrlEl = document.getElementById("llm-local-url");
+        if (localUrlEl && restoredUrl) localUrlEl.value = restoredUrl;
         if (currentConfig.llm.model) {
             setTimeout(function() {
                 var sel = document.getElementById("llm-model");

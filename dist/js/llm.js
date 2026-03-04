@@ -4,11 +4,16 @@ var providerModels = {
     anthropic: ["claude-opus-4-20250514", "claude-sonnet-4-20250514", "claude-3.5-sonnet-20241022", "claude-3-haiku-20240307"],
     google: ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"],
     groq: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"],
-    ollama: ["llama3.2", "mistral", "codellama", "phi3"],
+    ollama: ["llama3.2", "llama3.1", "mistral", "codellama", "phi3", "qwen2.5", "deepseek-r1"],
+    lmstudio: ["(auto-detected from server)"],
+    jan: ["(auto-detected from server)"],
     deepseek: ["deepseek-chat", "deepseek-coder", "deepseek-reasoner"],
     mistral: ["mistral-large-latest", "mistral-medium-latest", "mistral-small-latest", "codestral-latest"],
     inception: ["mercury-2"]
 };
+
+var LOCAL_PROVIDERS = ["ollama", "lmstudio", "jan"];
+var LOCAL_DEFAULTS = { ollama: "http://localhost:11434", lmstudio: "http://localhost:1234", jan: "http://localhost:1337" };
 
 var orModels = [];
 var orSortKey = "name";
@@ -16,15 +21,26 @@ var orSortDir = 1;
 var orSelectedModel = "";
 
 async function autoFetchModels(provider, apiKey) {
-    if (!apiKey && provider !== "ollama") return;
+    var isLocal = LOCAL_PROVIDERS.includes(provider);
+    if (!apiKey && !isLocal) return;
     var sel = document.getElementById("llm-model");
     if (!sel) return;
 
     sel.innerHTML = '<option value="">⟳ Fetching active models...</option>';
-    var url = "";
-    var headers = [];
 
-    if (provider === "google") {
+    // Determine base URL
+    var localUrlEl = document.getElementById("llm-local-url");
+    var baseUrl = (localUrlEl && localUrlEl.value.trim()) || LOCAL_DEFAULTS[provider] || "";
+
+    var url = "";
+    var fetchHeaders = {};
+
+    if (provider === "ollama") {
+        url = baseUrl + "/api/tags";
+    } else if (provider === "lmstudio" || provider === "jan") {
+        // Both speak OpenAI-compatible /v1/models
+        url = baseUrl + "/v1/models";
+    } else if (provider === "google") {
         url = "https://generativelanguage.googleapis.com/v1beta/models?key=" + apiKey;
     } else if (["openai","groq","deepseek","mistral","inception"].includes(provider)) {
         var bases = {
@@ -35,63 +51,57 @@ async function autoFetchModels(provider, apiKey) {
             inception: "https://api.inceptionlabs.ai/v1/models"
         };
         url = bases[provider];
-        headers.push("-H", "Authorization: Bearer " + apiKey);
+        fetchHeaders["Authorization"] = "Bearer " + apiKey;
     } else if (provider === "anthropic") {
         url = "https://api.anthropic.com/v1/models";
-        headers.push("-H", "x-api-key: " + apiKey, "-H", "anthropic-version: 2023-06-01");
-    } else if (provider === "ollama") {
-        url = "http://localhost:11434/api/tags";
+        fetchHeaders["x-api-key"] = apiKey;
+        fetchHeaders["anthropic-version"] = "2023-06-01";
+    }
+
+    if (!url) {
+        // Fallback to static list
+        sel.innerHTML = "";
+        (providerModels[provider] || []).forEach(function(m) {
+            var opt = document.createElement("option"); opt.value = m; opt.textContent = m; sel.appendChild(opt);
+        });
+        return;
     }
 
     try {
-        var rawJson = "";
-        if (window.__TAURI__) {
-            var args = ["-s"];
-            headers.forEach(function(h) { args.push(h); });
-            args.push(url);
-            rawJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: args });
-        } else {
-            var fetchOpts = { headers: {} };
-            for (var i = 0; i < headers.length; i += 2) {
-                var k = headers[i+1].split(":")[0].replace("-H","").trim();
-                var v = headers[i+1].split(":").slice(1).join(":").trim();
-                fetchOpts.headers[k] = v;
-            }
-            var resp = await fetch(url, fetchOpts);
-            rawJson = await resp.text();
-        }
-
-        var data = JSON.parse(rawJson);
+        var resp = await fetch(url, { headers: fetchHeaders });
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        var data = await resp.json();
         var models = [];
 
-        if (provider === "google" && data.models) {
+        if (provider === "ollama" && data.models) {
+            models = data.models.map(function(m) { return m.name; });
+        } else if (provider === "google" && data.models) {
             models = data.models.filter(function(m) {
                 return m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent");
             }).map(function(m) { return m.name.replace("models/", ""); });
-        } else if (provider === "ollama" && data.models) {
-            models = data.models.map(function(m) { return m.name; });
         } else if (data.data) {
+            // OpenAI-compatible (lmstudio, jan, openai, groq, etc.)
             models = data.data.map(function(m) { return m.id; });
         }
 
         if (models.length > 0) {
             sel.innerHTML = "";
             models.sort().forEach(function(m) {
-                var opt = document.createElement("option");
-                opt.value = m; opt.textContent = m; sel.appendChild(opt);
+                var opt = document.createElement("option"); opt.value = m; opt.textContent = m; sel.appendChild(opt);
             });
             if (currentConfig.llm && currentConfig.llm.provider === provider && currentConfig.llm.model) {
                 sel.value = currentConfig.llm.model;
             }
             return;
         }
-    } catch(e) {}
+    } catch(e) {
+        appendLog("dash-log", "[LLM] Model fetch failed for " + provider + ": " + (e.message || e));
+    }
 
+    // Fallback to static list
     sel.innerHTML = "";
-    var fallbacks = providerModels[provider] || [];
-    fallbacks.forEach(function(m) {
-        var opt = document.createElement("option");
-        opt.value = m; opt.textContent = m; sel.appendChild(opt);
+    (providerModels[provider] || []).forEach(function(m) {
+        var opt = document.createElement("option"); opt.value = m; opt.textContent = m; sel.appendChild(opt);
     });
     if (currentConfig.llm && currentConfig.llm.provider === provider && currentConfig.llm.model) {
         sel.value = currentConfig.llm.model;
@@ -104,9 +114,11 @@ async function applyLLMConfig() {
     var provider = document.getElementById("llm-provider").value;
     var apiKey = document.getElementById("llm-api-key").value.trim();
     var model = provider === "openrouter" ? orSelectedModel : document.getElementById("llm-model").value;
+    var isLocal = LOCAL_PROVIDERS.includes(provider);
+    var localUrlEl = document.getElementById("llm-local-url");
+    var localUrl = (localUrlEl && localUrlEl.value.trim()) || LOCAL_DEFAULTS[provider] || "";
 
-
-    if (!apiKey.trim() && provider !== "ollama") {
+    if (!apiKey && !isLocal) {
         showToast("API key is required for " + provider, "error");
         return;
     }
@@ -118,11 +130,15 @@ async function applyLLMConfig() {
     // Preserve existing per-provider keys, just update the active provider's entry
     if (!currentConfig.llm) currentConfig.llm = {};
     if (!currentConfig.llm.api_keys) currentConfig.llm.api_keys = {};
+    if (!currentConfig.llm.local_urls) currentConfig.llm.local_urls = {};
     currentConfig.llm.provider = provider;
     currentConfig.llm.model = model;
     if (apiKey) currentConfig.llm.api_keys[provider] = apiKey;
+    if (localUrl) currentConfig.llm.local_urls[provider] = localUrl;
     // Keep api_key in sync for the Rust daemon (active provider's key)
     currentConfig.llm.api_key = apiKey || currentConfig.llm.api_keys[provider] || "";
+    currentConfig.llm.local_url = localUrl;
+
     var tomlContent = buildConfigToml();
 
     try {
@@ -139,15 +155,25 @@ async function applyLLMConfig() {
 async function testLLMConfig() {
     var provider = document.getElementById("llm-provider").value;
     var apiKey = document.getElementById("llm-api-key").value.trim();
-    if (!apiKey && provider !== "ollama") { showToast("Enter an API key first", "error"); return; }
+    var isLocal = LOCAL_PROVIDERS.includes(provider);
+    var localUrlEl = document.getElementById("llm-local-url");
+    var baseUrl = (localUrlEl && localUrlEl.value.trim()) || LOCAL_DEFAULTS[provider] || "";
+
+    if (!apiKey && !isLocal) { showToast("Enter an API key first", "error"); return; }
     showToast("Testing connection...", "info");
     try {
         if (provider === "openrouter") {
             var resp = await fetch("https://openrouter.ai/api/v1/models", { headers: { "Authorization": "Bearer " + apiKey } });
             showToast(resp.ok ? "OpenRouter API key is valid!" : "Invalid API key (HTTP " + resp.status + ")", resp.ok ? "success" : "error");
         } else if (provider === "ollama") {
-            var resp2 = await fetch("http://localhost:11434/api/tags");
-            showToast(resp2.ok ? "Ollama is running locally!" : "Ollama not reachable", resp2.ok ? "success" : "error");
+            var resp2 = await fetch(baseUrl + "/api/tags");
+            showToast(resp2.ok ? "Ollama is running at " + baseUrl : "Ollama not reachable at " + baseUrl, resp2.ok ? "success" : "error");
+        } else if (provider === "lmstudio") {
+            var resp3 = await fetch(baseUrl + "/v1/models");
+            showToast(resp3.ok ? "LM Studio is running at " + baseUrl : "LM Studio not reachable at " + baseUrl, resp3.ok ? "success" : "error");
+        } else if (provider === "jan") {
+            var resp4 = await fetch(baseUrl + "/v1/models");
+            showToast(resp4.ok ? "Jan is running at " + baseUrl : "Jan not reachable at " + baseUrl, resp4.ok ? "success" : "error");
         } else {
             showToast("Key saved. Full connection test available when agent daemon is running.", "info");
         }

@@ -28,9 +28,26 @@ document.querySelectorAll(".tab").forEach(function(tab) {
 document.getElementById("llm-provider").addEventListener("change", function() {
     var provider = this.value;
     var isOR = provider === "openrouter";
+    var isLocal = ["ollama", "lmstudio", "jan"].includes(provider);
+    var localDefaults = { ollama: "http://localhost:11434", lmstudio: "http://localhost:1234", jan: "http://localhost:1337" };
+
+    // Show/hide local URL field
+    var localUrlGroup = document.getElementById("llm-local-url-group");
+    var localUrlEl = document.getElementById("llm-local-url");
+    if (localUrlGroup) localUrlGroup.style.display = isLocal ? "block" : "none";
+    if (isLocal && localUrlEl) {
+        // Restore saved URL for this provider or show default
+        var savedUrl = (currentConfig.llm && currentConfig.llm.local_urls && currentConfig.llm.local_urls[provider]) || "";
+        localUrlEl.value = savedUrl || localDefaults[provider] || "";
+    }
+
+    // Hide API key field for local providers (no key needed)
+    var apiKeyGroup = document.getElementById("llm-apikey-group");
+    if (apiKeyGroup) apiKeyGroup.style.display = isLocal ? "none" : "block";
+
     var keyInput = document.getElementById("llm-api-key");
     var activeKey = "";
-    if (keyInput) {
+    if (keyInput && !isLocal) {
         // Restore this provider's saved key from the per-provider map
         activeKey = (currentConfig.llm && currentConfig.llm.api_keys && currentConfig.llm.api_keys[provider]) || "";
         keyInput.value = activeKey;
@@ -43,7 +60,7 @@ document.getElementById("llm-provider").addEventListener("change", function() {
         if (orModels.length === 0 && activeKey.length > 10) window.fetchORModels();
     } else {
         if (orArea) { orArea.classList.add("hidden"); orArea.style.display = "none"; }
-        if (activeKey.length > 5 || provider === "ollama") {
+        if (isLocal || activeKey.length > 5) {
             autoFetchModels(provider, activeKey);
         } else {
             var models = providerModels[provider] || [];
@@ -54,6 +71,15 @@ document.getElementById("llm-provider").addEventListener("change", function() {
             }
         }
     }
+});
+
+document.getElementById("llm-local-url").addEventListener("change", function() {
+    var provider = document.getElementById("llm-provider").value;
+    if (!currentConfig.llm) currentConfig.llm = {};
+    if (!currentConfig.llm.local_urls) currentConfig.llm.local_urls = {};
+    currentConfig.llm.local_urls[provider] = this.value.trim();
+    autoFetchModels(provider, "");
+    var r = document.getElementById("llm-save-reminder"); if (r) r.classList.add("visible");
 });
 
 document.getElementById("llm-api-key").addEventListener("input", function() {

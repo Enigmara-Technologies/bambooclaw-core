@@ -187,12 +187,18 @@ async function executeTool(toolName, args) {
 
 async function callLLM(userMessage) {
     var cfg = currentConfig.llm;
-    if (!cfg || !cfg.api_key) throw new Error("No LLM configured. Go to LLM Settings and apply a configuration.");
+    var isLocal = cfg && ["ollama","lmstudio","jan"].includes(cfg.provider);
+    if (!cfg || (!cfg.api_key && !isLocal)) throw new Error("No LLM configured. Go to LLM Settings and apply a configuration.");
 
     chatHistory.push({ role: "user", content: userMessage });
     if (chatHistory.length > 30) chatHistory = chatHistory.slice(-30);
 
     var provider = cfg.provider, model = cfg.model, apiKey = cfg.api_key;
+    var baseUrl = cfg.local_url || (cfg.local_urls && cfg.local_urls[provider]) || "";
+    if (!baseUrl && provider === "ollama") baseUrl = "http://localhost:11434";
+    if (!baseUrl && provider === "lmstudio") baseUrl = "http://localhost:1234";
+    if (!baseUrl && provider === "jan") baseUrl = "http://localhost:1337";
+
     var platform = "unknown";
     try { platform = await invokeShort("get_platform"); } catch(e) {}
     var autonomy = (currentConfig.settings && currentConfig.settings.autonomy) || "collaborative";
@@ -221,7 +227,14 @@ async function callLLM(userMessage) {
     else if (provider === "mistral") { apiUrl = "https://api.mistral.ai/v1/chat/completions"; headers = { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" }; }
     else if (provider === "anthropic") { apiUrl = "https://api.anthropic.com/v1/messages"; headers = { "x-api-key": apiKey, "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" }; supportsTools = false; }
     else if (provider === "google") { apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey; headers = { "Content-Type": "application/json" }; supportsTools = false; }
-    else if (provider === "ollama") { apiUrl = "http://localhost:11434/api/chat"; headers = { "Content-Type": "application/json" }; supportsTools = false; }
+    else if (provider === "ollama") { apiUrl = baseUrl + "/api/chat"; headers = { "Content-Type": "application/json" }; supportsTools = false; }
+    else if (provider === "lmstudio" || provider === "jan") {
+        // Both expose an OpenAI-compatible endpoint — full tool support
+        apiUrl = baseUrl + "/v1/chat/completions";
+        headers = { "Content-Type": "application/json" };
+        // LM Studio/Jan don't need auth but accept it harmlessly if present
+        if (apiKey) headers["Authorization"] = "Bearer " + apiKey;
+    }
     else if (provider === "inception") { apiUrl = "https://api.inceptionlabs.ai/v1/chat/completions"; headers = { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" }; }
     else { throw new Error("Unsupported provider: " + provider); }
 
