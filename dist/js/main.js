@@ -60,16 +60,9 @@ document.getElementById("llm-provider").addEventListener("change", function() {
         if (orModels.length === 0 && activeKey.length > 10) window.fetchORModels();
     } else {
         if (orArea) { orArea.classList.add("hidden"); orArea.style.display = "none"; }
-        if (isLocal || activeKey.length > 5) {
-            autoFetchModels(provider, activeKey);
-        } else {
-            var models = providerModels[provider] || [];
-            var sel = document.getElementById("llm-model");
-            if (sel) {
-                sel.innerHTML = "";
-                models.forEach(function(m) { var opt = document.createElement("option"); opt.value = m; opt.textContent = m; sel.appendChild(opt); });
-            }
-        }
+        // Reset dropdown — user must click ↺ Fetch to populate
+        var sel = document.getElementById("llm-model");
+        if (sel) sel.innerHTML = '<option value="">— click ↺ to fetch models —</option>';
     }
 });
 
@@ -78,7 +71,6 @@ document.getElementById("llm-local-url").addEventListener("change", function() {
     if (!currentConfig.llm) currentConfig.llm = {};
     if (!currentConfig.llm.local_urls) currentConfig.llm.local_urls = {};
     currentConfig.llm.local_urls[provider] = this.value.trim();
-    autoFetchModels(provider, "");
     var r = document.getElementById("llm-save-reminder"); if (r) r.classList.add("visible");
 });
 
@@ -88,10 +80,6 @@ document.getElementById("llm-api-key").addEventListener("input", function() {
     if (!currentConfig.llm) currentConfig.llm = {};
     if (!currentConfig.llm.api_keys) currentConfig.llm.api_keys = {};
     currentConfig.llm.api_keys[provider] = val;
-    if (val.length > 5 || provider === "ollama") {
-        if (provider === "openrouter" && orModels.length === 0) window.fetchORModels();
-        else if (provider !== "openrouter") autoFetchModels(provider, val);
-    }
     var r = document.getElementById("llm-save-reminder"); if (r) r.classList.add("visible");
 });
 
@@ -206,6 +194,14 @@ document.getElementById("btn-step2-install").addEventListener("click", async fun
 
 document.getElementById("btn-toggle-llm-api-key").addEventListener("click", function() { window.toggleKeyVisibility("llm-api-key", this); });
 document.getElementById("btn-toggle-composio-api-key").addEventListener("click", function() { window.toggleKeyVisibility("composio-api-key", this); });
+document.getElementById("btn-refresh-models").addEventListener("click", function() {
+    var provider = document.getElementById("llm-provider").value;
+    var apiKey = document.getElementById("llm-api-key").value.trim();
+    var sel = document.getElementById("llm-model");
+    if (sel) sel.innerHTML = '<option value="">⟳ Fetching...</option>';
+    autoFetchModels(provider, apiKey);
+});
+
 document.getElementById("btn-apply-llm").addEventListener("click", applyLLMConfig);
 document.getElementById("btn-test-llm").addEventListener("click", testLLMConfig);
 document.getElementById("btn-setup-tg").addEventListener("click", setupTelegram);

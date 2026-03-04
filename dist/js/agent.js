@@ -366,25 +366,9 @@ async function callLLM(userMessage) {
     if (!baseUrl && provider === "lmstudio") baseUrl = "http://localhost:1234";
     if (!baseUrl && provider === "jan")      baseUrl = "http://localhost:1337";
 
-    var platform = "unknown";
-    try { platform = await invokeShort("get_platform"); } catch(e) {}
-    var autonomy = (currentConfig.settings && currentConfig.settings.autonomy) || "collaborative";
     var maxIter = parseInt((currentConfig.settings && currentConfig.settings.maxToolIterations) || MAX_TOOL_ITERATIONS);
-
-    var systemPrompt = "You are BambooClaw, an AI agent running on the user's " + platform + " computer.\n\n";
-    if (autonomy === "observe") {
-        systemPrompt += "MODE: OBSERVATION ONLY.\n\n";
-    } else if (autonomy === "collaborative") {
-        systemPrompt += "MODE: COLLABORATIVE.\n\n";
-    } else {
-        systemPrompt += "MODE: FULL AUTONOMY. You have absolute control over this computer.\n\n";
-        systemPrompt += "CRITICAL RULES:\n1. NEVER tell the user to do something manually.\n2. Chain as many tool calls as needed. Max iterations: " + maxIter + "\n3. Complete ALL steps before responding.\n";
-    }
-
     var personaPrompt = (activePersonaIndex >= 0 && activePersonaIndex < personas.length) ? personas[activePersonaIndex].prompt.trim() : "";
-    if (personaPrompt) {
-        systemPrompt += "\n--- ACTIVE PERSONA ---\n" + personaPrompt + "\n--- END PERSONA ---\n";
-    }
+    var systemPrompt = personaPrompt || null;
 
     var apiUrl, headers, supportsTools = true;
     if (provider === "openrouter")  { apiUrl = "https://openrouter.ai/api/v1/chat/completions"; headers = { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json", "HTTP-Referer": "https://bambooclaw.com" }; }
@@ -403,7 +387,9 @@ async function callLLM(userMessage) {
     else if (provider === "inception") { apiUrl = "https://api.inceptionlabs.ai/v1/chat/completions"; headers = { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" }; }
     else { throw new Error("Unsupported provider: " + provider); }
 
-    var messages = [{ role: "system", content: systemPrompt }].concat(chatHistory);
+    var messages = systemPrompt
+        ? [{ role: "system", content: systemPrompt }].concat(chatHistory)
+        : chatHistory.slice();
 
     function updatePayloadInspector(body) {
         var el = document.getElementById("llm-payload-display");
@@ -412,10 +398,16 @@ async function callLLM(userMessage) {
 
     if (!supportsTools) {
         var body;
-        if (provider === "anthropic") body = { model: model, max_tokens: 2048, system: systemPrompt, messages: chatHistory };
-        else if (provider === "google") body = { contents: [{ parts: [{ text: userMessage }] }] };
-        else if (provider === "ollama") body = { model: model, messages: messages, stream: false };
-        else body = { model: model, messages: messages, max_tokens: 4096 };
+        if (provider === "anthropic") {
+            body = { model: model, max_tokens: 2048, messages: chatHistory };
+            if (systemPrompt) body.system = systemPrompt;
+        } else if (provider === "google") {
+            body = { contents: [{ parts: [{ text: userMessage }] }] };
+        } else if (provider === "ollama") {
+            body = { model: model, messages: messages, stream: false };
+        } else {
+            body = { model: model, messages: messages, max_tokens: 4096 };
+        }
         updatePayloadInspector(body);
         var resp = await fetch(apiUrl, { method: "POST", headers: headers, body: JSON.stringify(body) });
         if (!resp.ok) throw new Error("LLM API error (HTTP " + resp.status + ")");
