@@ -70,7 +70,7 @@ document.getElementById("llm-api-key").addEventListener("input", function() {
 document.getElementById("llm-provider").dispatchEvent(new Event("change"));
 
 // =========== SETTINGS CHANGE LISTENERS ===========
-["set-autonomy","set-port","set-tunnel","set-identity","set-runtime","set-loglevel","set-tool-iterations"].forEach(function(id) {
+["set-autonomy","set-identity","set-loglevel","set-tool-iterations"].forEach(function(id) {
     var el = document.getElementById(id);
     if (!el) return;
     el.addEventListener("change", function() {
@@ -287,7 +287,7 @@ async function boot() {
             await window.enterDashboard();
             loadPersonas();
             if (!currentConfig.settings) {
-                currentConfig.settings = { autonomy: "autonomous", port: "7331", tunnel: "none", identity: "bamboo", runtime: "native", loglevel: "info", maxToolIterations: 10 };
+                currentConfig.settings = { autonomy: "autonomous", identity: "bamboo", loglevel: "info", maxToolIterations: 10 };
                 saveAllConfig();
             }
             if (currentConfig.settings && currentConfig.settings.maxToolIterations) {

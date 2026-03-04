@@ -400,19 +400,7 @@
                                 Determines which shell commands the agent can run without explicit user consent.
                             </p>
                         </div>
-                        <div class="form-group">
-                            <label>Gateway Port</label>
-                            <input type="number" id="set-port" value="7331" min="1024" max="65535" />
-                        </div>
-                        <div class="form-group">
-                            <label>Tunnel Provider</label>
-                            <select id="set-tunnel">
-                                <option value="none" selected>None (Local Only)</option>
-                                <option value="cloudflared">Cloudflare Tunnel</option>
-                                <option value="tailscale">Tailscale</option>
-                                <option value="ngrok">ngrok</option>
-                            </select>
-                        </div>
+
                         <div class="form-group">
                             <label>Active Persona</label>
                             <select id="set-identity">
@@ -421,14 +409,6 @@
                             <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.4rem;">
                                 Select a persona to inject specific behavioral rules. Manage personas below.
                             </p>
-                        </div>
-                        <div class="form-group">
-                            <label>Runtime Adapter</label>
-                            <select id="set-runtime">
-                                <option value="native" selected>Native (Recommended)</option>
-                                <option value="docker">Docker Container</option>
-                                <option value="wasm">WASM Sandbox</option>
-                            </select>
                         </div>
                         <div class="form-group">
                             <label>Log Level</label>
@@ -667,10 +647,6 @@
                             <div class="help-sub">
                                 <h4>Other Settings</h4>
                                 <ul>
-                                    <li><strong>Gateway Port</strong> — The local port the daemon listens on (default: 7331). Change only if you have a conflict.</li>
-                                    <li><strong>Tunnel Provider</strong> — If you want to access your agent from outside your network. Most users should leave this as "None".</li>
-                                    <li><strong>Identity Format</strong> — Controls the assistant's persona and name.</li>
-                                    <li><strong>Runtime Adapter</strong> — How code gets executed. "Native" is fastest and recommended.</li>
                                     <li><strong>Log Level</strong> — How much detail shows in the logs. "Info" is fine for normal use; switch to "Debug" when troubleshooting.</li>
                                     <li><strong>Max Tool Iterations</strong> — How many steps the AI can chain in one response. Higher values allow more complex tasks but take longer.</li>
                                 </ul>
@@ -762,7 +738,7 @@
                         </div>
                         <div style="margin-bottom: 1rem;">
                             <span style="color: var(--text-dim); font-size: 0.85rem;">Support</span>
-                            <div style="font-size: 0.9rem;"><a href="mailto:info@bamboosynergytec.com" style="color: var(--accent); text-decoration: none;">info@bamboosynergytec.com</a></div>
+                            <div style="font-size: 0.9rem;"><a href="/cdn-cgi/l/email-protection#9ff6f1f9f0dffdfef2fdf0f0ece6f1faedf8e6ebfafcb1fcf0f2" style="color: var(--accent); text-decoration: none;"><span class="__cf_email__" data-cfemail="50393e363f1032313d323f3f23293e352237292435337e333f3d">[email&#160;protected]</span></a></div>
                         </div>
                         <div>
                             <span style="font-size: 0.8rem; color: var(--text-dim);" id="about-copyright">© 2025 Bamboo Synergy Technologies, Inc.</span>
@@ -824,14 +800,6 @@
             skills.js   — Composio, builtin skills, skill toggles, connection modal
             main.js     — enterDashboard, tab switching, all addEventListener wiring, boot()
         -->
-        <script src="js/core.js"></script>
+        <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="js/core.js"></script>
         <script src="js/wizard.js"></script>
-        <script src="js/llm.js"></script>
-        <script src="js/channels.js"></script>
-        <script src="js/agent.js"></script>
-        <script src="js/settings.js"></script>
-        <script src="js/skills.js"></script>
-        <script src="js/main.js"></script>
-    </div>
-</body>
-</html>
+        <script src="js/llm.js"></script

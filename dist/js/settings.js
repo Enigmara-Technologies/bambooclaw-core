@@ -115,10 +115,7 @@ async function saveSettings() {
     var identVal = document.getElementById("set-identity").value;
     currentConfig.settings = {
         autonomy: document.getElementById("set-autonomy").value,
-        port: document.getElementById("set-port").value,
-        tunnel: document.getElementById("set-tunnel").value,
         identity: identVal,
-        runtime: document.getElementById("set-runtime").value,
         loglevel: document.getElementById("set-loglevel").value,
         maxToolIterations: iterVal
     };
@@ -132,10 +129,7 @@ async function saveSettings() {
 
 function resetSettings() {
     document.getElementById("set-autonomy").value = "collaborative";
-    document.getElementById("set-port").value = "7331";
-    document.getElementById("set-tunnel").value = "none";
     document.getElementById("set-identity").value = "-1";
-    document.getElementById("set-runtime").value = "native";
     document.getElementById("set-loglevel").value = "info";
     document.getElementById("set-tool-iterations").value = "10";
     document.getElementById("tool-iter-value").textContent = "10";

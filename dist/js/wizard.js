@@ -210,10 +210,7 @@ function buildConfigToml() {
         lines.push("[agent]");
         var s = currentConfig.settings;
         if (s.autonomy) lines.push('autonomy = ' + JSON.stringify(s.autonomy));
-        if (s.port) lines.push("gateway_port = " + s.port);
-        if (s.tunnel) lines.push('tunnel = ' + JSON.stringify(s.tunnel));
         if (s.identity) lines.push('identity = ' + JSON.stringify(s.identity));
-        if (s.runtime) lines.push('runtime = ' + JSON.stringify(s.runtime));
         if (s.loglevel) lines.push('log_level = ' + JSON.stringify(s.loglevel));
         if (currentConfig.composioApiKey) lines.push('composio_api_key = ' + JSON.stringify(currentConfig.composioApiKey));
         lines.push("");
@@ -319,9 +316,6 @@ function applyConfigToUI() {
     if (currentConfig.settings) {
         var s = currentConfig.settings;
         if (s.autonomy) document.getElementById("set-autonomy").value = s.autonomy;
-        if (s.port || s.gateway_port) document.getElementById("set-port").value = s.port || s.gateway_port;
-        if (s.tunnel) document.getElementById("set-tunnel").value = s.tunnel;
-        if (s.runtime) document.getElementById("set-runtime").value = s.runtime;
         if (s.loglevel || s.log_level) document.getElementById("set-loglevel").value = s.loglevel || s.log_level;
         if (s.identity !== undefined) {
             var identVal = parseInt(s.identity);
