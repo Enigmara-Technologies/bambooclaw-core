@@ -185,6 +185,173 @@ async function executeTool(toolName, args) {
     }
 }
 
+// =========== SKILL TOOL EXECUTION ===========
+async function executeSkillTool(toolName, args) {
+    appendLog("unified-log", "[SKILL] Executing skill tool: " + toolName);
+
+    // ── Composio tools ────────────────────────────────────────────────────────
+    if (toolName.startsWith("composio_")) {
+        var composioKey = currentConfig.composioApiKey;
+        if (!composioKey) return "Error: No Composio API key configured. Go to the Skills tab and enter your Composio API key.";
+
+        // Resolve the real Composio tool slug from the safe name we stored at registration
+        var realSlug = (window.composioToolMap && window.composioToolMap[toolName]) || toolName.replace(/^composio_/, "");
+
+        var execEndpoint = "https://backend.composio.dev/api/v3/tools/" + encodeURIComponent(realSlug) + "/execute";
+        var execBody = JSON.stringify({ entityId: "default", input: args || {} });
+
+        appendLog("unified-log", "[SKILL] Composio execute → " + realSlug + " | input: " + JSON.stringify(args).substring(0, 200));
+
+        try {
+            var resultJson;
+            if (window.__TAURI__) {
+                resultJson = await tauriInvoke("run_shell_command", {
+                    commandName: "curl",
+                    args: ["-s", "-X", "POST",
+                           "-H", "x-api-key: " + composioKey,
+                           "-H", "Content-Type: application/json",
+                           "-d", execBody,
+                           execEndpoint]
+                });
+            } else {
+                var resp = await fetch(execEndpoint, {
+                    method: "POST",
+                    headers: { "x-api-key": composioKey, "Content-Type": "application/json" },
+                    body: execBody
+                });
+                resultJson = await resp.text();
+            }
+
+            var result = JSON.parse(resultJson);
+
+            // Composio wraps success in result.data or result.response
+            if (result.error || result.errorMessage) {
+                var errMsg = result.error || result.errorMessage || "Unknown Composio error";
+                appendLog("unified-log", "[SKILL] Composio error: " + errMsg);
+                // Check if it's an auth error — guide the user
+                if (errMsg.toLowerCase().indexOf("not connected") >= 0 || errMsg.toLowerCase().indexOf("auth") >= 0 || errMsg.toLowerCase().indexOf("401") >= 0) {
+                    return "Error: The " + realSlug.split("_")[0] + " account is not connected. Go to the Skills tab and click 'link account' to authorize it.";
+                }
+                return "Composio tool error: " + errMsg;
+            }
+
+            var output = result.data || result.response || result.output || result.result || result;
+            var outputStr = typeof output === "string" ? output : JSON.stringify(output, null, 2);
+            appendLog("unified-log", "[SKILL] Composio result: " + outputStr.substring(0, 300));
+            return outputStr;
+
+        } catch(e) {
+            appendLog("unified-log", "[SKILL] Composio execution failed: " + (e.message || e));
+            return "Composio tool execution failed: " + (e.message || String(e));
+        }
+    }
+
+    // ── Builtin skill tools ───────────────────────────────────────────────────
+    var platform = "unknown";
+    try { platform = await invokeShort("get_platform"); } catch(e) {}
+
+    if (toolName === "web_search") {
+        var query = encodeURIComponent(args.query || "");
+        var engine = (args.engine || "duckduckgo").toLowerCase();
+        var searchUrl = engine === "google"  ? "https://www.google.com/search?q=" + query :
+                        engine === "bing"    ? "https://www.bing.com/search?q=" + query :
+                                               "https://html.duckduckgo.com/html/?q=" + query;
+        try {
+            var searchResp = await fetch(searchUrl, { headers: { "User-Agent": "Mozilla/5.0" } });
+            var html = await searchResp.text();
+            // Extract visible text snippets from search results
+            var snippets = [];
+            var re = /<a[^>]*class="[^"]*result[^"]*"[^>]*>[\s\S]*?<\/a>/gi;
+            var titleRe = /<[^>]+>([^<]{10,200})<\/[^>]+>/g;
+            var stripped = html.replace(/<script[\s\S]*?<\/script>/gi, "")
+                               .replace(/<style[\s\S]*?<\/style>/gi, "")
+                               .replace(/<[^>]+>/g, " ")
+                               .replace(/\s{2,}/g, " ")
+                               .substring(0, 8000);
+            return "Search results for: " + args.query + "\n\n" + stripped;
+        } catch(e) {
+            return "Web search failed: " + (e.message || e);
+        }
+    }
+
+    if (toolName === "web_browse") {
+        // Use Python + playwright if available, otherwise fetch as fallback
+        var url = args.url || "";
+        if (!url) return "Error: url is required";
+        try {
+            // Try playwright via python first (requires playwright installed)
+            var pyScript = "from playwright.sync_api import sync_playwright\n" +
+                "with sync_playwright() as p:\n" +
+                "    b = p.chromium.launch(headless=True)\n" +
+                "    pg = b.new_page()\n" +
+                "    pg.goto('" + url.replace(/'/g, "\\'") + "', timeout=30000)\n" +
+                "    pg.wait_for_load_state('networkidle', timeout=10000)\n" +
+                "    print(pg.inner_text('body')[:8000])\n" +
+                "    b.close()\n";
+            var pyFile = platform === "windows" ? "C:\\tmp\\bc_browse.py" : "/tmp/bc_browse.py";
+            await invokeShort("run_shell_command", platform === "windows"
+                ? { commandName: "powershell", args: ["-Command", "Set-Content -Path '" + pyFile + "' -Value '" + pyScript.replace(/'/g, "''") + "'"] }
+                : { commandName: "bash", args: ["-c", "cat > '" + pyFile + "' << 'BCEOF'\n" + pyScript + "\nBCEOF"] });
+            var browseResult = await invokeShort("run_shell_command", { commandName: "python", args: [pyFile] });
+            return "Page content from " + url + ":\n\n" + browseResult;
+        } catch(e) {
+            // Fallback: plain fetch
+            try {
+                var fbResp = await fetch(url);
+                var fbHtml = await fbResp.text();
+                var fbText = fbHtml.replace(/<script[\s\S]*?<\/script>/gi, "")
+                                   .replace(/<style[\s\S]*?<\/style>/gi, "")
+                                   .replace(/<[^>]+>/g, " ")
+                                   .replace(/\s{2,}/g, " ")
+                                   .substring(0, 8000);
+                return "Page content from " + url + " (fetch fallback):\n\n" + fbText;
+            } catch(e2) {
+                return "Web browse failed: " + (e2.message || e2);
+            }
+        }
+    }
+
+    if (toolName === "docker_command") {
+        var dockerArgs = args.args || [];
+        if (!Array.isArray(dockerArgs) || dockerArgs.length === 0) return "Error: args array is required";
+        try {
+            var dockerResult = await invokeShort("run_shell_command", { commandName: "docker", args: dockerArgs });
+            return dockerResult || "(no output)";
+        } catch(e) {
+            return "Docker error: " + (e.message || e);
+        }
+    }
+
+    if (toolName === "ssh_execute") {
+        if (!args.host || !args.user || !args.command) return "Error: host, user, and command are required";
+        var sshPort = args.port || 22;
+        var sshArgs = ["-o", "StrictHostKeyChecking=no", "-p", String(sshPort),
+                       args.user + "@" + args.host, args.command];
+        try {
+            var sshResult = await invokeShort("run_shell_command", { commandName: "ssh", args: sshArgs });
+            return sshResult || "(no output)";
+        } catch(e) {
+            return "SSH error: " + (e.message || e);
+        }
+    }
+
+    if (toolName === "mqtt_publish") {
+        if (!args.broker || !args.topic || !args.message) return "Error: broker, topic, and message are required";
+        // Use mosquitto_pub if available
+        try {
+            var mqttArgs = ["-h", args.broker, "-t", args.topic, "-m", args.message];
+            if (args.port) { mqttArgs.push("-p"); mqttArgs.push(String(args.port)); }
+            var mqttResult = await invokeShort("run_shell_command", { commandName: "mosquitto_pub", args: mqttArgs });
+            return "Published to " + args.broker + "/" + args.topic + ": " + args.message + "\n" + (mqttResult || "");
+        } catch(e) {
+            return "MQTT publish failed (is mosquitto_pub installed?): " + (e.message || e);
+        }
+    }
+
+    return "Skill tool not yet implemented: " + toolName;
+}
+
+// =========== LLM CALL ===========
 async function callLLM(userMessage) {
     var cfg = currentConfig.llm;
     var isLocal = cfg && ["ollama","lmstudio","jan"].includes(cfg.provider);
@@ -195,14 +362,14 @@ async function callLLM(userMessage) {
 
     var provider = cfg.provider, model = cfg.model, apiKey = cfg.api_key;
     var baseUrl = cfg.local_url || (cfg.local_urls && cfg.local_urls[provider]) || "";
-    if (!baseUrl && provider === "ollama") baseUrl = "http://localhost:11434";
+    if (!baseUrl && provider === "ollama")   baseUrl = "http://localhost:11434";
     if (!baseUrl && provider === "lmstudio") baseUrl = "http://localhost:1234";
-    if (!baseUrl && provider === "jan") baseUrl = "http://localhost:1337";
+    if (!baseUrl && provider === "jan")      baseUrl = "http://localhost:1337";
 
     var platform = "unknown";
     try { platform = await invokeShort("get_platform"); } catch(e) {}
     var autonomy = (currentConfig.settings && currentConfig.settings.autonomy) || "collaborative";
-    var maxIter = (currentConfig.settings && currentConfig.settings.maxToolIterations) || MAX_TOOL_ITERATIONS;
+    var maxIter = parseInt((currentConfig.settings && currentConfig.settings.maxToolIterations) || MAX_TOOL_ITERATIONS);
 
     var systemPrompt = "You are BambooClaw, an AI agent running on the user's " + platform + " computer.\n\n";
     if (autonomy === "observe") {
@@ -220,19 +387,17 @@ async function callLLM(userMessage) {
     }
 
     var apiUrl, headers, supportsTools = true;
-    if (provider === "openrouter") { apiUrl = "https://openrouter.ai/api/v1/chat/completions"; headers = { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json", "HTTP-Referer": "https://bambooclaw.com" }; }
+    if (provider === "openrouter")  { apiUrl = "https://openrouter.ai/api/v1/chat/completions"; headers = { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json", "HTTP-Referer": "https://bambooclaw.com" }; }
     else if (provider === "openai") { apiUrl = "https://api.openai.com/v1/chat/completions"; headers = { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" }; }
-    else if (provider === "groq") { apiUrl = "https://api.groq.com/openai/v1/chat/completions"; headers = { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" }; }
+    else if (provider === "groq")   { apiUrl = "https://api.groq.com/openai/v1/chat/completions"; headers = { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" }; }
     else if (provider === "deepseek") { apiUrl = "https://api.deepseek.com/v1/chat/completions"; headers = { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" }; }
-    else if (provider === "mistral") { apiUrl = "https://api.mistral.ai/v1/chat/completions"; headers = { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" }; }
+    else if (provider === "mistral")  { apiUrl = "https://api.mistral.ai/v1/chat/completions"; headers = { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" }; }
     else if (provider === "anthropic") { apiUrl = "https://api.anthropic.com/v1/messages"; headers = { "x-api-key": apiKey, "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" }; supportsTools = false; }
-    else if (provider === "google") { apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey; headers = { "Content-Type": "application/json" }; supportsTools = false; }
-    else if (provider === "ollama") { apiUrl = baseUrl + "/api/chat"; headers = { "Content-Type": "application/json" }; supportsTools = false; }
+    else if (provider === "google")    { apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey; headers = { "Content-Type": "application/json" }; supportsTools = false; }
+    else if (provider === "ollama")    { apiUrl = baseUrl + "/api/chat"; headers = { "Content-Type": "application/json" }; supportsTools = false; }
     else if (provider === "lmstudio" || provider === "jan") {
-        // Both expose an OpenAI-compatible endpoint — full tool support
         apiUrl = baseUrl + "/v1/chat/completions";
         headers = { "Content-Type": "application/json" };
-        // LM Studio/Jan don't need auth but accept it harmlessly if present
         if (apiKey) headers["Authorization"] = "Bearer " + apiKey;
     }
     else if (provider === "inception") { apiUrl = "https://api.inceptionlabs.ai/v1/chat/completions"; headers = { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" }; }
@@ -250,6 +415,7 @@ async function callLLM(userMessage) {
         if (provider === "anthropic") body = { model: model, max_tokens: 2048, system: systemPrompt, messages: chatHistory };
         else if (provider === "google") body = { contents: [{ parts: [{ text: userMessage }] }] };
         else if (provider === "ollama") body = { model: model, messages: messages, stream: false };
+        else body = { model: model, messages: messages, max_tokens: 4096 };
         updatePayloadInspector(body);
         var resp = await fetch(apiUrl, { method: "POST", headers: headers, body: JSON.stringify(body) });
         if (!resp.ok) throw new Error("LLM API error (HTTP " + resp.status + ")");
@@ -257,12 +423,12 @@ async function callLLM(userMessage) {
         var reply = "";
         if (provider === "anthropic") reply = (data.content && data.content[0] && data.content[0].text) || "(empty)";
         else if (provider === "google") reply = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text) || "(empty)";
-        else if (provider === "ollama") reply = (data.message && data.message.content) || "(empty)";
+        else reply = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || (data.message && data.message.content) || "(empty)";
         chatHistory.push({ role: "assistant", content: reply });
         return reply;
     }
 
-    for (var iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
+    for (var iteration = 0; iteration < maxIter; iteration++) {
         var dedupedTools = [], seenToolNames = {};
         agentTools.forEach(function(t) {
             var tn = t.function.name;
@@ -292,7 +458,7 @@ async function callLLM(userMessage) {
                 var toolArgs = {};
                 try { toolArgs = JSON.parse(tc.function.arguments); } catch(e) {}
                 var toolResult = await executeTool(tc.function.name, toolArgs);
-                messages.push({ role: "tool", tool_call_id: tc.id, content: toolResult });
+                messages.push({ role: "tool", tool_call_id: tc.id, content: String(toolResult) });
             }
             continue;
         }
