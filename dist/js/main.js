@@ -31,8 +31,9 @@ document.getElementById("llm-provider").addEventListener("change", function() {
     var keyInput = document.getElementById("llm-api-key");
     var activeKey = "";
     if (keyInput) {
-        keyInput.value = (currentConfig.api_keys && currentConfig.api_keys[provider]) || "";
-        activeKey = keyInput.value;
+        // Restore this provider's saved key from the per-provider map
+        activeKey = (currentConfig.llm && currentConfig.llm.api_keys && currentConfig.llm.api_keys[provider]) || "";
+        keyInput.value = activeKey;
     }
     var group = document.getElementById("llm-model-group");
     if (group) group.style.display = isOR ? "none" : "block";
@@ -58,8 +59,9 @@ document.getElementById("llm-provider").addEventListener("change", function() {
 document.getElementById("llm-api-key").addEventListener("input", function() {
     var provider = document.getElementById("llm-provider").value;
     var val = this.value.trim();
-    if (!currentConfig.api_keys) currentConfig.api_keys = {};
-    currentConfig.api_keys[provider] = val;
+    if (!currentConfig.llm) currentConfig.llm = {};
+    if (!currentConfig.llm.api_keys) currentConfig.llm.api_keys = {};
+    currentConfig.llm.api_keys[provider] = val;
     if (val.length > 5 || provider === "ollama") {
         if (provider === "openrouter" && orModels.length === 0) window.fetchORModels();
         else if (provider !== "openrouter") autoFetchModels(provider, val);

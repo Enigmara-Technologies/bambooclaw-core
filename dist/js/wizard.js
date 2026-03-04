@@ -190,9 +190,24 @@ function buildConfigToml() {
     if (currentConfig.llm) {
         lines.push("[llm]");
         if (currentConfig.llm.provider) lines.push('provider = ' + JSON.stringify(currentConfig.llm.provider));
-        if (currentConfig.llm.api_key) lines.push('api_key = ' + JSON.stringify(currentConfig.llm.api_key));
+        // Write active provider's key as api_key (for the Rust daemon)
+        var activeKey = (currentConfig.llm.api_keys && currentConfig.llm.api_keys[currentConfig.llm.provider]) || currentConfig.llm.api_key || "";
+        if (activeKey) lines.push('api_key = ' + JSON.stringify(activeKey));
         if (currentConfig.llm.model) lines.push('model = ' + JSON.stringify(currentConfig.llm.model));
         lines.push("");
+    }
+
+    // Persist all per-provider API keys so switching providers doesn't lose them
+    if (currentConfig.llm && currentConfig.llm.api_keys) {
+        var keys = currentConfig.llm.api_keys;
+        var providers = Object.keys(keys).filter(function(p) { return keys[p]; });
+        if (providers.length > 0) {
+            lines.push("[llm_keys]");
+            providers.forEach(function(p) {
+                lines.push(p + ' = ' + JSON.stringify(keys[p]));
+            });
+            lines.push("");
+        }
     }
 
     if (currentConfig.channels) {
@@ -270,6 +285,11 @@ function parseAndApplyConfig(toml) {
                 if (!currentConfig.llm) currentConfig.llm = {};
                 currentConfig.llm[key] = String(val);
             }
+            if (section === "llm_keys") {
+                if (!currentConfig.llm) currentConfig.llm = {};
+                if (!currentConfig.llm.api_keys) currentConfig.llm.api_keys = {};
+                currentConfig.llm.api_keys[key] = String(val);
+            }
             if (section.startsWith("channels.")) {
                 var ch = section.replace("channels.", "");
                 if (!currentConfig.channels) currentConfig.channels = {};
@@ -295,7 +315,11 @@ function applyConfigToUI() {
             document.getElementById("llm-provider").value = currentConfig.llm.provider;
             document.getElementById("llm-provider").dispatchEvent(new Event("change"));
         }
-        if (currentConfig.llm.api_key) document.getElementById("llm-api-key").value = currentConfig.llm.api_key;
+        // Restore the key for the active provider from the per-provider map (fallback to legacy api_key)
+        var activeProvider = currentConfig.llm.provider;
+        var restoredKey = (currentConfig.llm.api_keys && activeProvider && currentConfig.llm.api_keys[activeProvider])
+            || currentConfig.llm.api_key || "";
+        if (restoredKey) document.getElementById("llm-api-key").value = restoredKey;
         if (currentConfig.llm.model) {
             setTimeout(function() {
                 var sel = document.getElementById("llm-model");

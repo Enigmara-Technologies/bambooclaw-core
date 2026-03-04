@@ -115,7 +115,14 @@ async function applyLLMConfig() {
         return;
     }
 
-    currentConfig.llm = { provider: provider, api_key: apiKey, model: model };
+    // Preserve existing per-provider keys, just update the active provider's entry
+    if (!currentConfig.llm) currentConfig.llm = {};
+    if (!currentConfig.llm.api_keys) currentConfig.llm.api_keys = {};
+    currentConfig.llm.provider = provider;
+    currentConfig.llm.model = model;
+    if (apiKey) currentConfig.llm.api_keys[provider] = apiKey;
+    // Keep api_key in sync for the Rust daemon (active provider's key)
+    currentConfig.llm.api_key = apiKey || currentConfig.llm.api_keys[provider] || "";
     var tomlContent = buildConfigToml();
 
     try {
