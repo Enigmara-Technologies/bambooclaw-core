@@ -1,0 +1,235 @@
+// =========== LLM PROVIDER MODELS ===========
+var providerModels = {
+    openai: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo", "o1-preview", "o1-mini"],
+    anthropic: ["claude-opus-4-20250514", "claude-sonnet-4-20250514", "claude-3.5-sonnet-20241022", "claude-3-haiku-20240307"],
+    google: ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"],
+    groq: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"],
+    ollama: ["llama3.2", "mistral", "codellama", "phi3"],
+    deepseek: ["deepseek-chat", "deepseek-coder", "deepseek-reasoner"],
+    mistral: ["mistral-large-latest", "mistral-medium-latest", "mistral-small-latest", "codestral-latest"],
+    inception: ["mercury-2"]
+};
+
+var orModels = [];
+var orSortKey = "name";
+var orSortDir = 1;
+var orSelectedModel = "";
+
+async function autoFetchModels(provider, apiKey) {
+    if (!apiKey && provider !== "ollama") return;
+    var sel = document.getElementById("llm-model");
+    if (!sel) return;
+
+    sel.innerHTML = '<option value="">⟳ Fetching active models...</option>';
+    var url = "";
+    var headers = [];
+
+    if (provider === "google") {
+        url = "https://generativelanguage.googleapis.com/v1beta/models?key=" + apiKey;
+    } else if (["openai", "groq", "deepseek", "mistral", "inception"].includes(provider)) {
+        var bases = {
+            openai: "https://api.openai.com/v1/models",
+            groq: "https://api.groq.com/openai/v1/models",
+            deepseek: "https://api.deepseek.com/models",
+            mistral: "https://api.mistral.ai/v1/models",
+            inception: "https://api.inceptionlabs.ai/v1/models"
+        };
+        url = bases[provider];
+        headers.push("-H", "Authorization: Bearer " + apiKey);
+    } else if (provider === "anthropic") {
+        url = "https://api.anthropic.com/v1/models";
+        headers.push("-H", "x-api-key: " + apiKey, "-H", "anthropic-version: 2023-06-01");
+    } else if (provider === "ollama") {
+        url = "http://localhost:11434/api/tags";
+    }
+
+    try {
+        var rawJson = "";
+        if (window.__TAURI__) {
+            var args = ["-s"];
+            headers.forEach(function(h) { args.push(h); });
+            args.push(url);
+            rawJson = await tauriInvoke("run_shell_command", { commandName: "curl", args: args });
+        } else {
+            var fetchOpts = { headers: {} };
+            for(var i=0; i<headers.length; i+=2) {
+                var key = headers[i+1].split(":")[0].replace("-H", "").trim();
+                var val = headers[i+1].split(":").slice(1).join(":").trim();
+                fetchOpts.headers[key] = val;
+            }
+            var resp = await fetch(url, fetchOpts);
+            rawJson = await resp.text();
+        }
+
+        var data = JSON.parse(rawJson);
+        var models = [];
+
+        if (provider === "google" && data.models) {
+            models = data.models.filter(function(m) { 
+                return m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent"); 
+            }).map(function(m) { return m.name.replace("models/", ""); });
+        } else if (provider === "ollama" && data.models) {
+            models = data.models.map(function(m) { return m.name; });
+        } else if (data.data) {
+            models = data.data.map(function(m) { return m.id; });
+        }
+
+        if (models.length > 0) {
+            sel.innerHTML = "";
+            models.sort().forEach(function(m) {
+                var opt = document.createElement("option");
+                opt.value = m; opt.textContent = m; sel.appendChild(opt);
+            });
+            if (currentConfig.llm && currentConfig.llm.provider === provider && currentConfig.llm.model) {
+                sel.value = currentConfig.llm.model;
+            }
+            return;
+        }
+    } catch(e) { }
+
+    sel.innerHTML = "";
+    var fallbacks = providerModels[provider] || [];
+    fallbacks.forEach(function(m) {
+        var opt = document.createElement("option");
+        opt.value = m; opt.textContent = m; sel.appendChild(opt);
+    });
+    if (currentConfig.llm && currentConfig.llm.provider === provider && currentConfig.llm.model) {
+        sel.value = currentConfig.llm.model;
+    }
+}
+
+async function applyLLMConfig() {
+    appendLog("dash-log", "[LLM] applyLLMConfig() called");
+    var provider = document.getElementById("llm-provider").value;
+    var apiKey = document.getElementById("llm-api-key").value.trim();
+    var model = provider === "openrouter" ? orSelectedModel : document.getElementById("llm-model").value;
+    var spEl = document.getElementById("settings-system-prompt");
+    var systemPrompt = spEl ? spEl.value : "";
+
+    if (!apiKey.trim() && provider !== "ollama") {
+        showToast("API key is required for " + provider, "error");
+        return;
+    }
+    if (provider === "openrouter" && !model) {
+        showToast("Please select a model from the list first", "error");
+        return;
+    }
+
+    currentConfig.llm = { provider: provider, api_key: apiKey, model: model, system_prompt: systemPrompt };
+    var tomlContent = buildConfigToml();
+
+    try {
+        await invokeShort("write_config", { content: tomlContent });
+        showToast("Configuration saved to ~/.bambooclaw/config.toml", "success");
+    } catch(e) {
+        localStorage.setItem("bambooclaw-config", JSON.stringify(currentConfig));
+        showToast("Configuration saved successfully", "success");
+    }
+    var r1 = document.getElementById("or-save-reminder"); if (r1) r1.classList.remove("visible");
+    var r2 = document.getElementById("llm-save-reminder"); if (r2) r2.classList.remove("visible");
+}
+
+async function testLLMConfig() {
+    var provider = document.getElementById("llm-provider").value;
+    var apiKey = document.getElementById("llm-api-key").value.trim();
+    if (!apiKey && provider !== "ollama") { showToast("Enter an API key first", "error"); return; }
+    showToast("Testing connection...", "info");
+
+    try {
+        if (provider === "openrouter") {
+            var resp = await fetch("https://openrouter.ai/api/v1/models", { headers: { "Authorization": "Bearer " + apiKey } });
+            if (resp.ok) showToast("OpenRouter API key is valid!", "success");
+            else showToast("Invalid API key (HTTP " + resp.status + ")", "error");
+        } else if (provider === "ollama") {
+            var resp2 = await fetch("http://localhost:11434/api/tags");
+            if (resp2.ok) showToast("Ollama is running locally!", "success");
+            else showToast("Ollama not reachable", "error");
+        } else {
+            showToast("Key saved. Full connection test available when agent daemon is running.", "info");
+        }
+    } catch(e) { showToast("Connection test error: " + (e.message || e), "error"); }
+}
+
+window.fetchORModels = function() {
+    var listEl = document.getElementById("or-model-list");
+    if (!listEl) return;
+    listEl.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--text-dim);"><span class="spinner">⟳</span> Loading models...</div>';
+    
+    fetch("https://openrouter.ai/api/v1/models")
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        var seen = {};
+        orModels = (data.data || []).filter(function(m) {
+            if (!m.name || !m.pricing || !m.id) return false;
+            if (seen[m.id]) return false;
+            if (m.name === m.id) return false;
+            seen[m.id] = true;
+            return true;
+        }).map(function(m) {
+            return {
+                id: m.id,
+                name: m.name,
+                input: parseFloat(m.pricing.prompt || "0"),
+                output: parseFloat(m.pricing.completion || "0")
+            };
+        });
+        document.getElementById("or-model-count").textContent = "(" + orModels.length + " available)";
+        renderORModels();
+    }).catch(function() {
+        listEl.innerHTML = '<div style="padding:1rem;color:var(--error);text-align:center;">Failed to load models</div>';
+    });
+};
+
+window.sortORModels = function(key) {
+    if (orSortKey === key) { orSortDir *= -1; } else { orSortKey = key; orSortDir = 1; }
+    renderORModels();
+};
+
+window.selectORModel = function(id) {
+    orSelectedModel = id;
+    var m = orModels.find(function(x) { return x.id === id; });
+    var nameEl = document.getElementById("or-active-model-name");
+    if (nameEl) nameEl.textContent = m ? m.name + " (" + m.id + ")" : id;
+    var reminder = document.getElementById("or-save-reminder");
+    if (reminder) reminder.classList.add("visible");
+    var sel = document.getElementById("llm-model");
+    sel.innerHTML = "";
+    var opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = m ? m.name : id;
+    sel.appendChild(opt);
+    sel.value = id;
+    renderORModels();
+};
+
+function renderORModels() {
+    var search = (document.getElementById("or-model-search").value || "").toLowerCase();
+    var filtered = orModels.filter(function(m) {
+        return m.id.toLowerCase().indexOf(search) >= 0 || m.name.toLowerCase().indexOf(search) >= 0;
+    });
+    filtered.sort(function(a, b) {
+        var cmp = 0;
+        if (orSortKey === "name") cmp = a.name.localeCompare(b.name);
+        else if (orSortKey === "input") cmp = a.input - b.input;
+        else if (orSortKey === "output") cmp = a.output - b.output;
+        return cmp * orSortDir;
+    });
+
+    var html = '<table style="width:100%;border-collapse:collapse;font-size:0.8rem;">';
+    html += '<thead><tr style="background:#1a1a2e;position:sticky;top:0;">';
+    html += '<th style="text-align:left;padding:0.5rem 0.75rem;">Model</th><th style="text-align:right;padding:0.5rem 0.75rem;">Input</th><th style="text-align:right;padding:0.5rem 0.75rem;">Output</th>';
+    html += '</tr></thead><tbody>';
+
+    filtered.forEach(function(m) {
+        var sel = m.id === orSelectedModel;
+        var bg = sel ? "background:rgba(16,185,129,0.15);border-left:3px solid var(--accent);" : "border-left:3px solid transparent;";
+        html += '<tr data-model-id="' + escapeHtml(m.id) + '" style="cursor:pointer;border-bottom:1px solid var(--border);' + bg + '" class="or-model-row">';
+        html += '<td style="padding:0.5rem 0.75rem;"><div style="font-weight:600;">' + escapeHtml(m.name) + '</div><div style="color:var(--text-dim);font-size:0.7rem;">' + escapeHtml(m.id) + '</div></td>';
+        html += '<td style="text-align:right;padding:0.5rem 0.75rem;font-family:monospace;">$' + (m.input*1000000).toFixed(2) + '</td>';
+        html += '<td style="text-align:right;padding:0.5rem 0.75rem;font-family:monospace;">$' + (m.output*1000000).toFixed(2) + '</td>';
+        html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    document.getElementById("or-model-list").innerHTML = html;
+}
