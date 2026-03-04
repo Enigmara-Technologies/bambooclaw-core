@@ -57,6 +57,7 @@
         "height": 965,
         "center": true,
         "focus": true,
+        "visible": false,
         "resizable": true,
         "decorations": true,
         "fullscreen": false

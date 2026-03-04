@@ -3,6 +3,7 @@
 use std::sync::Mutex;
 use std::process::Child;
 use std::path::Path;
+use tauri::Manager;
 
 // State manager to keep track of the running background daemon
 struct DaemonState(Mutex<Option<Child>>);
@@ -62,7 +63,7 @@ fn check_prerequisite(name: String) -> Result<String, String> {
             #[cfg(target_os = "windows")]
             {
                 let vswhere = "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe";
-                run_shell_command(vswhere.to_string(), vec!["-latest".to_string(), "-property".to_string(), "installationPath"])
+                run_shell_command(vswhere.to_string(), vec!["-latest".to_string(), "-property".to_string(), "installationPath".to_string()])
             }
             #[cfg(not(target_os = "windows"))]
             {
@@ -204,6 +205,30 @@ fn emergency_flush(state: tauri::State<DaemonState>) -> Result<String, String> {
 fn main() {
     tauri::Builder::default()
         .manage(DaemonState(Mutex::new(None)))
+        .setup(|app| {
+            let window = app.get_window("main").unwrap();
+
+            // Force the window into the foreground on Windows.
+            //
+            // Windows 10/11 focus-stealing prevention blocks apps launched from
+            // an installer context from claiming the foreground normally, even
+            // with focus:true in tauri.conf.json. The workaround: briefly set
+            // always-on-top (which bypasses the OS restriction), show and focus
+            // the window, then release always-on-top after 500ms so it behaves
+            // like a normal window from that point on.
+            window.set_always_on_top(true).unwrap();
+            window.center().unwrap();
+            window.show().unwrap();
+            window.set_focus().unwrap();
+
+            let w = window.clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_millis(500));
+                let _ = w.set_always_on_top(false);
+            });
+
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             get_platform,
             get_home_dir,
