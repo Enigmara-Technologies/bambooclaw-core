@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,8 +19,9 @@
             <div class="splash-bar-track"><div class="splash-bar-fill"></div></div>
         </div>
         <script>
+        // Self-contained splash timer — runs independently of boot()
         (function() {
-            var SPLASH_DURATION = 1500;
+            var SPLASH_DURATION = 3000;
             var splashEl = document.getElementById("splash-screen");
             if (!splashEl) return;
             setTimeout(function() {
@@ -46,15 +48,36 @@
                     <h1>Environment Audit</h1>
                     <p class="subtitle">Ensuring your system is prepared for BambooClaw™ edge deployment.</p>
                     <div>
-                        <div class="check-row"><span>Operating System</span><span class="status-badge status-detecting" id="chk-os">Detecting...</span></div>
-                        <div class="check-row"><span>Rust Toolchain</span><span class="status-badge status-detecting" id="chk-rust">Detecting...</span></div>
-                        <div class="check-row"><span>Git CLI</span><span class="status-badge status-detecting" id="chk-git">Detecting...</span></div>
-                        <div class="check-row"><span>Build Tools</span><span class="status-badge status-detecting" id="chk-build">Detecting...</span></div>
-                        <div class="check-row"><span>Python</span><span class="status-badge status-detecting" id="chk-python">Detecting...</span></div>
-                        <div class="check-row"><span>Node.js</span><span class="status-badge status-detecting" id="chk-node">Detecting...</span></div>
+                        <div class="check-row">
+                            <span>Operating System</span>
+                            <span class="status-badge status-detecting" id="chk-os">Detecting...</span>
+                        </div>
+                        <div class="check-row">
+                            <span>Rust Toolchain</span>
+                            <span class="status-badge status-detecting" id="chk-rust">Detecting...</span>
+                        </div>
+                        <div class="check-row">
+                            <span>Git CLI</span>
+                            <span class="status-badge status-detecting" id="chk-git">Detecting...</span>
+                        </div>
+                        <div class="check-row">
+                            <span>Build Tools</span>
+                            <span class="status-badge status-detecting" id="chk-build">Detecting...</span>
+                        </div>
+                        <div class="check-row">
+                            <span>Python</span>
+                            <span class="status-badge status-detecting" id="chk-python">Detecting...</span>
+                        </div>
+                        <div class="check-row">
+                            <span>Node.js</span>
+                            <span class="status-badge status-detecting" id="chk-node">Detecting...</span>
+                        </div>
                     </div>
                     <div class="log-container">
-                        <div class="log-header"><span>BOOT TRACE LOG</span><button class="btn btn-sm btn-outline" id="btn-copy-boot-log" style="padding: 2px 6px; font-size: 0.7rem;">📋 Copy</button></div>
+                        <div class="log-header">
+                            <span>BOOT TRACE LOG</span>
+                            <button class="btn btn-sm btn-outline" id="btn-copy-boot-log" style="padding: 2px 6px; font-size: 0.7rem;">📋 Copy</button>
+                        </div>
                         <div class="log-body" id="boot-log"></div>
                     </div>
                     <div style="margin-top: 1.5rem; text-align: right;">
@@ -62,11 +85,40 @@
                     </div>
                 </div>
 
+    <script>
+    (function() {
+        try {
+            var el = document.getElementById("boot-log");
+            if (el) el.textContent = "[CANARY] JS engine alive at " + new Date().toISOString() + "\n";
+            // Also init unified log
+            var ul = document.getElementById("unified-log");
+            if (ul && !ul.textContent) ul.textContent = "";
+        } catch(e) {}
+    })();
+    // Global error boundary
+    window.onerror = function(msg, src, line, col, err) {
+        try {
+            var el = document.getElementById("boot-log");
+            if (el) el.textContent += "[FATAL] " + msg + " at line " + line + ":" + col + "\n";
+        } catch(e) {}
+        return false;
+    };
+    window.addEventListener("unhandledrejection", function(event) {
+        try {
+            var el = document.getElementById("boot-log");
+            if (el) el.textContent += "[FATAL] Unhandled rejection: " + (event.reason ? (event.reason.message || event.reason) : "unknown") + "\n";
+        } catch(e) {}
+    });
+    </script>
+
                 <div class="glass-card wizard-step hidden" id="step-1">
                     <h1>Readying Prereqs</h1>
                     <p class="subtitle">Applying required system dependencies and development toolchains.</p>
                     <div class="log-container">
-                        <div class="log-header"><span>SYSTEM INSTALLATION LOG</span><button class="btn btn-sm btn-outline" id="btn-copy-install-log" style="padding: 2px 6px; font-size: 0.7rem;">📋 Copy</button></div>
+                        <div class="log-header">
+                            <span>SYSTEM INSTALLATION LOG</span>
+                            <button class="btn btn-sm btn-outline" id="btn-copy-install-log" style="padding: 2px 6px; font-size: 0.7rem;">📋 Copy</button>
+                        </div>
                         <div class="log-body" id="install-log"></div>
                     </div>
                     <div style="margin-top: 1.5rem; display: flex; justify-content: space-between;">
@@ -78,6 +130,7 @@
                 <div class="glass-card wizard-step hidden" id="step-2">
                     <h1>Agent Capabilities</h1>
                     <p class="subtitle">Select additional tools to maximize your agent's autonomous power.</p>
+
                     <div style="margin-bottom: 1rem;">
                         <label style="display:flex;align-items:flex-start;gap:0.75rem;padding:1rem;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:rgba(16,185,129,0.05);">
                             <input type="checkbox" id="cap-python" checked style="margin-top:3px;accent-color:var(--accent);width:18px;height:18px;">
@@ -88,6 +141,7 @@
                             </div>
                         </label>
                     </div>
+
                     <div style="margin-bottom: 1rem;">
                         <label style="display:flex;align-items:flex-start;gap:0.75rem;padding:1rem;border:1px solid var(--border);border-radius:8px;cursor:pointer;">
                             <input type="checkbox" id="cap-browser" style="margin-top:3px;accent-color:var(--accent);width:18px;height:18px;">
@@ -98,10 +152,26 @@
                             </div>
                         </label>
                     </div>
+
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display:flex;align-items:flex-start;gap:0.75rem;padding:1rem;border:1px solid var(--border);border-radius:8px;cursor:pointer;">
+                            <input type="checkbox" id="cap-node" style="margin-top:3px;accent-color:var(--accent);width:18px;height:18px;">
+                            <div>
+                                <div style="font-weight:600;">Developer Tools</div>
+                                <div style="font-size:0.8rem;color:var(--text-dim);margin-top:0.25rem;">Node.js LTS</div>
+                                <div style="font-size:0.75rem;color:var(--text-dim);margin-top:0.25rem;">Enables: JavaScript execution, npm package ecosystem</div>
+                            </div>
+                        </label>
+                    </div>
+
                     <div class="log-container">
-                        <div class="log-header"><span>CAPABILITY INSTALL LOG</span><button class="btn btn-sm btn-outline" id="btn-copy-cap-log" style="padding: 2px 6px; font-size: 0.7rem;">📋 Copy</button></div>
+                        <div class="log-header">
+                            <span>CAPABILITY INSTALL LOG</span>
+                            <button class="btn btn-sm btn-outline" id="btn-copy-cap-log" style="padding: 2px 6px; font-size: 0.7rem;">📋 Copy</button>
+                        </div>
                         <div class="log-body" id="capability-log"></div>
                     </div>
+
                     <div style="margin-top: 1.5rem; display: flex; justify-content: space-between;">
                         <button class="btn btn-outline" id="btn-back-step2">← Back</button>
                         <div style="display:flex;gap:0.75rem;">
@@ -113,7 +183,7 @@
 
                 <div class="glass-card wizard-step hidden" id="step-3">
                     <div style="text-align: center; padding: 2rem 0;">
-                        <div style="font-size: 3rem; margin-bottom: 1rem; color: var(--success);">✓</div>
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">✓</div>
                         <h1>Installation Complete</h1>
                         <p class="subtitle">BambooClaw™ is now registered as a system service.</p>
                         <div class="form-group" style="text-align: left;">
@@ -133,6 +203,8 @@
                     <div class="tab" data-tab="tab-skills">Skills</div>
                     <div class="tab" data-tab="tab-settings">Settings</div>
                     <div class="tab" data-tab="tab-logs">Logs</div>
+                    <div class="tab" data-tab="tab-help">Help</div>
+                    <div class="tab" data-tab="tab-about">About</div>
                 </div>
 
                 <div class="glass-card tab-panel" id="tab-llm">
@@ -150,25 +222,16 @@
                             <option value="inception">Inception</option>
                         </select>
                     </div>
-                    
                     <div class="form-group">
                         <label>Secret API Key</label>
-                        <div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; background: #050507; overflow: hidden;">
-                            <input type="password" id="llm-api-key" placeholder="sk-..." style="border: none; border-radius: 0; outline: none; background: transparent; flex: 1; padding: 0.75rem;" />
-                            <button type="button" onclick="window.toggleKeyVisibility('llm-api-key', this)" class="btn btn-outline" style="border: none; border-radius: 0; padding: 0.75rem; height: 100%; border-left: 1px solid var(--border);">👁️</button>
-                        </div>
-                        <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.4rem;">
-                            Each provider remembers its own API key securely.
-                        </p>
+                        <input type="password" id="llm-api-key" placeholder="sk-..." />
                     </div>
-
                     <div class="form-group" id="llm-model-group">
                         <label>Model</label>
                         <select id="llm-model">
                             <option value="">Select provider first</option>
                         </select>
                     </div>
-                    
                     <div class="form-group hidden" id="or-models-area">
                         <label>Model <span id="or-model-count" style="color:var(--text-dim);font-size:0.8rem;"></span></label>
                         <div class="active-model-display" id="or-active-model">
@@ -183,19 +246,18 @@
                             <button class="btn btn-sm btn-outline" id="or-sort-output">▼ Output $/1M</button>
                             <button class="btn btn-sm" id="btn-fetch-models">Fetch Models</button>
                         </div>
-                        <div id="or-model-list" style="height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;background:#050507;"></div>
+                        <div id="or-model-list" style="height:420px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;background:#050507;"></div>
                     </div>
                     
                     <div id="llm-save-reminder" class="save-reminder">⚠ You have unsaved changes. Click <strong>Apply Configuration</strong> to save.</div>
-                    <div style="margin-top: 1rem;">
-                        <button class="btn" id="btn-apply-llm">Apply Configuration</button>
-                        <button class="btn btn-outline" style="margin-left: 0.5rem;" id="btn-test-llm">Test Connection</button>
-                    </div>
+                    <button class="btn" id="btn-apply-llm">Apply Configuration</button>
+                    <button class="btn btn-outline" style="margin-left: 0.5rem;" id="btn-test-llm">Test Connection</button>
                 </div>
 
                 <div class="glass-card tab-panel hidden" id="tab-channels">
                     <h1 style="font-size: 1.3rem; margin-bottom: 0.5rem;">Active Channels</h1>
                     <p class="subtitle">Connect your agent to external messaging platforms.</p>
+
                     <div class="channel-row">
                         <div>
                             <div class="channel-name">🤖 Telegram Bot</div>
@@ -203,6 +265,7 @@
                         </div>
                         <button class="btn btn-sm btn-outline" id="btn-setup-tg">Setup</button>
                     </div>
+
                     <div class="channel-row">
                         <div>
                             <div class="channel-name">💬 Discord App</div>
@@ -210,6 +273,7 @@
                         </div>
                         <button class="btn btn-sm btn-outline" id="btn-setup-dc">Setup</button>
                     </div>
+
                     <div class="channel-row">
                         <div>
                             <div class="channel-name">📱 WhatsApp</div>
@@ -217,6 +281,7 @@
                         </div>
                         <button class="btn btn-sm btn-outline" id="btn-setup-wa">Setup</button>
                     </div>
+
                     <div class="channel-row">
                         <div>
                             <div class="channel-name">🔗 Slack</div>
@@ -224,6 +289,7 @@
                         </div>
                         <button class="btn btn-sm btn-outline" id="btn-setup-sl">Setup</button>
                     </div>
+
                     <div id="channel-setup-area" class="hidden" style="margin-top: 1.5rem; padding: 1.5rem; border: 1px solid var(--border); border-radius: 8px; background: #050507;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                             <h2 style="font-size: 1.1rem;" id="channel-setup-title">Setup</h2>
@@ -247,6 +313,7 @@
                             <button class="btn btn-flush" id="btn-emergency-flush">⚠ Emergency Flush</button>
                         </div>
                     </div>
+
                     <h2 style="font-size: 1rem; margin-bottom: 0.5rem; color: var(--text-dim);">Agent Chat</h2>
                     <div class="chat-container">
                         <div class="chat-messages" id="agent-chat-messages">
@@ -257,11 +324,12 @@
                             <button type="button" class="btn" style="border-radius: 0;" id="btn-send-chat">Send</button>
                         </div>
                     </div>
+
                 </div>
 
                 <div class="glass-card tab-panel hidden" id="tab-skills">
                     <h1 style="font-size: 1.3rem; margin-bottom: 0.5rem;">🧩 Skills</h1>
-                    <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Extend your agent with real integrations.</p>
+                    <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Extend your agent with real integrations. Toggle skills to inject their tools into the agent.</p>
 
                     <div class="active-tools-panel" id="active-tools-summary">
                         <div class="active-tools-header" id="btn-toggle-tools-list">
@@ -285,12 +353,9 @@
                         <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
                             <div class="form-group" style="flex:1; margin-bottom: 0;">
                                 <label>Composio API Key</label>
-                                <div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; background: #050507; overflow: hidden;">
-                                    <input type="password" id="composio-api-key" placeholder="Your Composio API key..." style="border: none; border-radius: 0; outline: none; background: transparent; flex: 1; padding: 0.75rem;" />
-                                    <button type="button" onclick="window.toggleKeyVisibility('composio-api-key', this)" class="btn btn-outline" style="border: none; border-radius: 0; padding: 0.75rem; height: 100%; border-left: 1px solid var(--border);">👁️</button>
-                                </div>
+                                <input type="password" id="composio-api-key" placeholder="Your Composio API key..." />
                             </div>
-                            <button class="btn btn-sm" id="btn-save-composio" style="height: 48px;">Connect</button>
+                            <button class="btn btn-sm" id="btn-save-composio" style="height: 38px;">Connect</button>
                         </div>
                         <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0.5rem;">
                             Get a free API key at <span style="color: var(--accent); cursor: pointer;" id="btn-open-composio">app.composio.dev/settings</span>
@@ -302,6 +367,7 @@
                         <div id="composio-placeholder" style="padding: 2rem; text-align: center; color: var(--text-dim); border: 1px dashed var(--border); border-radius: 8px; margin-bottom: 1rem;">
                             Enter your Composio API key and click Connect to load available integrations.
                         </div>
+
                         <div id="composio-connected-area" class="hidden">
                             <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center;">
                                 <input type="text" id="skill-search" placeholder="Search toolkits..." style="flex: 1;" />
@@ -311,11 +377,13 @@
                             <div id="composio-pagination" style="text-align: center; margin-top: 1rem;"></div>
                         </div>
                     </div>
+
                 </div>
 
                 <div class="glass-card tab-panel hidden" id="tab-settings">
                     <h1 style="font-size: 1.3rem; margin-bottom: 0.5rem;">Agent Settings</h1>
-                    <div class="settings-grid" style="margin-bottom: 1.5rem;">
+                    <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1.5rem;">These settings are pre-configured with optimal defaults. No changes are needed unless you have specific requirements.</p>
+                    <div class="settings-grid">
                         <div class="form-group">
                             <label>Autonomy Level</label>
                             <select id="set-autonomy">
@@ -323,14 +391,8 @@
                                 <option value="collaborative" selected>Collaborative (Needs Approval)</option>
                                 <option value="autonomous">Full Autonomy</option>
                             </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Active Persona</label>
-                            <select id="set-identity">
-                                <option value="-1">— BambooClaw Default (No Persona) —</option>
-                            </select>
                             <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.4rem;">
-                                Select a persona to inject specific rules. Manage them below.
+                                Determines which shell commands the agent can run without explicit user consent.
                             </p>
                         </div>
                         <div class="form-group">
@@ -345,6 +407,15 @@
                                 <option value="tailscale">Tailscale</option>
                                 <option value="ngrok">ngrok</option>
                             </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Active Persona</label>
+                            <select id="set-identity">
+                                <option value="-1">— BambooClaw Default (System Prompt Only) —</option>
+                            </select>
+                            <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.4rem;">
+                                Select a persona to inject specific behavioral rules. Manage personas below.
+                            </p>
                         </div>
                         <div class="form-group">
                             <label>Runtime Adapter</label>
@@ -373,68 +444,377 @@
                         </div>
                     </div>
 
+                    <div class="form-group" style="margin-top: 1.5rem;">
+                        <label>System Prompt</label>
+                        <textarea id="settings-system-prompt" rows="20" placeholder="Custom instructions for the agent. These are injected as highest-priority operator instructions..." style="min-height:400px;overflow-y:auto;resize:vertical;"></textarea>
+                        <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.4rem;">
+                            Custom instructions injected into every agent conversation as highest-priority operator directives.
+                        </p>
+                    </div>
+
                     <div style="margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1.5rem;">
-                        <h2 style="font-size: 1.1rem; margin-bottom: 0.5rem;">🎭 Manage Personas</h2>
-                        <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Create specialized roles for your agent.</p>
-                        
+                        <h2 style="font-size: 1.1rem; margin-bottom: 0.5rem;">🎭 Personas</h2>
+                        <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Create reusable personas. The active persona is selected in the settings grid above and combined with the System Prompt.</p>
+
                         <div id="persona-list" style="margin-bottom: 1rem;"></div>
 
                         <details id="persona-details-block" style="border: 1px solid var(--border); border-radius: 8px; padding: 0; background: #050507;">
-                            <summary style="padding: 0.75rem 1rem; cursor: pointer; font-weight: 600; font-size: 0.9rem; color: var(--accent); user-select: none; list-style: none;">+ Create / Edit Persona</summary>
+                            <summary style="padding: 0.75rem 1rem; cursor: pointer; font-weight: 600; font-size: 0.9rem; color: var(--accent); user-select: none; list-style: none;">+ Create New Persona</summary>
                             <div style="padding: 1rem;">
-                                <div style="background: rgba(16, 185, 129, 0.05); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px dashed var(--accent-glow);">
-                                    <label style="color: var(--accent);">✨ AI Prompt Engineer</label>
-                                    <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:0.5rem;">Describe your goal, and the selected LLM will write the perfect operator instructions for you.</p>
-                                    <textarea id="ai-persona-intent" rows="2" placeholder="e.g., 'Act as a senior Python developer who writes highly optimized code'..." style="margin-bottom: 0.75rem;"></textarea>
-                                    <button type="button" class="btn btn-sm" id="btn-generate-persona">✨ Auto-Generate Instructions</button>
-                                </div>
                                 <div class="form-group">
                                     <label>Persona Name</label>
-                                    <input type="text" id="new-persona-name" placeholder="e.g. Expert Python Developer..." />
+                                    <input type="text" id="new-persona-name" placeholder="e.g. Code Reviewer, Creative Writer..." />
                                 </div>
                                 <div class="form-group">
-                                    <label>Persona Instructions</label>
-                                    <textarea id="new-persona-prompt" rows="8" placeholder="Define how the agent should behave..." style="resize:vertical;"></textarea>
+                                    <label>Persona Prompt</label>
+                                    <textarea id="new-persona-prompt" rows="20" placeholder="Define how the agent should behave when this persona is active..." style="min-height:400px;overflow-y:auto;resize:vertical;"></textarea>
                                 </div>
-                                <div style="display: flex; gap: 0.5rem;">
-                                    <button type="button" class="btn btn-sm" id="btn-create-persona">Save Persona</button>
-                                    <button type="button" class="btn btn-sm btn-outline hidden" id="btn-cancel-edit-persona">Cancel</button>
-                                </div>
+                                <button class="btn btn-sm" id="btn-create-persona">Create Persona</button>
                             </div>
                         </details>
                     </div>
 
-                    <div id="settings-save-reminder" class="save-reminder" style="margin-top: 1.5rem;">⚠ You have unsaved changes. Click <strong>Save Settings</strong> to apply.</div>
-                    <div style="margin-top: 1rem;">
+                    <div id="settings-save-reminder" class="save-reminder">⚠ You have unsaved changes. Click <strong>Save Settings</strong> to apply.</div>
+                    <div style="margin-top: 1.5rem;">
                         <button class="btn" id="btn-save-settings">Save Settings</button>
                         <button class="btn btn-outline" style="margin-left: 0.5rem;" id="btn-reset-settings">Reset Defaults</button>
                     </div>
                 </div>
 
+                <div class="glass-card tab-panel hidden" id="tab-help">
+                    <h1 style="font-size: 1.3rem; margin-bottom: 0.25rem;">📖 BambooClaw™ Help Center</h1>
+                    <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1.25rem;">Everything you need to know, explained in plain English. Click any section to expand it.</p>
+
+                    <div class="help-search-wrap">
+                        <input type="text" class="help-search" id="help-search" placeholder="Search help topics..." />
+                    </div>
+
+                    <details class="help-section" open>
+                        <summary>👋 What is BambooClaw™?</summary>
+                        <div class="help-body">
+                            <p><strong>BambooClaw™ is your personal AI assistant that lives on your computer.</strong> Think of it like ChatGPT, but it runs privately on your machine, talks to you through apps you already use (like Telegram or Discord), and can actually do things on your computer — browse the web, write files, run code, and more.</p>
+                            <p>This Companion App is the control panel for your assistant. From here you can:</p>
+                            <ul>
+                                <li>Choose which AI brain powers your assistant (ChatGPT, Claude, Gemini, etc.)</li>
+                                <li>Connect messaging apps so you can chat with your assistant from your phone</li>
+                                <li>Start and stop the assistant</li>
+                                <li>Add new skills (like reading emails or searching the web)</li>
+                                <li>Fine-tune how autonomous your assistant is</li>
+                            </ul>
+                            <div class="help-tip">💡 <strong>Tip:</strong> BambooClaw™ runs as a background service on your computer. You don't need to keep this app open — once your assistant is running, it stays running until you stop it.</div>
+                        </div>
+                    </details>
+
+                    <details class="help-section">
+                        <summary>🚀 Getting Started (First-Time Setup)</summary>
+                        <div class="help-body">
+                            <p>When you first open BambooClaw™, the installer wizard walks you through everything:</p>
+                            <div class="help-step"><div class="help-step-num">1</div><div><strong>Environment Audit</strong> — The app checks if your system has the required tools installed (Rust, Git, and Build Tools). Green ✓ means it's ready. If something is missing, it will offer to install it for you automatically.</div></div>
+                            <div class="help-step"><div class="help-step-num">2</div><div><strong>Initialize Environment</strong> — Installs any missing tools. This may take a few minutes depending on your internet speed. You can watch the progress in the log window.</div></div>
+                            <div class="help-step"><div class="help-step-num">3</div><div><strong>Deploy Agent</strong> — Downloads and compiles the BambooClaw™ agent binary. This is the actual AI assistant engine. It takes 3–8 minutes depending on your PC speed.</div></div>
+                            <div class="help-step"><div class="help-step-num">4</div><div><strong>Enter Dashboard</strong> — Once done, you land here — the control panel where you configure and manage everything.</div></div>
+                            <div class="help-warn">⚠️ <strong>Important:</strong> The first installation requires an internet connection and about 2 GB of free disk space. Subsequent updates are much faster.</div>
+                            <div class="help-tip">💡 <strong>Tip:</strong> If a step fails, check the Boot Trace Log at the bottom of the screen for error details. The most common issue is a firewall blocking the download.</div>
+                        </div>
+                    </details>
+
+                    <details class="help-section">
+                        <summary>🧠 LLM Settings (Your AI Brain)</summary>
+                        <div class="help-body">
+                            <p>LLM stands for "Large Language Model" — it's the AI that makes your assistant smart. You need to connect at least one AI provider before your assistant can respond to messages.</p>
+
+                            <div class="help-sub">
+                                <h4>Choosing a Provider</h4>
+                                <p>BambooClaw™ supports many AI providers. Here's a quick comparison:</p>
+                                <ul>
+                                    <li><strong>OpenRouter</strong> (Recommended) — One API key gives you access to hundreds of models from every provider. Best value and flexibility.</li>
+                                    <li><strong>OpenAI</strong> — For GPT-4, GPT-5, and other OpenAI models directly.</li>
+                                    <li><strong>Anthropic</strong> — For Claude models. Excellent for careful, nuanced responses.</li>
+                                    <li><strong>Google Gemini</strong> — Google's AI models with large context windows.</li>
+                                    <li><strong>Groq</strong> — Ultra-fast inference. Great for quick tasks.</li>
+                                    <li><strong>Ollama</strong> — Run models entirely on your own computer, no internet needed. Free but requires a powerful GPU.</li>
+                                    <li><strong>DeepSeek</strong> — High-quality models at very low cost.</li>
+                                    <li><strong>Mistral</strong> — European AI provider with fast, capable models.</li>
+                                    <li><strong>Inception</strong> — Mercury 2 model for ultra-fast code generation via api.inceptionlabs.ai.</li>
+                                </ul>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>How to Set Up</h4>
+                                <div class="help-step"><div class="help-step-num">1</div><div>Pick your provider from the <strong>AI Provider</strong> dropdown.</div></div>
+                                <div class="help-step"><div class="help-step-num">2</div><div>Paste your <strong>API Key</strong>. You get this from the provider's website (e.g., <code>openrouter.ai/keys</code>). It usually starts with <code>sk-</code>.</div></div>
+                                <div class="help-step"><div class="help-step-num">3</div><div>Select a <strong>Model</strong>. If you chose OpenRouter, click "Fetch Models" to see all available options with pricing.</div></div>
+                                <div class="help-step"><div class="help-step-num">4</div><div>Click <strong>"Apply Configuration"</strong> to save.</div></div>
+                                <div class="help-step"><div class="help-step-num">5</div><div>Click <strong>"Test Connection"</strong> to verify everything works.</div></div>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>System Prompt (Optional)</h4>
+                                <p>The system prompt tells the AI how to behave. For example: "You are a helpful coding assistant. Be concise." Leave it blank to use the default BambooClaw™ persona.</p>
+                            </div>
+
+                            <div class="help-tip">💡 <strong>Tip:</strong> If you're new, start with <strong>OpenRouter</strong>. Sign up at openrouter.ai, add $5 credit, copy your key, and you'll have access to hundreds of models instantly.</div>
+                        </div>
+                    </details>
+
+                    <details class="help-section">
+                        <summary>📡 Channels (Where You Talk to Your Agent)</summary>
+                        <div class="help-body">
+                            <p>Channels let you chat with your BambooClaw assistant from messaging apps on your phone or desktop. You can connect multiple channels at the same time.</p>
+
+                            <div class="help-sub">
+                                <h4>🤖 Telegram Setup</h4>
+                                <p>Telegram is the easiest channel to set up. Here's how:</p>
+                                <div class="help-step"><div class="help-step-num">1</div><div>Open Telegram and search for <strong>@BotFather</strong> (the official Telegram bot for creating bots).</div></div>
+                                <div class="help-step"><div class="help-step-num">2</div><div>Send <code>/newbot</code> to BotFather. It will ask you for a name and username for your bot.</div></div>
+                                <div class="help-step"><div class="help-step-num">3</div><div>BotFather will give you a <strong>Bot Token</strong> — a long string of numbers and letters. Copy it.</div></div>
+                                <div class="help-step"><div class="help-step-num">4</div><div>Back in BambooClaw™, go to <strong>Channels → Telegram → Setup</strong>.</div></div>
+                                <div class="help-step"><div class="help-step-num">5</div><div>Paste your Bot Token and click <strong>Save</strong>.</div></div>
+                                <div class="help-step"><div class="help-step-num">6</div><div>Add your Telegram user ID to the <strong>Allowed Users</strong> list. This prevents strangers from using your bot.</div></div>
+                                <div class="help-tip">💡 <strong>Tip:</strong> To find your Telegram user ID, search for <strong>@userinfobot</strong> on Telegram and send it any message. It will reply with your numeric ID.</div>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>💬 Discord Setup</h4>
+                                <div class="help-step"><div class="help-step-num">1</div><div>Go to <strong>discord.com/developers/applications</strong> and click "New Application".</div></div>
+                                <div class="help-step"><div class="help-step-num">2</div><div>Give it a name (e.g., "BambooClaw"), then go to the <strong>Bot</strong> section.</div></div>
+                                <div class="help-step"><div class="help-step-num">3</div><div>Click "Reset Token" and copy the new <strong>Bot Token</strong>.</div></div>
+                                <div class="help-step"><div class="help-step-num">4</div><div>Enable these <strong>Privileged Gateway Intents</strong>: Message Content Intent, Server Members Intent.</div></div>
+                                <div class="help-step"><div class="help-step-num">5</div><div>Go to <strong>OAuth2 → URL Generator</strong>. Check "bot" scope, then "Send Messages" and "Read Message History" permissions. Copy the invite URL and add the bot to your server.</div></div>
+                                <div class="help-step"><div class="help-step-num">6</div><div>Back in BambooClaw™, go to <strong>Channels → Discord → Setup</strong> and paste your Bot Token.</div></div>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>📱 WhatsApp & 💼 Slack</h4>
+                                <p>WhatsApp and Slack integrations are available but require additional setup with business APIs. Click the <strong>Setup</strong> button for each to see the step-by-step instructions specific to that platform.</p>
+                            </div>
+
+                            <div class="help-warn">⚠️ <strong>Important:</strong> Your BambooClaw™ daemon must be running for channels to work. Messages received while the daemon is stopped will be missed.</div>
+                        </div>
+                    </details>
+
+                    <details class="help-section">
+                        <summary>🎮 Agent Control (Running Your Assistant)</summary>
+                        <div class="help-body">
+                            <p>The Agent Control tab is where you start, stop, and chat with your BambooClaw assistant.</p>
+
+                            <div class="help-sub">
+                                <h4>Starting & Stopping</h4>
+                                <p>Click <strong>"Start Daemon"</strong> to launch your assistant in the background. The status indicator will change from 🔴 Stopped to 🟢 Running.</p>
+                                <p>Click <strong>"Stop Daemon"</strong> to shut it down. Any connected channels (Telegram, Discord) will stop receiving responses until you start it again.</p>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>In-App Chat</h4>
+                                <p>The built-in chat lets you talk to your assistant directly, without needing Telegram or Discord. Type your message and press Send. The response comes from the same AI brain you configured in LLM Settings.</p>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>Runtime Log</h4>
+                                <p>The log panel shows real-time activity: incoming messages, AI responses, tool executions, and errors. This is your best friend for understanding what your assistant is doing.</p>
+                                <ul>
+                                    <li><strong>Green text</strong> — Successful actions</li>
+                                    <li><strong>Yellow text</strong> — Warnings (non-critical)</li>
+                                    <li><strong>Red text</strong> — Errors (something went wrong)</li>
+                                </ul>
+                            </div>
+
+                            <div class="help-tip">💡 <strong>Tip:</strong> You can close the Companion App and the daemon will keep running in the background. Re-open the app anytime to check the status.</div>
+                        </div>
+                    </details>
+
+                    <details class="help-section">
+                        <summary>🧩 Skills (Extending What Your Agent Can Do)</summary>
+                        <div class="help-body">
+                            <p>Skills give your assistant superpowers beyond just chatting. With skills enabled, your assistant can interact with real apps and services.</p>
+
+                            <div class="help-sub">
+                                <h4>What is Composio?</h4>
+                                <p><strong>Composio</strong> is the platform that provides skills to BambooClaw. Think of it as an app store for your AI assistant. Each skill connects your assistant to a real service (Gmail, GitHub, Google Search, etc.).</p>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>Setting Up Skills</h4>
+                                <div class="help-step"><div class="help-step-num">1</div><div>Go to <strong>composio.dev</strong> and create a free account.</div></div>
+                                <div class="help-step"><div class="help-step-num">2</div><div>Navigate to your <strong>Settings → API Keys</strong> and copy your key.</div></div>
+                                <div class="help-step"><div class="help-step-num">3</div><div>In BambooClaw™, go to the <strong>Skills</strong> tab and paste your Composio API Key.</div></div>
+                                <div class="help-step"><div class="help-step-num">4</div><div>Toggle on any skills you want to enable. Each skill card shows what it does.</div></div>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>Skill Categories</h4>
+                                <ul>
+                                    <li>🔍 <strong>Web Search</strong> — Search Google, DuckDuckGo, or Brave from chat</li>
+                                    <li>📧 <strong>Email</strong> — Read, draft, and send emails via Gmail</li>
+                                    <li>📁 <strong>File Management</strong> — Read, create, and edit files on your computer</li>
+                                    <li>💻 <strong>Code Execution</strong> — Run Python, JavaScript, or shell commands</li>
+                                    <li>🌐 <strong>Web Browsing</strong> — Visit websites and extract information</li>
+                                    <li>📊 <strong>GitHub</strong> — Create issues, read repos, submit PRs</li>
+                                    <li>📝 <strong>Note-taking</strong> — Create and organize notes</li>
+                                </ul>
+                            </div>
+
+                            <div class="help-warn">⚠️ <strong>Important:</strong> Skills that modify files or run code can make real changes to your system. Start with the <strong>Collaborative</strong> autonomy level (in Settings) so your assistant asks for permission before doing anything potentially risky.</div>
+                        </div>
+                    </details>
+
+                    <details class="help-section">
+                        <summary>⚙️ Settings (Fine-Tuning Behavior)</summary>
+                        <div class="help-body">
+                            <p>The Settings tab lets you control how your assistant behaves. Defaults are already configured for you — only change these if you know what you need.</p>
+
+                            <div class="help-sub">
+                                <h4>Autonomy Levels</h4>
+                                <ul>
+                                    <li><strong>Observation Only</strong> — The assistant can only read and respond. It cannot run commands or modify files. Safest option.</li>
+                                    <li><strong>Collaborative (Default)</strong> — The assistant can suggest actions and execute them after you approve. Best balance of safety and usefulness.</li>
+                                    <li><strong>Full Autonomy</strong> — The assistant can take action without asking. Powerful but use with caution — it can run shell commands, write files, and more.</li>
+                                </ul>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>Other Settings</h4>
+                                <ul>
+                                    <li><strong>Gateway Port</strong> — The local port the daemon listens on (default: 7331). Change only if you have a conflict.</li>
+                                    <li><strong>Tunnel Provider</strong> — If you want to access your agent from outside your network. Most users should leave this as "None".</li>
+                                    <li><strong>Identity Format</strong> — Controls the assistant's persona and name.</li>
+                                    <li><strong>Runtime Adapter</strong> — How code gets executed. "Native" is fastest and recommended.</li>
+                                    <li><strong>Log Level</strong> — How much detail shows in the logs. "Info" is fine for normal use; switch to "Debug" when troubleshooting.</li>
+                                    <li><strong>Max Tool Iterations</strong> — How many steps the AI can chain in one response. Higher values allow more complex tasks but take longer.</li>
+                                </ul>
+                            </div>
+
+                            <div class="help-tip">💡 <strong>Tip:</strong> If you're just getting started, leave all settings at their defaults. The pre-configured values work well for most users.</div>
+                        </div>
+                    </details>
+
+                    <details class="help-section">
+                        <summary>🔧 Troubleshooting / FAQ</summary>
+                        <div class="help-body">
+                            <div class="help-sub">
+                                <h4>"Daemon won't start"</h4>
+                                <ul>
+                                    <li>Check the Dashboard Debug Log at the bottom of the screen for error messages.</li>
+                                    <li>Make sure the installation completed successfully (all wizard steps were green).</li>
+                                    <li>Try restarting the Companion App.</li>
+                                    <li>Ensure port 7331 (or your custom port) is not in use by another application.</li>
+                                </ul>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>"Telegram not responding"</h4>
+                                <ul>
+                                    <li>Verify the daemon is running (check Agent Control tab).</li>
+                                    <li>Make sure you saved a valid Bot Token in Channels → Telegram.</li>
+                                    <li>Check that your Telegram user ID is in the Allowed Users list.</li>
+                                    <li>Try clicking "Test" in the Telegram setup to validate the token.</li>
+                                </ul>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>"Composio key not validating"</h4>
+                                <ul>
+                                    <li>Make sure you copied the full key from composio.dev (Settings → API Keys).</li>
+                                    <li>BambooClaw tries multiple API endpoints automatically. If you're in the desktop app and it still fails, check your internet connection.</li>
+                                    <li>If you're viewing this in a web browser preview, CORS restrictions may block the validation. The key will still work when running in the actual desktop app.</li>
+                                </ul>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>"Model gives errors"</h4>
+                                <ul>
+                                    <li>Double-check your API key is correct and has credits/balance.</li>
+                                    <li>Some models require a paid plan. Try a different, cheaper model first.</li>
+                                    <li>Click "Test Connection" in the LLM Settings tab to see the exact error.</li>
+                                </ul>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>"Everything looks broken in the browser preview"</h4>
+                                <p>If you're viewing BambooClaw™ inside a web browser (e.g., the Lovable preview), some features won't work because they require the actual desktop app (Tauri). Specifically:</p>
+                                <ul>
+                                    <li>Starting/stopping the daemon</li>
+                                    <li>System checks (OS detection, Rust, Git)</li>
+                                    <li>Composio API validation (may show CORS errors)</li>
+                                </ul>
+                                <p>These all work correctly in the real desktop app. The browser preview is useful for checking the UI layout and reading help content like this.</p>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>"How do I update BambooClaw?"</h4>
+                                <p>When a new version is available, the Companion App will show an update notification on the top-right. Click it to download and install the update. Your settings and channel configurations are preserved across updates.</p>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>"Where is my data stored?"</h4>
+                                <p>All BambooClaw™ data is stored locally on your computer in the <code>~/.bambooclaw/</code> folder. This includes your configuration, API keys, and chat history. Nothing is sent to external servers except your messages to the AI provider you chose.</p>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="glass-card tab-panel hidden" id="tab-about">
+                    <h1 style="font-size: 1.3rem; margin-bottom: 1rem;">About BambooClaw™</h1>
+                    <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 8px; background: #050507; margin-bottom: 1rem;">
+                        <div style="margin-bottom: 1rem;">
+                            <span style="color: var(--text-dim); font-size: 0.85rem;">Version</span>
+                            <div style="font-size: 1.1rem; font-weight: 700; color: var(--accent);" id="about-version">loading...</div>
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <span style="color: var(--text-dim); font-size: 0.85rem;">Trademark</span>
+                            <div style="font-size: 0.9rem;">BambooClaw™ is a trademark of <a href="https://www.bamboosynergytec.com" target="_blank" style="color: var(--accent); text-decoration: none;">Bamboo Synergy Technologies</a></div>
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <span style="color: var(--text-dim); font-size: 0.85rem;">Developer</span>
+                            <div style="font-size: 0.9rem;">Developed by <a href="https://www.enigmara.com" target="_blank" style="color: var(--accent); text-decoration: none;">Enigmara Technologies Corp.</a></div>
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <span style="color: var(--text-dim); font-size: 0.85rem;">Support</span>
+                            <div style="font-size: 0.9rem;"><a href="mailto:info@bamboosynergytec.com" style="color: var(--accent); text-decoration: none;">info@bamboosynergytec.com</a></div>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.8rem; color: var(--text-dim);" id="about-copyright">© 2025 Bamboo Synergy Technologies, Inc.</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="glass-card tab-panel hidden" id="tab-logs">
                     <h1 style="font-size: 1.3rem; margin-bottom: 0.75rem;">📋 Session Log</h1>
+                    <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1.25rem;">Unified continuous log for this session. All system, agent, and skill events are recorded here with timestamps.</p>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
                         <span style="font-size: 0.75rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace;">SESSION LOG — <span id="session-id-label">...</span></span>
-                        <button class="btn btn-sm btn-outline" id="btn-copy-log">📋 Copy Log</button>
+                        <div style="display:flex;gap:0.5rem;">
+                            <button class="btn btn-sm btn-outline" id="btn-copy-log">📋 Copy Log</button>
+                            <button class="btn btn-sm btn-outline" id="btn-open-log-folder">📂 Open Folder</button>
+                        </div>
                     </div>
                     <div class="log-body" id="unified-log" style="height:400px;background:#050507;border:1px solid var(--border);border-radius:6px;font-size:0.72rem;line-height:1.6;"></div>
+                    <div style="margin-top:1.25rem;padding:0.6rem 0.75rem;background:#050507;border:1px solid var(--border);border-radius:6px;">
+                        <label style="font-size:0.7rem;color:var(--text-dim);margin-bottom:0.25rem;">Log Storage Path</label>
+                        <input type="text" id="log-path-display" readonly value="~/.bambooclaw/logs/" style="font-size:0.75rem;font-family:'JetBrains Mono',monospace;background:transparent;border:none;color:var(--accent);padding:0.25rem 0;" />
+                    </div>
                     <div id="dash-log" style="display:none;"></div>
                     <div id="daemon-log" style="display:none;"></div>
+
                     <div style="margin-top:1.5rem;">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
                             <h2 style="font-size:1.1rem;margin:0;">🔍 Last LLM Request Payload</h2>
                             <button class="btn btn-sm btn-outline" id="btn-copy-payload">📋 Copy Payload</button>
                         </div>
+                        <p style="font-size:0.8rem;color:var(--text-dim);margin-bottom:0.75rem;">The complete request body sent to the model on the last call, including system prompt, persona, skills/tools, conversation history, and user message.</p>
                         <div id="llm-payload-display" class="log-body" style="height:400px;background:#050507;border:1px solid var(--border);border-radius:6px;font-size:0.72rem;line-height:1.6;white-space:pre-wrap;word-break:break-all;color:var(--text-dim);padding:1rem;">
-                            <span style="color:var(--text-dim);font-style:italic;">No LLM call made yet.</span>
+                            <span style="color:var(--text-dim);font-style:italic;">No LLM call made yet. Send a message via chat, Telegram, or another channel to see the full payload here.</span>
                         </div>
                     </div>
                 </div>
+
             </div>
         </main>
     </div>
 
     <div class="toast-container" id="toast-container"></div>
-    <script src="js/app.js"></script>
+
+<script src="js/app.js"></script>
+
 </body>
 </html>
