@@ -502,6 +502,27 @@ async function callLLM(userMessage) {
         var dedupedTools = [], seenToolNames = {};
         agentTools.forEach(function(t) {
             var tn = t.function.name;
+            // Hard guard: strip any composio_ tool whose toolkit is not in enabledSkills
+            if (tn.startsWith("composio_")) {
+                // tn is like "composio_GITHUB_CREATE_ISSUE" or "composio_github"
+                // enabledSkills keys are like "composio_github" (lowercase slug)
+                var toolSlugUpper = tn.replace(/^composio_/, ""); // e.g. "GITHUB_CREATE_ISSUE"
+                var matchedEnabled = Object.keys(enabledSkills).some(function(sk) {
+                    if (!enabledSkills[sk] || !sk.startsWith("composio_")) return false;
+                    var skSlug = sk.replace("composio_", "").toUpperCase(); // e.g. "GITHUB"
+                    return toolSlugUpper.startsWith(skSlug + "_") || toolSlugUpper === skSlug;
+                });
+                // Also check composioToolMap for exact matches (slugs with underscores in name)
+                if (!matchedEnabled && window.composioToolMap && window.composioToolMap[tn]) {
+                    var mapped = window.composioToolMap[tn].toUpperCase();
+                    matchedEnabled = Object.keys(enabledSkills).some(function(sk) {
+                        if (!enabledSkills[sk] || !sk.startsWith("composio_")) return false;
+                        var skSlug = sk.replace("composio_", "").toUpperCase();
+                        return mapped.startsWith(skSlug + "_") || mapped.startsWith(skSlug);
+                    });
+                }
+                if (!matchedEnabled) return; // skip this tool
+            }
             if (!seenToolNames[tn]) { seenToolNames[tn] = true; if (!t.function.description) t.function.description = tn; dedupedTools.push(t); }
         });
         var reqBody = { model: model, messages: messages, max_tokens: 4096 };

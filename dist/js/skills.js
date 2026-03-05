@@ -563,6 +563,46 @@ function rebuildBuiltinTools() {
     renderActiveToolsSummary(); renderEnabledIntegrations();
 }
 
+async function restoreComposioState() {
+    // Called on boot. Fetches the toolkit list for UI display, then re-fetches tools
+    // ONLY for integrations the user has actually enabled. Never injects all 500 toolkits.
+    var key = currentConfig.composioApiKey;
+    if (!key) return;
+    var statusEl = document.getElementById("composio-status");
+    if (statusEl) { statusEl.style.display = "block"; statusEl.innerHTML = '<span style="color:var(--text-dim);">⟳ Restoring Composio tools...</span>'; }
+
+    try {
+        var resp = await fetch(COMPOSIO_API_URL + "/toolkits?limit=500", { headers: { "x-api-key": key } });
+        if (!resp.ok) { if (statusEl) statusEl.innerHTML = '<span style="color:var(--error);">✗ Composio key error (' + resp.status + ')</span>'; return; }
+        var toolkitsData = await resp.json();
+        composioToolkits = (toolkitsData.items || []).map(function(tk) {
+            var m = tk.meta || {};
+            return { slug: tk.slug, name: tk.name || tk.slug, description: m.description || tk.description || "", logo: m.logo || tk.logo || "", categories: (m.categories || tk.categories || []).map(function(c) { return (typeof c === "object" && c.name) ? c.name : String(c); }), tools_count: m.tools_count || tk.tools_count || 0, triggers_count: m.triggers_count || tk.triggers_count || 0 };
+        });
+        var catSet = {};
+        composioToolkits.forEach(function(tk) { (tk.categories || []).forEach(function(c) { catSet[c] = true; }); });
+        composioCategories = ["All"].concat(Object.keys(catSet).sort());
+        document.getElementById("composio-placeholder").classList.add("hidden");
+        document.getElementById("composio-connected-area").classList.remove("hidden");
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent);">✓ Connected to Composio</span>';
+        renderAllSkills();
+
+        // Now fetch tools ONLY for enabled integrations
+        var enabledSlugs = Object.keys(enabledSkills).filter(function(k) { return enabledSkills[k] && k.startsWith("composio_"); }).map(function(k) { return k.replace("composio_", ""); });
+        if (enabledSlugs.length === 0) { appendLog("dash-log", "[SKILLS] No Composio integrations enabled — no tools injected."); return; }
+        appendLog("dash-log", "[SKILLS] Restoring tools for enabled integrations: " + enabledSlugs.join(", "));
+        agentTools = agentTools.filter(function(t) { return !t.function.name.startsWith("composio_"); });
+        for (var i = 0; i < enabledSlugs.length; i++) {
+            await fetchToolkitTools(enabledSlugs[i]);
+        }
+        appendLog("dash-log", "[SKILLS] Composio restore complete. Tools in payload: " + agentTools.filter(function(t){return t.function.name.startsWith("composio_");}).length);
+    } catch(e) {
+        appendLog("dash-log", "[SKILLS] restoreComposioState error: " + e.message);
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--warning);">⚠ Cannot connect to Composio (CORS). Key saved for desktop use.</span>';
+    }
+}
+window.restoreComposioState = restoreComposioState;
+
 async function saveComposioKey() {
     var key = document.getElementById("composio-api-key").value.trim();
     if (!key) { showToast("Please enter a Composio API key", "error"); return; }

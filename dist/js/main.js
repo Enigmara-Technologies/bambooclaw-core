@@ -352,7 +352,10 @@ async function boot() {
             if (currentConfig.composioApiKey) {
                 var ckEl = document.getElementById("composio-api-key");
                 if (ckEl) ckEl.value = currentConfig.composioApiKey;
-                setTimeout(function() { saveComposioKey(); }, 1000);
+                // Restore composio UI and re-fetch tools ONLY for enabled integrations.
+                // Never call saveComposioKey() on boot — that fetches all 500 toolkits
+                // regardless of what the user has enabled and injects them all into agentTools.
+                setTimeout(function() { restoreComposioState(); }, 1000);
             }
             setTimeout(function() { renderActiveToolsSummary(); renderEnabledIntegrations(); }, 2000);
             setTimeout(function() { if (currentConfig.llm && currentConfig.llm.api_key && !daemonRunning) toggleDaemon(); }, 500);
