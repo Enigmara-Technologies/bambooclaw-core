@@ -342,8 +342,10 @@ function renderComposioToolkits() {
         html += imgSrc ? '<div class="skill-icon"><img src="' + escapeHtml(imgSrc) + '" data-slug="' + escapeHtml(tk.slug) + '" onerror="this.outerHTML=\'<span class=skill-icon>🧩</span>\'" /></div>' : '<div class="skill-icon">🧩</div>';
         html += '<div class="skill-name">' + escapeHtml(tk.name) + '</div>';
         html += '<div class="skill-meta">';
-        if (tk.tools_count > 0) html += '<span style="font-size:0.65rem;color:var(--accent);">● ' + tk.tools_count + ' tools</span>';
-        if (tk.triggers_count > 0) html += '<span style="font-size:0.65rem;color:var(--warning);">⚡ ' + tk.triggers_count + ' triggers</span>';
+        var actualToolCount = composioToolkitDetails[tk.slug] ? composioToolkitDetails[tk.slug].length : tk.tools_count;
+        var actualTriggerCount = composioToolkitDetails[tk.slug + "_triggers"] ? composioToolkitDetails[tk.slug + "_triggers"].length : tk.triggers_count;
+        if (actualToolCount > 0) html += '<span style="font-size:0.65rem;color:var(--accent);">● ' + actualToolCount + ' tools</span>';
+        if (actualTriggerCount > 0) html += '<span style="font-size:0.65rem;color:var(--warning);">⚡ ' + actualTriggerCount + ' triggers</span>';
         html += '<button class="skill-info-btn" title="Show details">i</button></div>';
         if (tk.auth_warning) html += '<div class="auth-warning-badge">⚠ Not connected — <span style="cursor:pointer;text-decoration:underline;" data-connect-slug="' + escapeHtml(tk.slug) + '">link account</span></div>';
         html += '<div class="skill-desc-full" data-toolkit-slug="' + tk.slug + '"><div>' + escapeHtml(tk.description || "No description available") + '</div>';
@@ -451,7 +453,7 @@ async function fetchToolkitTools(slug) {
     var composioKey = currentConfig.composioApiKey;
     if (!composioKey) return;
     try {
-        var endpoint = COMPOSIO_API_URL + "/tools?toolkit_slug=" + encodeURIComponent(slug) + "&limit=200";
+        var endpoint = COMPOSIO_API_URL + "/tools?toolkit=" + encodeURIComponent(slug) + "&limit=200";
         var toolsJson = window.__TAURI__ ? await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, endpoint] }) : await (await fetch(endpoint, { headers: { "x-api-key": composioKey } })).text();
         var data = JSON.parse(toolsJson);
         var tools = data.items || [];
@@ -475,7 +477,7 @@ async function fetchToolkitTriggers(slug) {
     var composioKey = currentConfig.composioApiKey;
     if (!composioKey) return;
     try {
-        var endpoint = COMPOSIO_API_URL + "/triggers_types?toolkit_slugs=" + encodeURIComponent(slug) + "&limit=50";
+        var endpoint = COMPOSIO_API_URL + "/triggers?toolkit=" + encodeURIComponent(slug) + "&limit=50";
         var resultJson = window.__TAURI__ ? await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, endpoint] }) : await (await fetch(endpoint, { headers: { "x-api-key": composioKey } })).text();
         composioToolkitDetails[slug + "_triggers"] = JSON.parse(resultJson).items || [];
         renderToolkitTriggers(slug);
@@ -539,7 +541,7 @@ async function loadToolkitToolsOnDemand(slug) {
     var composioKey = currentConfig.composioApiKey;
     if (!composioKey) return;
     try {
-        var endpoint = COMPOSIO_API_URL + "/tools?toolkit_slug=" + encodeURIComponent(slug) + "&limit=200";
+        var endpoint = COMPOSIO_API_URL + "/tools?toolkit=" + encodeURIComponent(slug) + "&limit=200";
         var toolsJson = window.__TAURI__ ? await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, endpoint] }) : await (await fetch(endpoint, { headers: { "x-api-key": composioKey } })).text();
         composioToolkitDetails[slug] = JSON.parse(toolsJson).items || [];
         renderToolkitToolsList(slug);
