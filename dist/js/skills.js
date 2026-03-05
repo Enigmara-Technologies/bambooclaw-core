@@ -231,18 +231,8 @@ async function performComposioOAuth(slug) {
     }
 
     try {
-        // Step 1: look up integrations for this app
-        var intData = await composioGet("/integrations?appName=" + encodeURIComponent(slug) + "&limit=10");
-        var integrations = intData.items || (Array.isArray(intData) ? intData : []);
-
-        var connData;
-        if (integrations.length > 0) {
-            // Use first available integration
-            connData = await composioPost("/connectedAccounts", { integrationId: integrations[0].id, entityId: "default" });
-        } else {
-            // No pre-built integration — try initiating directly by app name (Composio v2 style)
-            connData = await composioPost("/connectedAccounts", { appName: slug, entityId: "default", authMode: "OAUTH2" });
-        }
+        // Initiate OAuth directly by appName — no integrations lookup needed
+        var connData = await composioPost("/connectedAccounts", { appName: slug, entityId: "default", authMode: "OAUTH2" });
 
         if (connData.redirectUrl) {
             showToast("Opening authorization page for " + slug + "...", "success");
