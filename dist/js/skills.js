@@ -201,85 +201,94 @@ async function performComposioOAuth(slug) {
     if (!composioKey) { showToast("Set your Composio API key first", "error"); return; }
     showToast("Connecting " + slug + "...", "info");
 
-    async function v3Get(endpoint) {
-        var url = COMPOSIO_API_URL + endpoint;
-        if (window.__TAURI__) {
-            var raw = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, url] });
-            if (!raw || raw.trim().charAt(0) !== "{") throw new Error("Non-JSON response: " + (raw || "").substring(0, 200));
-            return JSON.parse(raw);
-        } else {
-            var resp = await fetch(url, { headers: { "x-api-key": composioKey } });
-            var text = await resp.text();
-            if (!text || text.trim().charAt(0) !== "{") throw new Error("Non-JSON response (HTTP " + resp.status + "): " + text.substring(0, 200));
-            return JSON.parse(text);
-        }
-    }
-
-    async function v3Post(endpoint, body) {
+    async function composioPost(endpoint, body) {
         var url = COMPOSIO_API_URL + endpoint;
         var bodyStr = JSON.stringify(body);
         if (window.__TAURI__) {
             var raw = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-X", "POST", "-H", "x-api-key: " + composioKey, "-H", "Content-Type: application/json", "-d", bodyStr, url] });
-            if (!raw || raw.trim().charAt(0) !== "{") throw new Error("Non-JSON response: " + (raw || "").substring(0, 200));
+            if (!raw || raw.trim().charAt(0) !== "{") throw new Error("Composio returned non-JSON: " + (raw || "").substring(0, 120));
             return JSON.parse(raw);
         } else {
             var resp = await fetch(url, { method: "POST", headers: { "x-api-key": composioKey, "Content-Type": "application/json" }, body: bodyStr });
             var text = await resp.text();
-            if (!text || text.trim().charAt(0) !== "{") throw new Error("Non-JSON response (HTTP " + resp.status + "): " + text.substring(0, 200));
+            if (!text || text.trim().charAt(0) !== "{") throw new Error("Composio returned non-JSON (HTTP " + resp.status + "): " + text.substring(0, 120));
             return JSON.parse(text);
         }
     }
 
-    function openUrl(url) {
-        if (window.__TAURI__ && window.__TAURI__.shell) window.__TAURI__.shell.open(url);
-        else window.open(url, "_blank");
+    async function composioGet(endpoint) {
+        var url = COMPOSIO_API_URL + endpoint;
+        if (window.__TAURI__) {
+            var raw = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, url] });
+            if (!raw || raw.trim().charAt(0) !== "{") throw new Error("Composio returned non-JSON: " + (raw || "").substring(0, 120));
+            return JSON.parse(raw);
+        } else {
+            var resp = await fetch(url, { headers: { "x-api-key": composioKey } });
+            var text = await resp.text();
+            if (!text || text.trim().charAt(0) !== "{") throw new Error("Composio returned non-JSON (HTTP " + resp.status + "): " + text.substring(0, 120));
+            return JSON.parse(text);
+        }
     }
 
     try {
-        // v3 flow: GET /auth_configs?toolkit_slug= to find the auth config id,
-        // then POST /connected_accounts with { auth_config: { id }, connection: { user_id } }
-        var cfgData = await v3Get("/auth_configs?toolkit_slug=" + encodeURIComponent(slug) + "&limit=10");
-        var configs = cfgData.items || (Array.isArray(cfgData) ? cfgData : []);
-        if (!configs.length) {
-            appendLog("dash-log", "[SKILLS] No auth_config found for " + slug + " — raw: " + JSON.stringify(cfgData).substring(0, 200));
-            showToast("No auth config for " + slug + ". Opening Composio to set it up...", "error");
-            openUrl("https://app.composio.dev/apps/" + slug);
-            return;
+        // Step 1: look up integrations for this app
+        var intData = await composioGet("/integrations?appName=" + encodeURIComponent(slug) + "&limit=10");
+        var integrations = intData.items || (Array.isArray(intData) ? intData : []);
+
+        var connData;
+        if (integrations.length > 0) {
+            // Use first available integration
+            connData = await composioPost("/connectedAccounts", { integrationId: integrations[0].id, entityId: "default" });
+        } else {
+            // No pre-built integration — try initiating directly by app name (Composio v2 style)
+            connData = await composioPost("/connectedAccounts", { appName: slug, entityId: "default", authMode: "OAUTH2" });
         }
-        var authConfigId = configs[0].id;
-        appendLog("dash-log", "[SKILLS] OAuth: using auth_config id=" + authConfigId + " for " + slug);
 
-        var connData = await v3Post("/connected_accounts", {
-            auth_config: { id: authConfigId },
-            connection: { user_id: "default" }
-        });
-
-        // v3 returns redirect_url (snake_case) for OAuth flows
-        var redirectUrl = connData.redirect_url || connData.redirectUrl
-            || (connData.connectionData && connData.connectionData.val && connData.connectionData.val.redirectUrl);
-
-        if (redirectUrl) {
+        if (connData.redirectUrl) {
             showToast("Opening authorization page for " + slug + "...", "success");
-            openUrl(redirectUrl);
+            if (window.__TAURI__ && window.__TAURI__.shell) {
+                window.__TAURI__.shell.open(connData.redirectUrl);
+            } else {
+                window.open(connData.redirectUrl, "_blank");
+            }
+            // Poll for connection completion
             setTimeout(function() { checkComposioConnection(slug); }, 15000);
-            setTimeout(function() { checkComposioConnection(slug); }, 35000);
-            setTimeout(function() { checkComposioConnection(slug); }, 65000);
-        } else if (connData.status === "ACTIVE" || connData.connectionStatus === "ACTIVE") {
+            setTimeout(function() { checkComposioConnection(slug); }, 30000);
+            setTimeout(function() { checkComposioConnection(slug); }, 60000);
+        } else if (connData.connectionStatus === "ACTIVE" || connData.status === "ACTIVE") {
             showToast(slug + " connected successfully!", "success");
             for (var i = 0; i < composioToolkits.length; i++) {
                 if (composioToolkits[i].slug === slug) { composioToolkits[i].auth_warning = false; break; }
             }
             renderComposioToolkits();
             renderEnabledIntegrations();
+        } else if (connData.error || connData.message) {
+            var errMsg = connData.error || connData.message;
+            showToast("Composio error: " + errMsg, "error");
+            appendLog("dash-log", "[SKILLS] OAuth error for " + slug + ": " + errMsg);
+            // Fall back to opening Composio dashboard for manual setup
+            var fb = "https://app.composio.dev/apps/" + slug;
+            setTimeout(function() {
+                if (window.__TAURI__ && window.__TAURI__.shell) window.__TAURI__.shell.open(fb);
+                else window.open(fb, "_blank");
+            }, 2000);
         } else {
-            var errDetail = (connData.error && (connData.error.message || JSON.stringify(connData.error)))
-                || JSON.stringify(connData).substring(0, 300);
-            appendLog("dash-log", "[SKILLS] OAuth unexpected response for " + slug + ": " + errDetail);
-            showToast("Composio error: " + errDetail, "error");
+            // Unknown response — open Composio dashboard as fallback
+            appendLog("dash-log", "[SKILLS] Unexpected OAuth response for " + slug + ": " + JSON.stringify(connData).substring(0, 200));
+            showToast("Could not initiate OAuth automatically. Opening Composio dashboard...", "info");
+            var fb2 = "https://app.composio.dev/apps/" + slug;
+            if (window.__TAURI__ && window.__TAURI__.shell) window.__TAURI__.shell.open(fb2);
+            else window.open(fb2, "_blank");
         }
     } catch(e) {
         appendLog("dash-log", "[SKILLS] OAuth exception for " + slug + ": " + (e.message || e));
         showToast("Connection error: " + (e.message || e), "error");
+        // Always offer the Composio dashboard as a manual fallback
+        var fb3 = "https://app.composio.dev/apps/" + slug;
+        setTimeout(function() {
+            if (window.__TAURI__ && window.__TAURI__.shell) window.__TAURI__.shell.open(fb3);
+            else window.open(fb3, "_blank");
+        }, 2500);
     }
 }
 
@@ -442,7 +451,7 @@ async function fetchToolkitTools(slug) {
     var composioKey = currentConfig.composioApiKey;
     if (!composioKey) return;
     try {
-        var endpoint = COMPOSIO_API_URL + "/tools?toolkit=" + encodeURIComponent(slug) + "&limit=200";
+        var endpoint = COMPOSIO_API_URL + "/tools?toolkit_slug=" + encodeURIComponent(slug) + "&limit=200";
         var toolsJson = window.__TAURI__ ? await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, endpoint] }) : await (await fetch(endpoint, { headers: { "x-api-key": composioKey } })).text();
         var data = JSON.parse(toolsJson);
         var tools = data.items || [];
@@ -466,7 +475,7 @@ async function fetchToolkitTriggers(slug) {
     var composioKey = currentConfig.composioApiKey;
     if (!composioKey) return;
     try {
-        var endpoint = COMPOSIO_API_URL + "/triggers?toolkit=" + encodeURIComponent(slug) + "&limit=50";
+        var endpoint = COMPOSIO_API_URL + "/triggers_types?toolkit_slugs=" + encodeURIComponent(slug) + "&limit=50";
         var resultJson = window.__TAURI__ ? await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, endpoint] }) : await (await fetch(endpoint, { headers: { "x-api-key": composioKey } })).text();
         composioToolkitDetails[slug + "_triggers"] = JSON.parse(resultJson).items || [];
         renderToolkitTriggers(slug);
@@ -530,7 +539,7 @@ async function loadToolkitToolsOnDemand(slug) {
     var composioKey = currentConfig.composioApiKey;
     if (!composioKey) return;
     try {
-        var endpoint = COMPOSIO_API_URL + "/tools?toolkit=" + encodeURIComponent(slug) + "&limit=200";
+        var endpoint = COMPOSIO_API_URL + "/tools?toolkit_slug=" + encodeURIComponent(slug) + "&limit=200";
         var toolsJson = window.__TAURI__ ? await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, endpoint] }) : await (await fetch(endpoint, { headers: { "x-api-key": composioKey } })).text();
         composioToolkitDetails[slug] = JSON.parse(toolsJson).items || [];
         renderToolkitToolsList(slug);
@@ -563,17 +572,9 @@ async function restoreComposioState() {
     if (statusEl) { statusEl.style.display = "block"; statusEl.innerHTML = '<span style="color:var(--text-dim);">⟳ Restoring Composio tools...</span>'; }
 
     try {
-        var toolkitsData = null;
-        if (window.__TAURI__) {
-            var curlResult = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + key, COMPOSIO_API_URL + "/toolkits?limit=500"] });
-            try { toolkitsData = JSON.parse(curlResult); } catch(pe) {}
-        }
-        if (!toolkitsData) {
-            var resp = await fetch(COMPOSIO_API_URL + "/toolkits?limit=500", { headers: { "x-api-key": key } });
-            if (!resp.ok) { if (statusEl) statusEl.innerHTML = '<span style="color:var(--error);">✗ Composio key error (' + resp.status + ')</span>'; return; }
-            toolkitsData = await resp.json();
-        }
-        if (!toolkitsData || !toolkitsData.items) { if (statusEl) statusEl.innerHTML = '<span style="color:var(--error);">✗ Composio key error</span>'; return; }
+        var resp = await fetch(COMPOSIO_API_URL + "/toolkits?limit=500", { headers: { "x-api-key": key } });
+        if (!resp.ok) { if (statusEl) statusEl.innerHTML = '<span style="color:var(--error);">✗ Composio key error (' + resp.status + ')</span>'; return; }
+        var toolkitsData = await resp.json();
         composioToolkits = (toolkitsData.items || []).map(function(tk) {
             var m = tk.meta || {};
             return { slug: tk.slug, name: tk.name || tk.slug, description: m.description || tk.description || "", logo: m.logo || tk.logo || "", categories: (m.categories || tk.categories || []).map(function(c) { return (typeof c === "object" && c.name) ? c.name : String(c); }), tools_count: m.tools_count || tk.tools_count || 0, triggers_count: m.triggers_count || tk.triggers_count || 0 };
