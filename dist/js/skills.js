@@ -201,84 +201,83 @@ async function performComposioOAuth(slug) {
     if (!composioKey) { showToast("Set your Composio API key first", "error"); return; }
     showToast("Connecting " + slug + "...", "info");
 
-    async function composioPost(endpoint, body) {
-        var url = COMPOSIO_API_URL + endpoint;
-        var bodyStr = JSON.stringify(body);
-        if (window.__TAURI__) {
-            var raw = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-X", "POST", "-H", "x-api-key: " + composioKey, "-H", "Content-Type: application/json", "-d", bodyStr, url] });
-            if (!raw || raw.trim().charAt(0) !== "{") throw new Error("Composio returned non-JSON: " + (raw || "").substring(0, 120));
-            return JSON.parse(raw);
-        } else {
-            var resp = await fetch(url, { method: "POST", headers: { "x-api-key": composioKey, "Content-Type": "application/json" }, body: bodyStr });
-            var text = await resp.text();
-            if (!text || text.trim().charAt(0) !== "{") throw new Error("Composio returned non-JSON (HTTP " + resp.status + "): " + text.substring(0, 120));
-            return JSON.parse(text);
-        }
-    }
-
-    async function composioGet(endpoint) {
+    // v3 REST API helpers — snake_case endpoints, auth_config.id body shape
+    async function v3Get(endpoint) {
         var url = COMPOSIO_API_URL + endpoint;
         if (window.__TAURI__) {
             var raw = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-H", "x-api-key: " + composioKey, url] });
-            if (!raw || raw.trim().charAt(0) !== "{") throw new Error("Composio returned non-JSON: " + (raw || "").substring(0, 120));
+            if (!raw || raw.trim().charAt(0) !== "{") throw new Error("Composio returned non-JSON: " + (raw || "").substring(0, 200));
             return JSON.parse(raw);
         } else {
             var resp = await fetch(url, { headers: { "x-api-key": composioKey } });
             var text = await resp.text();
-            if (!text || text.trim().charAt(0) !== "{") throw new Error("Composio returned non-JSON (HTTP " + resp.status + "): " + text.substring(0, 120));
+            if (!text || text.trim().charAt(0) !== "{") throw new Error("Composio returned non-JSON (HTTP " + resp.status + "): " + text.substring(0, 200));
             return JSON.parse(text);
         }
     }
 
-    try {
-        // Initiate OAuth directly by appName — no integrations lookup needed
-        var connData = await composioPost("/connectedAccounts", { appName: slug, entityId: "default", authMode: "OAUTH2" });
+    async function v3Post(endpoint, body) {
+        var url = COMPOSIO_API_URL + endpoint;
+        var bodyStr = JSON.stringify(body);
+        if (window.__TAURI__) {
+            var raw = await tauriInvoke("run_shell_command", { commandName: "curl", args: ["-s", "-X", "POST", "-H", "x-api-key: " + composioKey, "-H", "Content-Type: application/json", "-d", bodyStr, url] });
+            if (!raw || raw.trim().charAt(0) !== "{") throw new Error("Composio returned non-JSON: " + (raw || "").substring(0, 200));
+            return JSON.parse(raw);
+        } else {
+            var resp = await fetch(url, { method: "POST", headers: { "x-api-key": composioKey, "Content-Type": "application/json" }, body: bodyStr });
+            var text = await resp.text();
+            if (!text || text.trim().charAt(0) !== "{") throw new Error("Composio returned non-JSON (HTTP " + resp.status + "): " + text.substring(0, 200));
+            return JSON.parse(text);
+        }
+    }
 
-        if (connData.redirectUrl) {
-            showToast("Opening authorization page for " + slug + "...", "success");
-            if (window.__TAURI__ && window.__TAURI__.shell) {
-                window.__TAURI__.shell.open(connData.redirectUrl);
-            } else {
-                window.open(connData.redirectUrl, "_blank");
-            }
-            // Poll for connection completion
+    function openUrl(url) {
+        if (window.__TAURI__ && window.__TAURI__.shell) window.__TAURI__.shell.open(url);
+        else window.open(url, "_blank");
+    }
+
+    try {
+        // Step 1: get the auth_config id for this toolkit (v3 uses /auth_configs?toolkit_slug=)
+        var cfgData = await v3Get("/auth_configs?toolkit_slug=" + encodeURIComponent(slug) + "&limit=10");
+        var configs = cfgData.items || (Array.isArray(cfgData) ? cfgData : []);
+        if (!configs.length) {
+            showToast("No auth config found for " + slug + ". Please create one at app.composio.dev first.", "error");
+            appendLog("dash-log", "[SKILLS] No auth_config found for " + slug);
+            openUrl("https://app.composio.dev/apps/" + slug);
+            return;
+        }
+        var authConfigId = configs[0].id;
+
+        // Step 2: POST /connected_accounts with v3 body shape
+        var connData = await v3Post("/connected_accounts", {
+            auth_config: { id: authConfigId },
+            connection: { user_id: "default" }
+        });
+
+        // v3 returns redirect_url (snake_case) for OAuth flows
+        var redirectUrl = connData.redirect_url || connData.redirectUrl || (connData.connectionData && connData.connectionData.val && connData.connectionData.val.redirectUrl);
+        if (redirectUrl) {
+            showToast("Opening Google authorization page...", "success");
+            openUrl(redirectUrl);
+            // Poll for connection completion after user authorizes
             setTimeout(function() { checkComposioConnection(slug); }, 15000);
             setTimeout(function() { checkComposioConnection(slug); }, 30000);
             setTimeout(function() { checkComposioConnection(slug); }, 60000);
-        } else if (connData.connectionStatus === "ACTIVE" || connData.status === "ACTIVE") {
+        } else if (connData.status === "ACTIVE") {
             showToast(slug + " connected successfully!", "success");
             for (var i = 0; i < composioToolkits.length; i++) {
                 if (composioToolkits[i].slug === slug) { composioToolkits[i].auth_warning = false; break; }
             }
             renderComposioToolkits();
             renderEnabledIntegrations();
-        } else if (connData.error || connData.message) {
-            var errMsg = connData.error || connData.message;
-            showToast("Composio error: " + errMsg, "error");
-            appendLog("dash-log", "[SKILLS] OAuth error for " + slug + ": " + errMsg);
-            // Fall back to opening Composio dashboard for manual setup
-            var fb = "https://app.composio.dev/apps/" + slug;
-            setTimeout(function() {
-                if (window.__TAURI__ && window.__TAURI__.shell) window.__TAURI__.shell.open(fb);
-                else window.open(fb, "_blank");
-            }, 2000);
         } else {
-            // Unknown response — open Composio dashboard as fallback
-            appendLog("dash-log", "[SKILLS] Unexpected OAuth response for " + slug + ": " + JSON.stringify(connData).substring(0, 200));
-            showToast("Could not initiate OAuth automatically. Opening Composio dashboard...", "info");
-            var fb2 = "https://app.composio.dev/apps/" + slug;
-            if (window.__TAURI__ && window.__TAURI__.shell) window.__TAURI__.shell.open(fb2);
-            else window.open(fb2, "_blank");
+            var errDetail = (connData.error && (connData.error.message || JSON.stringify(connData.error))) || JSON.stringify(connData).substring(0, 200);
+            appendLog("dash-log", "[SKILLS] OAuth unexpected response for " + slug + ": " + errDetail);
+            showToast("Unexpected response from Composio: " + errDetail, "error");
         }
     } catch(e) {
         appendLog("dash-log", "[SKILLS] OAuth exception for " + slug + ": " + (e.message || e));
         showToast("Connection error: " + (e.message || e), "error");
-        // Always offer the Composio dashboard as a manual fallback
-        var fb3 = "https://app.composio.dev/apps/" + slug;
-        setTimeout(function() {
-            if (window.__TAURI__ && window.__TAURI__.shell) window.__TAURI__.shell.open(fb3);
-            else window.open(fb3, "_blank");
-        }, 2500);
     }
 }
 
