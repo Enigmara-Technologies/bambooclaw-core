@@ -669,6 +669,151 @@
                     </details>
 
                     <details class="help-section">
+                        <summary>🧠 Model Features & Thinking Modes</summary>
+                        <div class="help-body">
+
+                            <div class="help-sub">
+                                <h4>What is "Thinking Mode"?</h4>
+                                <p>Some models reason internally before answering — they generate a chain-of-thought wrapped in <code>&lt;think&gt;...&lt;/think&gt;</code> tags. BambooClaw always strips these tags before sending replies to Telegram, so your users only see the final answer. The thinking content is still visible in the in-app Agent Chat for debugging.</p>
+                                <p>Thinking mode is useful for complex tasks (math, coding, multi-step reasoning) but makes responses significantly slower and uses more tokens. For casual conversation you usually want it off.</p>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>Qwen3 (hybrid — thinking on by default)</h4>
+                                <p>Qwen3 models (e.g. <code>qwen3:8b</code>, <code>qwen3:14b</code>, <code>qwen3:32b</code>) support both thinking and non-thinking mode in a single model. Thinking is <strong>on by default</strong>.</p>
+                                <p><strong>Soft switch (via Telegram or chat):</strong> Add <code>/no_think</code> anywhere in your message to disable thinking for that turn, or use the BambooClaw Telegram command <code>/nothink</code> to disable it for all subsequent messages. Use <code>/think</code> to re-enable. Example:</p>
+                                <pre style="background:#050507;padding:0.5rem;border-radius:4px;font-size:0.8rem;overflow-x:auto;">What is 2+2? /no_think</pre>
+                                <p><strong>Hard switch (API parameter):</strong> When using vLLM, LM Deploy, or compatible servers, you can pass <code>"enable_thinking": false</code> in the request body. Note: LM Studio does not currently support this parameter directly via its API — use the <code>/no_think</code> soft switch instead, or modify the model's Jinja chat template in LM Studio to prepend <code>/no_think</code> to every user message.</p>
+                                <p><strong>Recommended parameters</strong> for Qwen3:<br>
+                                Thinking ON: <code>temperature=0.6, top_p=0.95, top_k=20, min_p=0</code><br>
+                                Thinking OFF: <code>temperature=0.7, top_p=0.8, top_k=20, min_p=0</code><br>
+                                Avoid greedy decoding (temperature=0) — it causes looping.</p>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>Qwen3.5 (hybrid — thinking on by default, no soft switch)</h4>
+                                <p>Qwen3.5 models (<code>qwen3.5:27b</code>, etc.) always think before responding. Unlike Qwen3, they do <strong>not</strong> support the <code>/think</code> / <code>/no_think</code> soft switch. To disable thinking you must pass API parameters. Use <code>"enable_thinking": false</code> with vLLM or LM Deploy. In LM Studio, you currently cannot disable thinking via the API — it must be done via the Jinja template.</p>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>DeepSeek-R1 / R1-Distill (thinking-only — cannot be disabled)</h4>
+                                <p>DeepSeek-R1 and its distilled variants (<code>deepseek-r1:7b</code>, <code>deepseek-r1:14b</code>, <code>deepseek-r1:70b</code>, etc.) are <strong>thinking-only</strong> models. Thinking cannot be disabled — they always reason before answering. This is a fundamental property of the model architecture.</p>
+                                <p><strong>Via Ollama</strong>, you can suppress the thinking content from the <em>output</em> using the <code>think: false</code> parameter in the request body. This hides the reasoning from the response but the model still computes it internally:</p>
+                                <pre style="background:#050507;padding:0.5rem;border-radius:4px;font-size:0.8rem;overflow-x:auto;">{ "model": "deepseek-r1:14b", "think": false, "messages": [...] }</pre>
+                                <p>BambooClaw already strips <code>&lt;think&gt;</code> blocks before Telegram delivery regardless.</p>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>DeepSeek-V3.1 / V3.2 (hybrid — thinking off by default)</h4>
+                                <p><code>deepseek-chat</code> (V3.2) is the <strong>non-thinking</strong> model. <code>deepseek-reasoner</code> (R1) is the thinking model. When using the DeepSeek API, these are separate model IDs — you switch modes by switching the model name, not a parameter.</p>
+                                <p>For V3.1 and V3.2 via compatible servers, use <code>"enable_thinking": true/false</code> to toggle. Note: this is not a standard OpenAI parameter so pass it via <code>extra_body</code> if using the OpenAI SDK.</p>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>QwQ (thinking-only — cannot be disabled)</h4>
+                                <p>QwQ models are pure reasoning models. Thinking is always on and cannot be disabled. These are best suited for hard math, coding, and scientific problems where accuracy matters more than speed.</p>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>Claude (Anthropic) Extended Thinking</h4>
+                                <p>Claude's extended thinking is controlled via the <code>thinking</code> parameter in the API, not via message content. It is <strong>off by default</strong> and is only available on Claude Sonnet and Opus models (not Haiku). BambooClaw currently does not expose this parameter — Claude always runs in standard mode. If you need extended thinking with Claude, contact support.</p>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>Gemini (Google) Thinking</h4>
+                                <p>Gemini 2.5 Pro and Flash have an internal thinking process that is on by default. You can control the thinking budget with the <code>thinkingConfig</code> parameter. To disable entirely, set <code>"thinkingConfig": { "thinkingBudget": 0 }</code>. Note: Gemini does not expose <code>&lt;think&gt;</code> tags in the output — the reasoning is hidden. BambooClaw currently uses Gemini in standard mode.</p>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>BambooClaw Telegram Commands for Thinking Control</h4>
+                                <p>You can control thinking mode for your session directly from Telegram:</p>
+                                <table style="width:100%;border-collapse:collapse;font-size:0.82rem;margin-top:0.5rem;">
+                                    <tr style="border-bottom:1px solid var(--border);">
+                                        <td style="padding:0.4rem 0.6rem;color:var(--accent);font-family:monospace;">/nothink</td>
+                                        <td style="padding:0.4rem 0.6rem;">Append <code>/no_think</code> to every message — disables thinking on Qwen3 and compatible models</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid var(--border);">
+                                        <td style="padding:0.4rem 0.6rem;color:var(--accent);font-family:monospace;">/think</td>
+                                        <td style="padding:0.4rem 0.6rem;">Re-enable thinking mode</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid var(--border);">
+                                        <td style="padding:0.4rem 0.6rem;color:var(--accent);font-family:monospace;">/status</td>
+                                        <td style="padding:0.4rem 0.6rem;">Show current thinking on/off state</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:0.4rem 0.6rem;color:var(--accent);font-family:monospace;">/reset</td>
+                                        <td style="padding:0.4rem 0.6rem;">Clear conversation history</td>
+                                    </tr>
+                                </table>
+                                <p style="margin-top:0.75rem;color:var(--text-dim);font-size:0.8rem;">⚠️ The <code>/no_think</code> soft switch works reliably on Qwen3 hybrid models. For DeepSeek-R1 and other thinking-only models, the tags are stripped from Telegram output automatically but the model still reasons internally.</p>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>Quick Reference: Thinking Support by Model Family</h4>
+                                <table style="width:100%;border-collapse:collapse;font-size:0.78rem;margin-top:0.5rem;">
+                                    <tr style="background:#0a0a12;border-bottom:1px solid var(--border);">
+                                        <th style="padding:0.4rem 0.5rem;text-align:left;color:var(--text-dim);">Model Family</th>
+                                        <th style="padding:0.4rem 0.5rem;text-align:left;color:var(--text-dim);">Type</th>
+                                        <th style="padding:0.4rem 0.5rem;text-align:left;color:var(--text-dim);">Default</th>
+                                        <th style="padding:0.4rem 0.5rem;text-align:left;color:var(--text-dim);">Can Disable?</th>
+                                        <th style="padding:0.4rem 0.5rem;text-align:left;color:var(--text-dim);">Method</th>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid var(--border);">
+                                        <td style="padding:0.35rem 0.5rem;">Qwen3</td>
+                                        <td style="padding:0.35rem 0.5rem;">Hybrid</td>
+                                        <td style="padding:0.35rem 0.5rem;color:#f59e0b;">ON</td>
+                                        <td style="padding:0.35rem 0.5rem;color:#22c55e;">Yes</td>
+                                        <td style="padding:0.35rem 0.5rem;font-family:monospace;font-size:0.75rem;">/no_think in message · enable_thinking: false</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid var(--border);">
+                                        <td style="padding:0.35rem 0.5rem;">Qwen3.5</td>
+                                        <td style="padding:0.35rem 0.5rem;">Hybrid</td>
+                                        <td style="padding:0.35rem 0.5rem;color:#f59e0b;">ON</td>
+                                        <td style="padding:0.35rem 0.5rem;color:#22c55e;">Yes (API only)</td>
+                                        <td style="padding:0.35rem 0.5rem;font-family:monospace;font-size:0.75rem;">enable_thinking: false · no soft switch</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid var(--border);">
+                                        <td style="padding:0.35rem 0.5rem;">DeepSeek-R1 / Distill</td>
+                                        <td style="padding:0.35rem 0.5rem;">Think-only</td>
+                                        <td style="padding:0.35rem 0.5rem;color:#f59e0b;">ON</td>
+                                        <td style="padding:0.35rem 0.5rem;color:#ef4444;">No</td>
+                                        <td style="padding:0.35rem 0.5rem;font-family:monospace;font-size:0.75rem;">think: false (Ollama — hides output only)</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid var(--border);">
+                                        <td style="padding:0.35rem 0.5rem;">DeepSeek-V3.1 / V3.2</td>
+                                        <td style="padding:0.35rem 0.5rem;">Hybrid</td>
+                                        <td style="padding:0.35rem 0.5rem;color:#6b7280;">OFF</td>
+                                        <td style="padding:0.35rem 0.5rem;color:#22c55e;">Yes</td>
+                                        <td style="padding:0.35rem 0.5rem;font-family:monospace;font-size:0.75rem;">enable_thinking: true/false</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid var(--border);">
+                                        <td style="padding:0.35rem 0.5rem;">QwQ</td>
+                                        <td style="padding:0.35rem 0.5rem;">Think-only</td>
+                                        <td style="padding:0.35rem 0.5rem;color:#f59e0b;">ON</td>
+                                        <td style="padding:0.35rem 0.5rem;color:#ef4444;">No</td>
+                                        <td style="padding:0.35rem 0.5rem;font-family:monospace;font-size:0.75rem;">—</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid var(--border);">
+                                        <td style="padding:0.35rem 0.5rem;">Claude (Anthropic)</td>
+                                        <td style="padding:0.35rem 0.5rem;">Optional</td>
+                                        <td style="padding:0.35rem 0.5rem;color:#6b7280;">OFF</td>
+                                        <td style="padding:0.35rem 0.5rem;color:#6b7280;">N/A</td>
+                                        <td style="padding:0.35rem 0.5rem;font-family:monospace;font-size:0.75rem;">thinking: { type: "enabled" } (not in BambooClaw yet)</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:0.35rem 0.5rem;">Gemini 2.5</td>
+                                        <td style="padding:0.35rem 0.5rem;">Optional</td>
+                                        <td style="padding:0.35rem 0.5rem;color:#f59e0b;">ON</td>
+                                        <td style="padding:0.35rem 0.5rem;color:#22c55e;">Yes (API only)</td>
+                                        <td style="padding:0.35rem 0.5rem;font-family:monospace;font-size:0.75rem;">thinkingConfig: { thinkingBudget: 0 }</td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                        </div>
+                    </details>
+
+                    <details class="help-section">
                         <summary>🔧 Troubleshooting / FAQ</summary>
                         <div class="help-body">
                             <div class="help-sub">
@@ -812,7 +957,7 @@
             skills.js   — Composio, builtin skills, skill toggles, connection modal
             main.js     — enterDashboard, tab switching, all addEventListener wiring, boot()
         -->
-                <script src="js/core.js"></script>
+                        <script src="js/core.js"></script>
         <script src="js/wizard.js"></script>
         <script src="js/llm.js"></script>
         <script src="js/channels.js"></script>
