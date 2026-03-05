@@ -351,6 +351,84 @@ async function executeSkillTool(toolName, args) {
     return "Skill tool not yet implemented: " + toolName;
 }
 
+// =========== RAW LLM CALL (plain text, no chat format) ===========
+async function callLLMRaw(userMessage) {
+    var cfg = currentConfig.llm;
+    var isLocal = cfg && ["ollama","lmstudio","jan"].includes(cfg.provider);
+    if (!cfg || (!cfg.api_key && !isLocal)) throw new Error("No LLM configured.");
+
+    var provider = cfg.provider, model = cfg.model, apiKey = cfg.api_key;
+    var baseUrl = cfg.local_url || (cfg.local_urls && cfg.local_urls[provider]) || "";
+    if (!baseUrl && provider === "ollama")   baseUrl = "http://localhost:11434";
+    if (!baseUrl && provider === "lmstudio") baseUrl = "http://localhost:1234";
+    if (!baseUrl && provider === "jan")      baseUrl = "http://localhost:1337";
+
+    // Build prompt: persona prefix (if active) + user message
+    var personaPrompt = (activePersonaIndex >= 0 && activePersonaIndex < personas.length)
+        ? personas[activePersonaIndex].prompt.trim() : "";
+    var fullPrompt = personaPrompt ? personaPrompt + "\n\n" + userMessage : userMessage;
+
+    appendLog("unified-log", "[AGENT] [RAW] Sending raw prompt (" + fullPrompt.length + " chars)");
+
+    var apiUrl, headers, rawBody, resp2, data2;
+
+    if (provider === "ollama") {
+        // Ollama /api/generate — true raw text completion, no roles at all
+        apiUrl = baseUrl + "/api/generate";
+        headers = { "Content-Type": "application/json" };
+        var body = { model: model, prompt: fullPrompt, stream: false };
+        var resp = await fetch(apiUrl, { method: "POST", headers: headers, body: JSON.stringify(body) });
+        if (!resp.ok) throw new Error("Ollama error HTTP " + resp.status);
+        var data = await resp.json();
+        return data.response || "(empty)";
+    }
+
+    if (provider === "anthropic") {
+        // Anthropic: single user message, no system
+        apiUrl = "https://api.anthropic.com/v1/messages";
+        headers = { "x-api-key": apiKey, "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" };
+        rawBody = { model: model, max_tokens: 2048, messages: [{ role: "user", content: fullPrompt }] };
+        resp2 = await fetch(apiUrl, { method: "POST", headers: headers, body: JSON.stringify(rawBody) });
+        if (!resp2.ok) throw new Error("Anthropic error HTTP " + resp2.status);
+        data2 = await resp2.json();
+        return (data2.content && data2.content[0] && data2.content[0].text) || "(empty)";
+    }
+
+    if (provider === "google") {
+        // Google: single user part, no system instruction
+        apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey;
+        headers = { "Content-Type": "application/json" };
+        rawBody = { contents: [{ parts: [{ text: fullPrompt }] }] };
+        resp2 = await fetch(apiUrl, { method: "POST", headers: headers, body: JSON.stringify(rawBody) });
+        if (!resp2.ok) throw new Error("Google error HTTP " + resp2.status);
+        data2 = await resp2.json();
+        return (data2.candidates && data2.candidates[0] && data2.candidates[0].content && data2.candidates[0].content.parts && data2.candidates[0].content.parts[0] && data2.candidates[0].content.parts[0].text) || "(empty)";
+    }
+
+    // All OpenAI-compatible providers (lmstudio, jan, openai, openrouter, groq, deepseek, mistral, inception)
+    // RAW = single user message containing persona+prompt, no system role, no history
+    var endpointMap = {
+        lmstudio:   baseUrl + "/v1/chat/completions",
+        jan:        baseUrl + "/v1/chat/completions",
+        openai:     "https://api.openai.com/v1/chat/completions",
+        openrouter: "https://openrouter.ai/api/v1/chat/completions",
+        groq:       "https://api.groq.com/openai/v1/chat/completions",
+        deepseek:   "https://api.deepseek.com/v1/chat/completions",
+        mistral:    "https://api.mistral.ai/v1/chat/completions",
+        inception:  "https://api.inceptionlabs.ai/v1/chat/completions"
+    };
+    apiUrl = endpointMap[provider] || (baseUrl + "/v1/chat/completions");
+    headers = { "Content-Type": "application/json" };
+    if (apiKey) headers["Authorization"] = "Bearer " + apiKey;
+    if (provider === "openrouter") headers["HTTP-Referer"] = "https://bambooclaw.com";
+
+    rawBody = { model: model, messages: [{ role: "user", content: fullPrompt }], max_tokens: 4096 };
+    resp2 = await fetch(apiUrl, { method: "POST", headers: headers, body: JSON.stringify(rawBody) });
+    if (!resp2.ok) throw new Error("LLM error HTTP " + resp2.status);
+    data2 = await resp2.json();
+    return (data2.choices && data2.choices[0] && data2.choices[0].message && data2.choices[0].message.content) || "(empty)";
+}
+
 // =========== LLM CALL ===========
 async function callLLM(userMessage) {
     var cfg = currentConfig.llm;
@@ -469,6 +547,8 @@ async function callLLM(userMessage) {
 // =========== TELEGRAM POLLING ===========
 var tgPollingTimeout = null;
 var tgLastUpdateId = 0;
+var thinkingEnabled = true; // toggle via /think and /nothink commands
+var rawMode = false;        // toggle via /raw and /noraw, or Settings tab
 
 function startTelegramPolling() {
     if (tgPollingTimeout) return;
@@ -502,23 +582,78 @@ async function pollTelegram() {
             tgLastUpdateId = update.update_id;
             if (update.message && update.message.text) {
                 var chatId = update.message.chat.id;
-                var text = update.message.text;
+                var text = update.message.text.trim();
                 var from = (update.message.from && update.message.from.first_name) || "User";
                 appendLog("unified-log", "[AGENT] [TELEGRAM] Message from " + from + ": " + text);
+
+                // ── Built-in commands (prefix match so /nothink works alone or with text) ──
+                var cmdMatch = text.match(/^(\/\w+)(.*)/);
+                var cmd = cmdMatch ? cmdMatch[1].toLowerCase() : null;
+                var cmdRest = cmdMatch ? cmdMatch[2].trim() : null;
+
+                async function tgSend(msg) {
+                    await fetch("https://api.telegram.org/bot" + token + "/sendMessage", {
+                        method: "POST", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ chat_id: chatId, text: msg })
+                    });
+                }
+
+                if (cmd === "/nothink") {
+                    thinkingEnabled = false;
+                    await tgSend("🧠 Thinking disabled. Using /no_think token on Qwen3 models.");
+                    if (!cmdRest) continue; // no trailing message — done
+                    text = cmdRest; cmd = null; // fall through with remaining text
+                } else if (cmd === "/think") {
+                    thinkingEnabled = true;
+                    await tgSend("🧠 Thinking enabled.");
+                    if (!cmdRest) continue;
+                    text = cmdRest; cmd = null;
+                } else if (cmd === "/raw") {
+                    rawMode = true;
+                    if (window.applyRawModeUI) window.applyRawModeUI(true);
+                    await tgSend("📄 RAW mode ON — plain text prompt, no chat format, no history.");
+                    if (!cmdRest) continue;
+                    text = cmdRest; cmd = null;
+                } else if (cmd === "/noraw") {
+                    rawMode = false;
+                    if (window.applyRawModeUI) window.applyRawModeUI(false);
+                    await tgSend("📄 RAW mode OFF — back to JSON chat format.");
+                    if (!cmdRest) continue;
+                    text = cmdRest; cmd = null;
+                } else if (cmd === "/status") {
+                    await tgSend("⚙️ RAW: " + (rawMode ? "ON" : "OFF") + " · Thinking: " + (thinkingEnabled ? "ON" : "OFF") +
+                        "\nCommands: /think · /nothink · /raw · /noraw · /status · /reset");
+                    continue;
+                } else if (cmd === "/reset") {
+                    chatHistory = [];
+                    await tgSend("🔄 Conversation history cleared.");
+                    continue;
+                }
+
+                // Append /no_think token for models that support it (Qwen3)
+                var llmText = text;
+                if (!thinkingEnabled) llmText = text + " /no_think";
+
                 var chatEl = document.getElementById("agent-chat-messages");
                 if (chatEl) {
                     chatEl.innerHTML += '<div class="chat-msg"><span class="role">You (Telegram):</span> ' + escapeHtml(text) + '</div>';
                     chatEl.scrollTop = chatEl.scrollHeight;
                 }
                 try {
-                    var reply = await callLLM(text);
-                    // Show reply in the in-app chat
+                    var reply;
+                    if (rawMode) {
+                        reply = await callLLMRaw(llmText);
+                    } else {
+                        reply = await callLLM(llmText);
+                    }
+                    // Strip think tags before showing anywhere
+                    var cleanReply = reply.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
                     if (chatEl) {
-                        chatEl.innerHTML += '<div class="chat-msg assistant"><span class="role">Agent:</span> ' + formatMarkdownToHtml(reply || "(no response)") + '</div>';
+                        chatEl.innerHTML += '<div class="chat-msg assistant"><span class="role">Agent:</span> ' + formatMarkdownToHtml(cleanReply || "(no response)") + '</div>';
                         chatEl.scrollTop = chatEl.scrollHeight;
                     }
                     // Send plain text to Telegram in chunks (Telegram limit: 4096 chars)
-                    var plainText = stripMarkdownForTelegram(reply);
+                    var plainText = stripMarkdownForTelegram(cleanReply);
                     var chunks = [];
                     while (plainText.length > 4096) {
                         var splitAt = plainText.lastIndexOf("\n", 4096);

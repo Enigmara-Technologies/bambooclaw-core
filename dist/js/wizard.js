@@ -371,5 +371,12 @@ function applyConfigToUI() {
             var identEl = document.getElementById("set-identity");
             if (identEl) identEl.value = activePersonaIndex >= 0 ? activePersonaIndex : "-1";
         }
+        if (s.maxToolIterations) {
+            var iterEl = document.getElementById("set-tool-iterations");
+            var iterLbl = document.getElementById("tool-iter-value");
+            if (iterEl) { iterEl.value = s.maxToolIterations; MAX_TOOL_ITERATIONS = parseInt(s.maxToolIterations); }
+            if (iterLbl) iterLbl.textContent = s.maxToolIterations;
+        }
+        if (window.applyRawModeUI) window.applyRawModeUI(!!s.rawMode);
     }
 }

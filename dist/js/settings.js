@@ -113,11 +113,14 @@ async function saveSettings() {
     var iterVal = parseInt(document.getElementById("set-tool-iterations").value) || 10;
     MAX_TOOL_ITERATIONS = iterVal;
     var identVal = document.getElementById("set-identity").value;
+    var rawVal = document.getElementById("set-raw-mode").checked;
+    rawMode = rawVal;
     currentConfig.settings = {
         autonomy: document.getElementById("set-autonomy").value,
         identity: identVal,
         loglevel: document.getElementById("set-loglevel").value,
-        maxToolIterations: iterVal
+        maxToolIterations: iterVal,
+        rawMode: rawVal
     };
     if (!currentConfig.llm) currentConfig.llm = { provider: "openai", api_key: "", model: "" };
     saveAllConfig();
@@ -133,6 +136,8 @@ function resetSettings() {
     document.getElementById("set-loglevel").value = "info";
     document.getElementById("set-tool-iterations").value = "10";
     document.getElementById("tool-iter-value").textContent = "10";
+    if (window.applyRawModeUI) window.applyRawModeUI(false);
     MAX_TOOL_ITERATIONS = 10;
+    rawMode = false;
     showToast("Settings reset to defaults", "info");
 }

@@ -107,6 +107,30 @@ document.getElementById("llm-provider").dispatchEvent(new Event("change"));
     });
 });
 
+// RAW mode toggle wiring
+(function() {
+    var cb = document.getElementById("set-raw-mode");
+    var slider = document.getElementById("raw-mode-slider");
+    var knob = document.getElementById("raw-mode-knob");
+    var lbl = document.getElementById("raw-mode-label");
+    function updateRawUI(on) {
+        knob.style.left = on ? "23px" : "3px";
+        knob.style.background = on ? "var(--accent)" : "var(--text-dim)";
+        slider.style.background = on ? "rgba(74,222,128,0.15)" : "#1e1e2e";
+        lbl.textContent = on ? "On — plain text, no chat format" : "Off — uses JSON chat API";
+        lbl.style.color = on ? "var(--accent)" : "var(--text-dim)";
+    }
+    slider.addEventListener("click", function() {
+        cb.checked = !cb.checked;
+        rawMode = cb.checked;
+        updateRawUI(rawMode);
+        var sr = document.getElementById("settings-save-reminder"); if (sr) sr.classList.add("visible");
+    });
+    // Initialise from saved config after boot — called by applyConfigToUI
+    window.applyRawModeUI = function(on) { cb.checked = !!on; rawMode = !!on; updateRawUI(!!on); };
+    updateRawUI(false);
+})();
+
 // =========== BUTTON WIRING ===========
 document.getElementById("btn-copy-boot-log").addEventListener("click", function() { copyLog("boot-log"); });
 document.getElementById("btn-copy-install-log").addEventListener("click", function() { copyLog("install-log"); });

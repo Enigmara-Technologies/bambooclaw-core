@@ -439,6 +439,23 @@
                                 How many tool calls the agent can chain per message. Higher = more complex tasks, but slower responses.
                             </p>
                         </div>
+
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label style="display:flex;align-items:center;gap:0.75rem;cursor:pointer;">
+                                <span>RAW Mode</span>
+                                <span style="position:relative;display:inline-block;width:44px;height:24px;">
+                                    <input type="checkbox" id="set-raw-mode" style="opacity:0;width:0;height:0;position:absolute;" />
+                                    <span id="raw-mode-slider" style="position:absolute;inset:0;background:#1e1e2e;border:1px solid var(--border);border-radius:24px;transition:background 0.2s;cursor:pointer;">
+                                        <span id="raw-mode-knob" style="position:absolute;left:3px;top:3px;width:16px;height:16px;background:var(--text-dim);border-radius:50%;transition:left 0.2s,background 0.2s;"></span>
+                                    </span>
+                                </span>
+                                <span id="raw-mode-label" style="color:var(--text-dim);font-size:0.8rem;">Off — uses JSON chat API</span>
+                            </label>
+                            <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.5rem;">
+                                When ON, skips the JSON chat format entirely. The active persona prompt (if any) is sent as a plain text prefix, followed directly by the user's message — no system/user role wrappers, no chat history. Useful for models that respond poorly to structured chat templates, or when you want minimal overhead.
+                                Toggle from Telegram with <code>/raw</code> and <code>/noraw</code>.
+                            </p>
+                        </div>
                     </div>
 
                     <div style="margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1.5rem;">
@@ -814,6 +831,123 @@
                     </details>
 
                     <details class="help-section">
+                        <summary>📄 RAW Mode vs JSON Chat Mode</summary>
+                        <div class="help-body">
+
+                            <div class="help-sub">
+                                <h4>What is the difference?</h4>
+                                <p><strong>JSON Chat Mode</strong> (default) structures every request as a conversation with typed roles. The payload sent to the model looks like this:</p>
+                                <pre style="background:#050507;padding:0.75rem;border-radius:6px;font-size:0.78rem;overflow-x:auto;">{
+  "model": "qwen3.5-9b",
+  "messages": [
+    { "role": "system", "content": "You are a helpful assistant." },
+    { "role": "user",   "content": "Good morning" },
+    { "role": "assistant", "content": "Good morning! How can I help?" },
+    { "role": "user",   "content": "What is the capital of France?" }
+  ]
+}</pre>
+                                <p><strong>RAW Mode</strong> skips all of that. The active persona prompt (if any) is prepended as plain text, followed directly by the user's message — no roles, no history, no wrappers:</p>
+                                <pre style="background:#050507;padding:0.75rem;border-radius:6px;font-size:0.78rem;overflow-x:auto;">You are a helpful assistant.
+
+What is the capital of France?</pre>
+                                <p>For Ollama, RAW mode uses the <code>/api/generate</code> endpoint (true text completion). For LM Studio, Jan, and cloud providers, it uses <code>/v1/chat/completions</code> but with a single <code>user</code> message containing the full concatenated string — no system message, no history.</p>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>When to use JSON Chat Mode</h4>
+                                <p>JSON Chat Mode is the right choice in almost all situations. Use it when:</p>
+                                <ul>
+                                    <li>You want the model to remember previous messages in the conversation (history is maintained across turns).</li>
+                                    <li>You are using a modern instruction-tuned model (GPT-4o, Claude, Llama 3, Qwen, Gemini, etc.) — these are trained specifically on the chat format and respond best to it.</li>
+                                    <li>You need tool calling / function calling — this only works in chat mode.</li>
+                                    <li>You want a system prompt (persona) to be clearly separated from the user's input so the model treats them differently.</li>
+                                    <li>You are having multi-turn conversations via Telegram or other channels where context matters.</li>
+                                </ul>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>When to use RAW Mode</h4>
+                                <p>RAW mode is a specialist tool. Use it when:</p>
+                                <ul>
+                                    <li><strong>The model ignores the chat template and thinks too much.</strong> Some models (especially thinking models like Qwen3.5 running via LM Studio) apply their own Jinja chat template on top of the JSON format, which can cause unexpected behavior — extra <code>&lt;think&gt;</code> blocks, role confusion, or the model responding to the template rather than your message. RAW mode bypasses the template entirely.</li>
+                                    <li><strong>You are running a base model, not an instruct model.</strong> Base models (e.g. <code>llama3-base</code>, <code>mistral-7b</code> without the Instruct suffix) are not trained to follow the chat format. They expect a raw text prompt and will produce better completions without role wrappers.</li>
+                                    <li><strong>You want stateless, single-turn responses.</strong> RAW mode sends no conversation history — every message is independent. This is useful for simple bots where each Telegram message should be answered fresh without context from previous turns.</li>
+                                    <li><strong>Your persona prompt is self-contained and the model works better without a separate system role.</strong> Some fine-tuned models respond better when the instruction and the query are in a single block of text rather than split across roles.</li>
+                                    <li><strong>You are debugging prompt behavior.</strong> RAW mode makes it easy to see exactly what text the model receives, with no hidden formatting from the chat template.</li>
+                                </ul>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>Trade-offs at a glance</h4>
+                                <table style="width:100%;border-collapse:collapse;font-size:0.8rem;margin-top:0.5rem;">
+                                    <tr style="background:#0a0a12;border-bottom:1px solid var(--border);">
+                                        <th style="padding:0.4rem 0.6rem;text-align:left;color:var(--text-dim);">Feature</th>
+                                        <th style="padding:0.4rem 0.6rem;text-align:center;color:var(--text-dim);">JSON Chat Mode</th>
+                                        <th style="padding:0.4rem 0.6rem;text-align:center;color:var(--text-dim);">RAW Mode</th>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid var(--border);">
+                                        <td style="padding:0.35rem 0.6rem;">Conversation history</td>
+                                        <td style="padding:0.35rem 0.6rem;text-align:center;color:#22c55e;">✓ Yes (last 30 turns)</td>
+                                        <td style="padding:0.35rem 0.6rem;text-align:center;color:#ef4444;">✗ No (stateless)</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid var(--border);">
+                                        <td style="padding:0.35rem 0.6rem;">Tool / function calling</td>
+                                        <td style="padding:0.35rem 0.6rem;text-align:center;color:#22c55e;">✓ Yes</td>
+                                        <td style="padding:0.35rem 0.6rem;text-align:center;color:#ef4444;">✗ No</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid var(--border);">
+                                        <td style="padding:0.35rem 0.6rem;">Persona / system prompt</td>
+                                        <td style="padding:0.35rem 0.6rem;text-align:center;color:#22c55e;">✓ As system role</td>
+                                        <td style="padding:0.35rem 0.6rem;text-align:center;color:#f59e0b;">~ As text prefix</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid var(--border);">
+                                        <td style="padding:0.35rem 0.6rem;">Works with instruct models</td>
+                                        <td style="padding:0.35rem 0.6rem;text-align:center;color:#22c55e;">✓ Best</td>
+                                        <td style="padding:0.35rem 0.6rem;text-align:center;color:#f59e0b;">~ Acceptable</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid var(--border);">
+                                        <td style="padding:0.35rem 0.6rem;">Works with base models</td>
+                                        <td style="padding:0.35rem 0.6rem;text-align:center;color:#ef4444;">✗ Poor</td>
+                                        <td style="padding:0.35rem 0.6rem;text-align:center;color:#22c55e;">✓ Best</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid var(--border);">
+                                        <td style="padding:0.35rem 0.6rem;">Avoids chat template issues</td>
+                                        <td style="padding:0.35rem 0.6rem;text-align:center;color:#ef4444;">✗ No</td>
+                                        <td style="padding:0.35rem 0.6rem;text-align:center;color:#22c55e;">✓ Yes</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:0.35rem 0.6rem;">Thinking model compatibility</td>
+                                        <td style="padding:0.35rem 0.6rem;text-align:center;color:#f59e0b;">~ Depends on model</td>
+                                        <td style="padding:0.35rem 0.6rem;text-align:center;color:#22c55e;">✓ More predictable</td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <div class="help-sub">
+                                <h4>How to toggle</h4>
+                                <p><strong>Settings tab:</strong> Find the <em>RAW Mode</em> toggle in Agent Settings and click to enable/disable. Click <strong>Save Settings</strong> to persist.</p>
+                                <p><strong>From Telegram:</strong></p>
+                                <table style="width:100%;border-collapse:collapse;font-size:0.82rem;margin-top:0.4rem;">
+                                    <tr style="border-bottom:1px solid var(--border);">
+                                        <td style="padding:0.4rem 0.6rem;color:var(--accent);font-family:monospace;">/raw</td>
+                                        <td style="padding:0.4rem 0.6rem;">Switch to RAW mode for this session</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid var(--border);">
+                                        <td style="padding:0.4rem 0.6rem;color:var(--accent);font-family:monospace;">/noraw</td>
+                                        <td style="padding:0.4rem 0.6rem;">Switch back to JSON chat mode</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:0.4rem 0.6rem;color:var(--accent);font-family:monospace;">/status</td>
+                                        <td style="padding:0.4rem 0.6rem;">Check current RAW and thinking state</td>
+                                    </tr>
+                                </table>
+                                <p style="margin-top:0.6rem;color:var(--text-dim);font-size:0.8rem;">Commands can be combined with a message on the same line, e.g. <code>/raw Tell me a joke</code> switches to RAW mode and immediately sends the message.</p>
+                            </div>
+
+                        </div>
+                    </details>
+
+                    <details class="help-section">
                         <summary>🔧 Troubleshooting / FAQ</summary>
                         <div class="help-body">
                             <div class="help-sub">
@@ -895,7 +1029,7 @@
                         </div>
                         <div style="margin-bottom: 1rem;">
                             <span style="color: var(--text-dim); font-size: 0.85rem;">Support</span>
-                            <div style="font-size: 0.9rem;"><a href="mailto:info@bamboosynergytec.com" style="color: var(--accent); text-decoration: none;">info@bamboosynergytec.com</a></div>
+                            <div style="font-size: 0.9rem;"><a href="mailto:info@bamboosynergytec.com" style="color:var(--accent);text-decoration:none;">info@bamboosynergytec.com</a></div>
                         </div>
                         <div>
                             <span style="font-size: 0.8rem; color: var(--text-dim);" id="about-copyright">© 2025 Bamboo Synergy Technologies, Inc.</span>
@@ -957,7 +1091,7 @@
             skills.js   — Composio, builtin skills, skill toggles, connection modal
             main.js     — enterDashboard, tab switching, all addEventListener wiring, boot()
         -->
-                        <script src="js/core.js"></script>
+                                <script src="js/core.js"></script>
         <script src="js/wizard.js"></script>
         <script src="js/llm.js"></script>
         <script src="js/channels.js"></script>
